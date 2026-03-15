@@ -20,6 +20,8 @@ export type RenderingState =
       size: number;
     };
 
+export type State = RenderingState;
+
 export const useRendering = (id: string, inputProps: MyCompProps) => {
   const [state, setState] = useState<RenderingState>({ status: "init" });
 
