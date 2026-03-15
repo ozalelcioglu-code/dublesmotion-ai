@@ -36,6 +36,7 @@ export type Ratio = z.infer<typeof RatioSchema>;
 export type Scene = z.infer<typeof SceneSchema>;
 export type Storyboard = z.infer<typeof StoryboardSchema>;
 export type MyCompProps = z.infer<typeof CompositionPropsSchema>;
+export type CompositionProps = MyCompProps;
 
 export const defaultMyCompProps: MyCompProps = {
   title: "AI Video",

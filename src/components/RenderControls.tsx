@@ -1,5 +1,4 @@
-
-import { CompositionProps } from "../../types/constants";
+import type { MyCompProps } from "../../types/constants";
 import { useRendering } from "../helpers/use-rendering";
 import { AlignEnd } from "./AlignEnd";
 import { Button } from "./Button";
@@ -13,7 +12,7 @@ import { Spacing } from "./Spacing";
 export const RenderControls: React.FC<{
   text: string;
   setText: React.Dispatch<React.SetStateAction<string>>;
-  inputProps: CompositionProps;
+  inputProps: MyCompProps;
 }> = ({ text, setText, inputProps }) => {
   const { renderMedia, state, undo } = useRendering("MyComp", inputProps);
 
@@ -27,7 +26,8 @@ export const RenderControls: React.FC<{
             disabled={state.status === "invoking"}
             setText={setText}
             text={text}
-          ></Input>
+          />
+
           <AlignEnd className="mt-4">
             <Button
               disabled={state.status === "invoking"}
@@ -37,9 +37,10 @@ export const RenderControls: React.FC<{
               Render video
             </Button>
           </AlignEnd>
+
           {state.status === "invoking" ? (
             <>
-              <Spacing></Spacing>
+              <Spacing />
               <div
                 style={{
                   fontSize: 14,
@@ -54,6 +55,7 @@ export const RenderControls: React.FC<{
                     ? ` ${Math.max(Math.round(state.progress * 100), 1)}%`
                     : null}
                 </div>
+
                 <div
                   style={{
                     color: "#999",
@@ -64,20 +66,23 @@ export const RenderControls: React.FC<{
                   {state.subtitle ?? "\u00A0"}
                 </div>
               </div>
+
               <ProgressBar progress={state.progress} />
             </>
           ) : null}
+
           {state.status === "error" ? (
-            <ErrorComp message={state.error.message}></ErrorComp>
+            <ErrorComp message={state.error.message} />
           ) : null}
         </>
       ) : null}
+
       {state.status === "done" ? (
         <>
           <ProgressBar progress={1} />
-          <Spacing></Spacing>
+          <Spacing />
           <AlignEnd>
-            <DownloadButton undo={undo} state={state}></DownloadButton>
+            <DownloadButton undo={undo} state={state} />
           </AlignEnd>
         </>
       ) : null}
