@@ -1,0 +1,21 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**"],
+      "env": [
+        "STRIPE_SECRET_KEY",
+        "STRIPE_PRICE_STARTER",
+        "STRIPE_PRICE_PRO",
+        "STRIPE_PRICE_AGENCY",
+        "STRIPE_WEBHOOK_SECRET",
+        "OPENAI_API_KEY",
+        "REPLICATE_API_TOKEN",
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL"
+      ]
+    }
+  }
+}

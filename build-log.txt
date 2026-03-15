@@ -1,0 +1,42 @@
+
+> my-video@1.0.0 build
+> next build
+
+▲ Next.js 16.1.5 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.9s
+  Running TypeScript ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/14) ...
+  Generating static pages using 7 workers (3/14) 
+  Generating static pages using 7 workers (6/14) 
+  Generating static pages using 7 workers (10/14) 
+✓ Generating static pages using 7 workers (14/14) in 156.9ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/ai/storyboard
+├ ƒ /api/ai/video
+├ ƒ /api/auth/[...all]
+├ ƒ /api/billing/checkout
+├ ƒ /api/billing/plan
+├ ƒ /api/db-test
+├ ƒ /api/me
+├ ƒ /api/render
+├ ƒ /api/session-test
+├ ƒ /api/videos/[id]
+├ ƒ /billing
+├ ƒ /dashboard
+├ ○ /login
+├ ○ /settings
+├ ○ /templates
+└ ƒ /videos
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
