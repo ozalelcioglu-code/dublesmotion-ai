@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { AppPageShell } from "../../components/AppPageShell";
+import AppPageShell  from "../../components/AppPageShell";
 import { DashboardClient } from "../../components/DashboardClient";
 import { auth } from "../../lib/auth";
 import {
