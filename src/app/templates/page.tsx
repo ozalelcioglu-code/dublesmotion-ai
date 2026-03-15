@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { AppPageShell } from "../../components/AppPageShell";
+import AppPageShell  from "../../components/AppPageShell";
 
 function getLanguageFromHeaders(h: Headers) {
   const cookie = h.get("cookie") || "";
