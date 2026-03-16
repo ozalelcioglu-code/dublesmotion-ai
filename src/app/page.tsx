@@ -861,42 +861,16 @@ function PageContent() {
             className="studio-responsive"
             style={{
               display: "grid",
-              gridTemplateColumns: isMobileViewport
-                ? "1fr"
-                : "360px minmax(520px, 760px)",
-              justifyContent: isMobileViewport ? "stretch" : "space-between",
+              gridTemplateColumns: isMobileViewport ? "1fr" : "360px 1fr",
+              justifyContent: "space-between",
               gap: isMobileViewport ? 16 : 24,
               alignItems: "start",
               width: "100%",
-              maxWidth: 1180,
+              maxWidth: 1320,
             }}
           >
             <div style={styles.studioRail}>
-              <div style={styles.mobileTopTabs} className="mobile-top-tabs">
-                {(
-                  [
-                    ["video", t.home.videoTool],
-                    ["voice", t.home.voiceTool],
-                    ["support", t.home.supportTool],
-                  ] as const
-                ).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setWorkspaceTab(key)}
-                    style={{
-                      ...styles.mobileTopTabButton,
-                      ...(workspaceTab === key
-                        ? styles.mobileTopTabButtonActive
-                        : {}),
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <div style={styles.workspaceSwitch} className="desktop-only">
+              <div style={styles.workspaceSwitch}>
                 {(
                   [
                     ["video", t.home.videoTool],
@@ -924,166 +898,149 @@ function PageContent() {
             </div>
 
             <div style={styles.canvasColumn}>
-              <div style={styles.previewHeader}>
-                <div>
-                  <div style={styles.cardTitle}>
-                    {previewTarget === "final"
-                      ? t.home.finalPreviewTitle
-                      : t.home.scenePreviewTitle}
+              <div style={styles.previewMainRow}>
+                <div style={styles.previewMainLeft}>
+                  <div style={styles.previewHeader}>
+                    <div>
+                      <div style={styles.cardTitle}>
+                        {previewTarget === "final"
+                          ? t.home.finalPreviewTitle
+                          : t.home.scenePreviewTitle}
+                      </div>
+                      <div style={styles.previewHeaderSub}>
+                        {previewTarget === "final"
+                          ? t.home.finalVideoButton
+                          : selectedScene?.title ?? t.home.selectedScene}
+                      </div>
+                    </div>
                   </div>
-                  <div style={styles.previewHeaderSub}>
-                    {previewTarget === "final"
-                      ? t.home.finalVideoButton
-                      : selectedScene?.title ?? t.home.selectedScene}
+
+                  <div style={styles.previewBoxLarge}>{renderPreviewContent()}</div>
+
+                  {generation.status === "done" && generation.saveWarning ? (
+                    <div style={styles.warningBox}>{generation.saveWarning}</div>
+                  ) : null}
+
+                  <div style={styles.outputCard}>
+                    <div style={styles.cardTitle}>{t.home.outputTitle}</div>
+
+                    <div style={styles.infoRow}>
+                      <span style={styles.infoLabel}>{t.home.mode}</span>
+                      <strong style={styles.infoValue}>
+                        {mode.replaceAll("_", " ")}
+                      </strong>
+                    </div>
+
+                    <div style={styles.infoRow}>
+                      <span style={styles.infoLabel}>{t.home.scenes}</span>
+                      <strong style={styles.infoValue}>
+                        {generation.status === "done" ? displayScenes.length : "-"}
+                      </strong>
+                    </div>
+
+                    <div style={styles.infoRow}>
+                      <span style={styles.infoLabel}>{t.home.duration}</span>
+                      <strong style={styles.infoValue}>
+                        {generation.status === "done" && totalDuration
+                          ? `${totalDuration}s`
+                          : "-"}
+                      </strong>
+                    </div>
+
+                    <div style={styles.infoRow}>
+                      <span style={styles.infoLabel}>{t.home.status}</span>
+                      <span style={styles.status}>{statusText}</span>
+                    </div>
+
+                    {generation.status === "done" ? (
+                      <a
+                        href={generation.videoUrl}
+                        download
+                        style={styles.downloadLink}
+                      >
+                        {t.home.downloadVideo}
+                      </a>
+                    ) : null}
                   </div>
                 </div>
 
-                <div style={styles.previewHeaderActions}>
-                  <button
-                    type="button"
-                    style={{
-                      ...styles.previewToggle,
-                      ...(previewTarget === "final"
-                        ? styles.previewToggleActive
-                        : {}),
-                    }}
-                    onClick={() => setPreviewTarget("final")}
-                  >
-                    {t.home.finalVideoButton}
-                  </button>
+                <div style={styles.previewMainRight}>
+                  <div style={styles.scenesRailCard}>
+                    <div style={styles.cardTitle}>{t.home.sceneRailTitle}</div>
 
-                  <button
-                    type="button"
-                    style={styles.outlineButton}
-                    onClick={() => router.push("/billing")}
-                  >
-                    {t.home.upgradeCta}
-                  </button>
-                </div>
-              </div>
+                    {displayScenes.length === 0 ? (
+                      <div style={styles.smallNote}>
+                        Video oluşturulduktan sonra sahneler burada görünecek.
+                      </div>
+                    ) : (
+                      <div style={styles.scenesStack}>
+                        {displayScenes.map((scene) => {
+                          const isSelected = scene.id === selectedSceneId;
 
-              <div style={styles.previewBoxLarge}>{renderPreviewContent()}</div>
-
-              {generation.status === "done" && generation.saveWarning ? (
-                <div style={styles.warningBox}>{generation.saveWarning}</div>
-              ) : null}
-
-              <div style={styles.outputCard}>
-                <div style={styles.cardTitle}>{t.home.outputTitle}</div>
-
-                <div style={styles.infoRow}>
-                  <span style={styles.infoLabel}>{t.home.mode}</span>
-                  <strong style={styles.infoValue}>
-                    {mode.replaceAll("_", " ")}
-                  </strong>
-                </div>
-
-                <div style={styles.infoRow}>
-                  <span style={styles.infoLabel}>{t.home.scenes}</span>
-                  <strong style={styles.infoValue}>
-                    {generation.status === "done" ? displayScenes.length : "-"}
-                  </strong>
-                </div>
-
-                <div style={styles.infoRow}>
-                  <span style={styles.infoLabel}>{t.home.duration}</span>
-                  <strong style={styles.infoValue}>
-                    {generation.status === "done" && totalDuration
-                      ? `${totalDuration}s`
-                      : "-"}
-                  </strong>
-                </div>
-
-                <div style={styles.infoRow}>
-                  <span style={styles.infoLabel}>{t.home.status}</span>
-                  <span style={styles.status}>{statusText}</span>
-                </div>
-
-                {generation.status === "done" ? (
-                  <a
-                    href={generation.videoUrl}
-                    download
-                    style={styles.downloadLink}
-                  >
-                    {t.home.downloadVideo}
-                  </a>
-                ) : null}
-              </div>
-
-              <div style={styles.scenesRailCard}>
-                <div style={styles.cardTitle}>{t.home.sceneRailTitle}</div>
-
-                {displayScenes.length === 0 ? (
-                  <div style={styles.smallNote}>
-                    Video oluşturulduktan sonra sahneler burada görünecek.
-                  </div>
-                ) : (
-                  <div style={styles.scenesStack}>
-                    {displayScenes.map((scene) => {
-                      const isSelected = scene.id === selectedSceneId;
-
-                      return (
-                        <div
-                          key={scene.id}
-                          style={{
-                            ...styles.sceneCard,
-                            ...(isSelected ? styles.sceneCardActive : {}),
-                          }}
-                        >
-                          {scene.videoUrl ? (
-                            <div style={styles.sceneThumbWrap}>
-                              <video
-                                src={scene.videoUrl}
-                                muted
-                                playsInline
-                                controls
-                                style={styles.sceneVideo}
-                              />
-                            </div>
-                          ) : scene.imageUrl ? (
-                            <div style={styles.sceneThumbWrap}>
-                              <img
-                                src={scene.imageUrl}
-                                alt={scene.title}
-                                style={styles.sceneThumb}
-                              />
-                            </div>
-                          ) : (
-                            <div style={styles.sceneThumbPlaceholder}>
-                              {scene.title}
-                            </div>
-                          )}
-
-                          <div style={styles.sceneTitleRow}>
-                            <strong>{scene.title}</strong>
-                            <span>{scene.durationSec}s</span>
-                          </div>
-
-                          <div style={styles.sceneDescription}>
-                            {scene.description}
-                          </div>
-
-                          <div style={styles.sceneActions}>
-                            <button
-                              type="button"
-                              style={styles.sceneActionButton}
-                              onClick={() => handleSelectScene(scene.id)}
+                          return (
+                            <div
+                              key={scene.id}
+                              style={{
+                                ...styles.sceneCard,
+                                ...(isSelected ? styles.sceneCardActive : {}),
+                              }}
                             >
-                              {t.common.select}
-                            </button>
-                            <button
-                              type="button"
-                              style={styles.sceneActionButtonDanger}
-                              onClick={() => handleDeleteScene(scene.id)}
-                            >
-                              {t.common.delete}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                              {scene.videoUrl ? (
+                                <div style={styles.sceneThumbWrap}>
+                                  <video
+                                    src={scene.videoUrl}
+                                    muted
+                                    playsInline
+                                    controls
+                                    style={styles.sceneVideo}
+                                  />
+                                </div>
+                              ) : scene.imageUrl ? (
+                                <div style={styles.sceneThumbWrap}>
+                                  <img
+                                    src={scene.imageUrl}
+                                    alt={scene.title}
+                                    style={styles.sceneThumb}
+                                  />
+                                </div>
+                              ) : (
+                                <div style={styles.sceneThumbPlaceholder}>
+                                  {scene.title}
+                                </div>
+                              )}
+
+                              <div style={styles.sceneTitleRow}>
+                                <strong>{scene.title}</strong>
+                                <span>{scene.durationSec}s</span>
+                              </div>
+
+                              <div style={styles.sceneDescription}>
+                                {scene.description}
+                              </div>
+
+                              <div style={styles.sceneActions}>
+                                <button
+                                  type="button"
+                                  style={styles.sceneActionButton}
+                                  onClick={() => handleSelectScene(scene.id)}
+                                >
+                                  {t.common.select}
+                                </button>
+                                <button
+                                  type="button"
+                                  style={styles.sceneActionButtonDanger}
+                                  onClick={() => handleDeleteScene(scene.id)}
+                                >
+                                  {t.common.delete}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </section>
@@ -1103,108 +1060,129 @@ function PageContent() {
             <div style={styles.topSub}>{t.home.subtitle}</div>
           </div>
 
-          <div style={styles.accountTopRight} ref={accountMenuRef}>
+          <div style={styles.topBarRight}>
             <button
               type="button"
-              style={styles.accountMiniButton}
-              onClick={() => setAccountMenuOpen((prev) => !prev)}
+              style={{
+                ...styles.topActionButton,
+                ...(previewTarget === "final" ? styles.topActionButtonActive : {}),
+              }}
+              onClick={() => setPreviewTarget("final")}
             >
-              <div style={styles.accountMiniAvatar}>
-                {(user?.name?.[0] || user?.email?.[0] || "D").toUpperCase()}
-              </div>
-
-              <div style={styles.accountMiniText}>
-                <strong style={styles.accountMiniName}>
-                  {isAuthenticated ? user?.name || "User" : "Guest"}
-                </strong>
-                <span style={styles.accountMiniPlan}>
-                  {user?.planLabel ?? "Free"}
-                </span>
-              </div>
-
-              <span style={styles.accountMiniCaret}>▾</span>
+              {t.home.finalVideoButton}
             </button>
 
-            {accountMenuOpen ? (
-              <div style={styles.accountDropdown}>
-                <div style={styles.accountDropdownHeader}>
-                  <div style={styles.accountDropdownName}>
+            <button
+              type="button"
+              style={styles.topActionButton}
+              onClick={() => router.push("/billing")}
+            >
+              {t.home.upgradeCta}
+            </button>
+
+            <div style={styles.accountTopRight} ref={accountMenuRef}>
+              <button
+                type="button"
+                style={styles.accountMiniButton}
+                onClick={() => setAccountMenuOpen((prev) => !prev)}
+              >
+                <div style={styles.accountMiniAvatar}>
+                  {(user?.name?.[0] || user?.email?.[0] || "D").toUpperCase()}
+                </div>
+
+                <div style={styles.accountMiniText}>
+                  <strong style={styles.accountMiniName}>
                     {isAuthenticated ? user?.name || "User" : "Guest"}
-                  </div>
-                  <div style={styles.accountDropdownEmail}>
-                    {isAuthenticated ? user?.email : t.header.guestText}
-                  </div>
+                  </strong>
+                  <span style={styles.accountMiniPlan}>
+                    {user?.planLabel ?? "Free"}
+                  </span>
                 </div>
 
-                <div style={styles.accountDropdownStats}>
-                  <div style={styles.accountDropdownStatRow}>
-                    <span>{t.home.currentPlan}</span>
-                    <strong>{user?.planLabel ?? "Free"}</strong>
-                  </div>
-                  <div style={styles.accountDropdownStatRow}>
-                    <span>{t.home.remainingCredits}</span>
-                    <strong>{remainingCreditsText}</strong>
-                  </div>
-                  <div style={styles.accountDropdownStatRow}>
-                    <span>{t.home.maxDuration}</span>
-                    <strong>{user?.maxDurationSec ?? 10}s</strong>
-                  </div>
-                </div>
+                <span style={styles.accountMiniCaret}>▾</span>
+              </button>
 
-                <div style={styles.accountDropdownGroup}>
-                  <label style={styles.accountDropdownLabel}>Language</label>
-                  <select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value as AppLanguage)}
-                    style={styles.accountDropdownSelect}
-                  >
-                    {Object.entries(LANGUAGE_LABELS).map(([key, label]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {accountMenuOpen ? (
+                <div style={styles.accountDropdown}>
+                  <div style={styles.accountDropdownHeader}>
+                    <div style={styles.accountDropdownName}>
+                      {isAuthenticated ? user?.name || "User" : "Guest"}
+                    </div>
+                    <div style={styles.accountDropdownEmail}>
+                      {isAuthenticated ? user?.email : t.header.guestText}
+                    </div>
+                  </div>
 
-                <div style={styles.accountDropdownActions}>
-                  {!isAuthenticated ? (
-                    <>
-                      <button
-                        type="button"
-                        style={styles.accountDropdownButton}
-                        onClick={() => router.push("/login")}
-                      >
-                        {t.common.login}
-                      </button>
-                      <button
-                        type="button"
-                        style={styles.accountDropdownButton}
-                        onClick={() => router.push("/billing")}
-                      >
-                        {t.common.billing}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        style={styles.accountDropdownButton}
-                        onClick={() => router.push("/billing")}
-                      >
-                        {t.common.billing}
-                      </button>
-                      <button
-                        type="button"
-                        style={styles.accountDropdownButtonDanger}
-                        onClick={handleLogout}
-                      >
-                        {t.common.logout}
-                      </button>
-                    </>
-                  )}
+                  <div style={styles.accountDropdownStats}>
+                    <div style={styles.accountDropdownStatRow}>
+                      <span>{t.home.currentPlan}</span>
+                      <strong>{user?.planLabel ?? "Free"}</strong>
+                    </div>
+                    <div style={styles.accountDropdownStatRow}>
+                      <span>{t.home.remainingCredits}</span>
+                      <strong>{remainingCreditsText}</strong>
+                    </div>
+                    <div style={styles.accountDropdownStatRow}>
+                      <span>{t.home.maxDuration}</span>
+                      <strong>{user?.maxDurationSec ?? 10}s</strong>
+                    </div>
+                  </div>
+
+                  <div style={styles.accountDropdownGroup}>
+                    <label style={styles.accountDropdownLabel}>Language</label>
+                    <select
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value as AppLanguage)}
+                      style={styles.accountDropdownSelect}
+                    >
+                      {Object.entries(LANGUAGE_LABELS).map(([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={styles.accountDropdownActions}>
+                    {!isAuthenticated ? (
+                      <>
+                        <button
+                          type="button"
+                          style={styles.accountDropdownButton}
+                          onClick={() => router.push("/login")}
+                        >
+                          {t.common.login}
+                        </button>
+                        <button
+                          type="button"
+                          style={styles.accountDropdownButton}
+                          onClick={() => router.push("/billing")}
+                        >
+                          {t.common.billing}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          style={styles.accountDropdownButton}
+                          onClick={() => router.push("/billing")}
+                        >
+                          {t.common.billing}
+                        </button>
+                        <button
+                          type="button"
+                          style={styles.accountDropdownButtonDanger}
+                          onClick={handleLogout}
+                        >
+                          {t.common.logout}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -1250,6 +1228,32 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "flex-start",
     gap: 14,
     flexWrap: "wrap",
+  },
+
+  topBarRight: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+  },
+
+  topActionButton: {
+    padding: "9px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.08)",
+    background: "rgba(255,255,255,0.96)",
+    color: "#0f172a",
+    fontWeight: 800,
+    fontSize: 13,
+    cursor: "pointer",
+    minHeight: 40,
+  },
+
+  topActionButtonActive: {
+    background: "#0f172a",
+    color: "#fff",
+    border: "1px solid #0f172a",
   },
 
   kicker: {
@@ -1456,7 +1460,7 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: "column",
     gap: 14,
     minWidth: 0,
-    alignItems: "flex-start",
+    alignItems: "stretch",
   },
 
   workspaceSwitch: {
@@ -1476,29 +1480,6 @@ const styles: Record<string, CSSProperties> = {
   },
 
   workspaceSwitchButtonActive: {
-    background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
-    color: "#fff",
-    border: "1px solid transparent",
-  },
-
-  mobileTopTabs: {
-    display: "flex",
-    gap: 8,
-    width: "100%",
-  },
-
-  mobileTopTabButton: {
-    flex: 1,
-    padding: "12px 12px",
-    borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-    color: "#334155",
-    cursor: "pointer",
-    fontWeight: 800,
-  },
-
-  mobileTopTabButtonActive: {
     background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
     color: "#fff",
     border: "1px solid transparent",
@@ -1704,6 +1685,28 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.5,
   },
 
+  previewMainRow: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 560px) minmax(260px, 340px)",
+    gap: 18,
+    alignItems: "start",
+    width: "100%",
+  },
+
+  previewMainLeft: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+    minWidth: 0,
+  },
+
+  previewMainRight: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+    minWidth: 0,
+  },
+
   previewHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -1711,7 +1714,6 @@ const styles: Record<string, CSSProperties> = {
     gap: 16,
     flexWrap: "wrap",
     width: "100%",
-    maxWidth: 760,
   },
 
   previewHeaderSub: {
@@ -1720,30 +1722,9 @@ const styles: Record<string, CSSProperties> = {
     marginTop: 4,
   },
 
-  previewHeaderActions: {
-    display: "flex",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-
-  previewToggle: {
-    padding: "10px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.10)",
-    background: "#fff",
-    color: "#0f172a",
-    cursor: "pointer",
-    fontWeight: 800,
-  },
-
-  previewToggleActive: {
-    background: "#0f172a",
-    color: "#fff",
-  },
-
   previewBoxLarge: {
     width: "100%",
-    maxWidth: 520,
+    maxWidth: 560,
     aspectRatio: "1 / 1",
     margin: "0",
     borderRadius: 22,
@@ -1811,7 +1792,7 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 700,
     fontSize: 14,
     width: "100%",
-    maxWidth: 760,
+    maxWidth: 560,
   },
 
   outputCard: {
@@ -1821,7 +1802,7 @@ const styles: Record<string, CSSProperties> = {
     border: "1px solid rgba(15,23,42,0.06)",
     boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
     width: "100%",
-    maxWidth: 760,
+    maxWidth: 560,
   },
 
   infoRow: {
@@ -1872,7 +1853,7 @@ const styles: Record<string, CSSProperties> = {
     border: "1px solid rgba(15,23,42,0.06)",
     boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
     width: "100%",
-    maxWidth: 760,
+    minHeight: 100,
   },
 
   scenesStack: {
@@ -1888,7 +1869,6 @@ const styles: Record<string, CSSProperties> = {
     background: "#fff",
     border: "1px solid rgba(15,23,42,0.06)",
     width: "100%",
-    maxWidth: 520,
   },
 
   sceneCardActive: {
@@ -2043,16 +2023,6 @@ const styles: Record<string, CSSProperties> = {
     border: "1px solid rgba(15,23,42,0.08)",
     color: "#334155",
     fontWeight: 700,
-  },
-
-  outlineButton: {
-    padding: "10px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "rgba(255,255,255,0.92)",
-    color: "#0f172a",
-    fontWeight: 800,
-    cursor: "pointer",
   },
 
   cardTitle: {
