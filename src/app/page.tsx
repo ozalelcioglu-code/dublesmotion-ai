@@ -14,7 +14,11 @@ import { useLanguage } from "../provider/LanguageProvider";
 import { LANGUAGE_LABELS, type AppLanguage } from "../lib/i18n";
 import AppSidebar from "../components/AppSidebar";
 
-type Mode = "text_to_video" | "url_to_video" | "image_to_video";
+type Mode =
+  | "text_to_video"
+  | "url_to_video"
+  | "image_to_video"
+  | "logo_to_video";
 type NavKey = "tool" | "apps" | "chat" | "flow" | "live";
 type WorkspaceTab = "video" | "voice" | "support";
 
@@ -127,19 +131,19 @@ function PageContent() {
       {
         id: "scene-1",
         title: "Scene 1",
-        description: `${clean} — establishing shot`,
+        description: `${clean} — hero shot`,
         durationSec: 4,
       },
       {
         id: "scene-2",
         title: "Scene 2",
-        description: `${clean} — medium motion shot`,
+        description: `${clean} — motion shot`,
         durationSec: 4,
       },
       {
         id: "scene-3",
         title: "Scene 3",
-        description: `${clean} — closing cinematic shot`,
+        description: `${clean} — closing shot`,
         durationSec: 4,
       },
     ];
@@ -193,7 +197,8 @@ function PageContent() {
         sourceUrl.trim().length > 0) ||
       (mode === "image_to_video" &&
         prompt.trim().length >= 3 &&
-        uploadedImageUrl.trim().length > 0));
+        uploadedImageUrl.trim().length > 0) ||
+      (mode === "logo_to_video" && uploadedImageUrl.trim().length > 0));
 
   const canGenerate = canGenerateBase && isAuthenticated && !isPlanBlocked;
 
@@ -280,6 +285,11 @@ function PageContent() {
             prompt: string;
             imageUrl: string;
             ratio?: string;
+          }
+        | {
+            mode: "logo_to_video";
+            prompt: string;
+            imageUrl: string;
           };
 
       if (mode === "text_to_video") {
@@ -295,12 +305,18 @@ function PageContent() {
           sourceUrl,
           ratio: ratioUi,
         };
-      } else {
+      } else if (mode === "image_to_video") {
         payload = {
           mode,
           prompt,
           imageUrl: uploadedImageUrl,
           ratio: ratioUi,
+        };
+      } else {
+        payload = {
+          mode,
+          prompt: prompt.trim() || "clean premium technology logo reveal",
+          imageUrl: uploadedImageUrl,
         };
       }
 
@@ -454,6 +470,7 @@ function PageContent() {
           <video
             src={selectedScene.videoUrl}
             controls
+            playsInline
             style={styles.video}
           />
         );
@@ -469,7 +486,14 @@ function PageContent() {
     }
 
     if (generation.status === "done") {
-      return <video src={generation.videoUrl} controls style={styles.video} />;
+      return (
+        <video
+          src={generation.videoUrl}
+          controls
+          playsInline
+          style={styles.video}
+        />
+      );
     }
 
     if (generation.status === "loading") {
@@ -593,7 +617,12 @@ function PageContent() {
 
         <div style={styles.modeTabs}>
           {(
-            ["text_to_video", "url_to_video", "image_to_video"] as const
+            [
+              "text_to_video",
+              "url_to_video",
+              "image_to_video",
+              "logo_to_video",
+            ] as const
           ).map((item) => (
             <button
               key={item}
@@ -609,13 +638,27 @@ function PageContent() {
           ))}
         </div>
 
-        <label style={styles.label}>{t.home.promptLabel}</label>
+        <label style={styles.label}>
+          {mode === "logo_to_video"
+            ? "Logo prompt (optional)"
+            : t.home.promptLabel}
+        </label>
         <textarea
           style={styles.prompt}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder={t.home.promptPlaceholder}
+          placeholder={
+            mode === "logo_to_video"
+              ? "clean premium technology logo reveal with subtle glow"
+              : t.home.promptPlaceholder
+          }
         />
+
+        {mode === "logo_to_video" ? (
+          <div style={styles.logoInfoBox}>
+            Upload your logo for a clean cinematic brand reveal. PNG logos with transparent background work best.
+          </div>
+        ) : null}
 
         {mode === "url_to_video" ? (
           <div style={styles.inputGroup}>
@@ -629,13 +672,19 @@ function PageContent() {
           </div>
         ) : null}
 
-        {mode === "image_to_video" ? (
+        {mode === "image_to_video" || mode === "logo_to_video" ? (
           <div style={styles.inputGroup}>
-            <label style={styles.label}>{t.home.uploadImageLabel}</label>
+            <label style={styles.label}>
+              {mode === "logo_to_video"
+                ? "Upload logo"
+                : t.home.uploadImageLabel}
+            </label>
 
             <div style={styles.uploadRow}>
               <label style={styles.uploadButton}>
-                {t.home.chooseImage}
+                {mode === "logo_to_video"
+                  ? "Choose logo"
+                  : t.home.chooseImage}
                 <input
                   type="file"
                   accept="image/*"
@@ -647,9 +696,17 @@ function PageContent() {
               {uploadingImage ? (
                 <span style={styles.uploadHint}>{t.home.uploadInProgress}</span>
               ) : uploadedImageUrl ? (
-                <span style={styles.uploadReady}>{t.home.imageUploaded}</span>
+                <span style={styles.uploadReady}>
+                  {mode === "logo_to_video"
+                    ? "Logo uploaded"
+                    : t.home.imageUploaded}
+                </span>
               ) : (
-                <span style={styles.uploadHint}>{t.home.noImageSelected}</span>
+                <span style={styles.uploadHint}>
+                  {mode === "logo_to_video"
+                    ? "No logo selected"
+                    : t.home.noImageSelected}
+                </span>
               )}
             </div>
 
@@ -665,18 +722,20 @@ function PageContent() {
           </div>
         ) : null}
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>{t.home.ratioLabel}</label>
-          <select
-            value={ratioUi}
-            onChange={(e) => setRatioUi(e.target.value)}
-            style={styles.selectWide}
-          >
-            <option value="1:1">1:1</option>
-            <option value="16:9">16:9</option>
-            <option value="9:16">9:16</option>
-          </select>
-        </div>
+        {mode !== "logo_to_video" ? (
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>{t.home.ratioLabel}</label>
+            <select
+              value={ratioUi}
+              onChange={(e) => setRatioUi(e.target.value)}
+              style={styles.selectWide}
+            >
+              <option value="1:1">1:1</option>
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+            </select>
+          </div>
+        ) : null}
 
         <div style={styles.controls}>
           <button type="button" style={styles.reset} onClick={handleReset}>
@@ -712,6 +771,8 @@ function PageContent() {
                 ? t.home.uploadInProgress
                 : generation.status === "loading"
                 ? t.home.statusGenerating
+                : mode === "logo_to_video"
+                ? "Generate logo animation"
                 : t.common.generate}
             </button>
           )}
@@ -720,7 +781,11 @@ function PageContent() {
         {isPlanBlocked ? (
           <div style={styles.limitBox}>{planLimitMessage}</div>
         ) : (
-          <div style={styles.smallNote}>{t.home.generateHint}</div>
+          <div style={styles.smallNote}>
+            {mode === "logo_to_video"
+              ? "Use a clean logo image for the best result."
+              : t.home.generateHint}
+          </div>
         )}
       </div>
     );
@@ -1035,7 +1100,17 @@ function PageContent() {
                               ...(isSelected ? styles.sceneCardActive : {}),
                             }}
                           >
-                            {scene.imageUrl ? (
+                            {scene.videoUrl ? (
+                              <div style={styles.sceneThumbWrap}>
+                                <video
+                                  src={scene.videoUrl}
+                                  muted
+                                  playsInline
+                                  controls
+                                  style={styles.sceneVideo}
+                                />
+                              </div>
+                            ) : scene.imageUrl ? (
                               <div style={styles.sceneThumbWrap}>
                                 <img
                                   src={scene.imageUrl}
@@ -1346,7 +1421,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   prompt: {
     width: "100%",
-    minHeight: 150,
+    minHeight: 130,
     borderRadius: 16,
     border: "1px solid rgba(15,23,42,0.08)",
     padding: 14,
@@ -1407,7 +1482,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   imagePreviewWrap: {
     marginTop: 12,
-    width: 140,
+    width: 120,
     aspectRatio: "1 / 1",
     borderRadius: 14,
     overflow: "hidden",
@@ -1474,6 +1549,18 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.5,
   },
 
+  logoInfoBox: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 14,
+    background: "rgba(239,246,255,0.95)",
+    border: "1px solid rgba(59,130,246,0.14)",
+    color: "#1d4ed8",
+    fontWeight: 700,
+    fontSize: 13,
+    lineHeight: 1.5,
+  },
+
   previewHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -1511,7 +1598,9 @@ const styles: Record<string, React.CSSProperties> = {
 
   previewBoxLarge: {
     width: "100%",
-    minHeight: 420,
+    maxWidth: 420,
+    aspectRatio: "1 / 1",
+    margin: "0 auto",
     borderRadius: 24,
     background: "#000",
     display: "flex",
@@ -1534,25 +1623,26 @@ const styles: Record<string, React.CSSProperties> = {
     height: "100%",
     objectFit: "cover",
     background: "#000",
+    display: "block",
   },
 
   centerBox: {
     textAlign: "center",
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 320,
     padding: 24,
     color: "#fff",
   },
 
   previewText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 800,
   },
 
   previewSubtext: {
     marginTop: 10,
     opacity: 0.72,
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 1.5,
     whiteSpace: "pre-wrap",
   },
@@ -1635,11 +1725,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   sceneCard: {
-    padding: 12,
+    padding: 10,
     borderRadius: 16,
     background: "#fff",
     border: "1px solid rgba(15,23,42,0.08)",
-    minWidth: 240,
+    minWidth: 190,
+    maxWidth: 220,
   },
 
   sceneCardActive: {
@@ -1649,7 +1740,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   sceneThumbWrap: {
     width: "100%",
-    aspectRatio: "16 / 9",
+    aspectRatio: "1 / 1",
     borderRadius: 12,
     overflow: "hidden",
     marginBottom: 10,
@@ -1662,9 +1753,17 @@ const styles: Record<string, React.CSSProperties> = {
     objectFit: "cover",
   },
 
+  sceneVideo: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+    background: "#000",
+  },
+
   sceneThumbPlaceholder: {
     width: "100%",
-    aspectRatio: "16 / 9",
+    aspectRatio: "1 / 1",
     borderRadius: 12,
     marginBottom: 10,
     background: "#e2e8f0",
@@ -1679,15 +1778,19 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "space-between",
     gap: 10,
     marginBottom: 6,
-    fontSize: 13,
+    fontSize: 12,
     color: "#0f172a",
   },
 
   sceneDescription: {
     color: "#64748b",
-    fontSize: 12,
-    lineHeight: 1.45,
-    minHeight: 52,
+    fontSize: 11,
+    lineHeight: 1.4,
+    minHeight: 46,
+    display: "-webkit-box",
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
   },
 
   sceneActions: {
@@ -1698,26 +1801,26 @@ const styles: Record<string, React.CSSProperties> = {
 
   sceneActionButton: {
     flex: 1,
-    padding: "9px 10px",
+    padding: "8px 9px",
     borderRadius: 10,
     border: "1px solid rgba(15,23,42,0.10)",
     background: "#fff",
     color: "#0f172a",
     cursor: "pointer",
     fontWeight: 700,
-    fontSize: 12,
+    fontSize: 11,
   },
 
   sceneActionButtonDanger: {
     flex: 1,
-    padding: "9px 10px",
+    padding: "8px 9px",
     borderRadius: 10,
     border: "1px solid rgba(239,68,68,0.16)",
     background: "#fff5f5",
     color: "#b91c1c",
     cursor: "pointer",
     fontWeight: 700,
-    fontSize: 12,
+    fontSize: 11,
   },
 
   secondaryPanel: {
