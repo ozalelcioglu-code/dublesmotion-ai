@@ -21,8 +21,17 @@ type Mode =
   | "url_to_video"
   | "image_to_video"
   | "logo_to_video";
+
 type NavKey = "tool" | "apps" | "chat" | "flow" | "live";
 type WorkspaceTab = "video" | "voice" | "support";
+
+type VideoStyle =
+  | "realistic"
+  | "cinematic"
+  | "3d_animation"
+  | "anime"
+  | "pixar"
+  | "cartoon";
 
 type SceneCard = {
   id: string;
@@ -74,6 +83,7 @@ function PageContent() {
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [ratioUi, setRatioUi] = useState("1:1");
+  const [styleUi, setStyleUi] = useState<VideoStyle>("cinematic");
 
   const [generation, setGeneration] = useState<GenerationState>({
     status: "idle",
@@ -271,56 +281,26 @@ function PageContent() {
         phase: "Submitting generation request...",
       });
 
-      let payload:
-        | {
-            mode: "text_to_video";
-            prompt: string;
-            ratio?: string;
-          }
-        | {
-            mode: "url_to_video";
-            prompt: string;
-            sourceUrl: string;
-            ratio?: string;
-          }
-        | {
-            mode: "image_to_video";
-            prompt: string;
-            imageUrl: string;
-            ratio?: string;
-          }
-        | {
-            mode: "logo_to_video";
-            prompt: string;
-            imageUrl: string;
-          };
+      const payload: Record<string, unknown> = {
+        mode,
+        style: styleUi,
+      };
 
       if (mode === "text_to_video") {
-        payload = {
-          mode,
-          prompt,
-          ratio: ratioUi,
-        };
+        payload.prompt = prompt;
+        payload.ratio = ratioUi;
       } else if (mode === "url_to_video") {
-        payload = {
-          mode,
-          prompt,
-          sourceUrl,
-          ratio: ratioUi,
-        };
+        payload.prompt = prompt;
+        payload.sourceUrl = sourceUrl;
+        payload.ratio = ratioUi;
       } else if (mode === "image_to_video") {
-        payload = {
-          mode,
-          prompt,
-          imageUrl: uploadedImageUrl,
-          ratio: ratioUi,
-        };
-      } else {
-        payload = {
-          mode,
-          prompt: prompt.trim() || "clean premium technology logo reveal",
-          imageUrl: uploadedImageUrl,
-        };
+        payload.prompt = prompt;
+        payload.imageUrl = uploadedImageUrl;
+        payload.ratio = ratioUi;
+      } else if (mode === "logo_to_video") {
+        payload.prompt =
+          prompt.trim() || "clean premium technology logo reveal";
+        payload.imageUrl = uploadedImageUrl;
       }
 
       const res = await fetch("/api/generate", {
@@ -726,6 +706,22 @@ function PageContent() {
           </div>
         ) : null}
 
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Style</label>
+          <select
+            value={styleUi}
+            onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
+            style={styles.selectWide}
+          >
+            <option value="realistic">Realistic</option>
+            <option value="cinematic">Cinematic</option>
+            <option value="3d_animation">3D Animation</option>
+            <option value="anime">Anime</option>
+            <option value="pixar">Pixar Style</option>
+            <option value="cartoon">Cartoon</option>
+          </select>
+        </div>
+
         {mode !== "logo_to_video" ? (
           <div style={styles.inputGroup}>
             <label style={styles.label}>{t.home.ratioLabel}</label>
@@ -869,33 +865,7 @@ function PageContent() {
               maxWidth: 1320,
             }}
           >
-            <div style={styles.studioRail}>
-              <div style={styles.workspaceSwitch}>
-                {(
-                  [
-                    ["video", t.home.videoTool],
-                    ["voice", t.home.voiceTool],
-                    ["support", t.home.supportTool],
-                  ] as const
-                ).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setWorkspaceTab(key)}
-                    style={{
-                      ...styles.workspaceSwitchButton,
-                      ...(workspaceTab === key
-                        ? styles.workspaceSwitchButtonActive
-                        : {}),
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {renderWorkspaceBody()}
-            </div>
+            <div style={styles.studioRail}>{renderWorkspaceBody()}</div>
 
             <div style={styles.canvasColumn}>
               <div style={styles.previewMainRow}>
@@ -1461,28 +1431,6 @@ const styles: Record<string, CSSProperties> = {
     gap: 14,
     minWidth: 0,
     alignItems: "stretch",
-  },
-
-  workspaceSwitch: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 8,
-  },
-
-  workspaceSwitchButton: {
-    padding: "12px 12px",
-    borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "rgba(255,255,255,0.82)",
-    color: "#334155",
-    cursor: "pointer",
-    fontWeight: 800,
-  },
-
-  workspaceSwitchButtonActive: {
-    background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
-    color: "#fff",
-    border: "1px solid transparent",
   },
 
   toolCard: {

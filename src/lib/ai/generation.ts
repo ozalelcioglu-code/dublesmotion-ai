@@ -1,6 +1,8 @@
 import { generateImageToVideo } from "./video";
 import { generateTextToImage } from "./image";
-
+import { generateStoryboard } from "./storyboard";
+import { applyStyle, type VideoStyle } from "./style-engine";
+import { createCharacterContinuity } from "./character-engine";
 
 export type GenerationMode =
   | "text_to_image"
@@ -17,6 +19,7 @@ export type GenerateContentInput = {
   sourceUrl?: string;
   durationSec?: number;
   plan?: string;
+  style?: VideoStyle;
 };
 
 export type GenerateContentResult =
@@ -98,70 +101,58 @@ function getRequestedSceneDuration(totalDurationSec: number, sceneCount: number)
 
 function mergeNegativePrompts(
   baseNegativePrompt?: string,
-  sceneNegativePrompt?: string
+  extraNegativePrompt?: string
 ) {
   const defaults = [
     "low quality",
     "blurry",
-    "text distortion",
-    "letters deformation",
-    "watermark",
-    "duplicate subject",
-    "extra objects",
-    "bad composition",
-    "deformed structure",
-    "unstable motion",
     "distorted face",
-    "distorted hands",
+    "distorted body",
+    "bad anatomy",
+    "warped objects",
+    "text artifacts",
+    "watermark",
+    "cropped subject",
+    "deformed hands",
+    "duplicate character",
+    "inconsistent character",
+    "messy background",
   ].join(", ");
 
-  if (baseNegativePrompt?.trim() && sceneNegativePrompt?.trim()) {
-    return `${baseNegativePrompt.trim()}, ${sceneNegativePrompt.trim()}, ${defaults}`;
-  }
+  const parts = [
+    baseNegativePrompt?.trim(),
+    extraNegativePrompt?.trim(),
+    defaults,
+  ].filter(Boolean);
 
-  if (baseNegativePrompt?.trim()) {
-    return `${baseNegativePrompt.trim()}, ${defaults}`;
-  }
-
-  if (sceneNegativePrompt?.trim()) {
-    return `${sceneNegativePrompt.trim()}, ${defaults}`;
-  }
-
-  return defaults;
+  return parts.join(", ");
 }
 
-function buildScenePrompts(prompt: string, sceneCount: number, logoMode = false) {
-  if (logoMode) {
-    return [
-      "clean cinematic logo reveal, subtle glow animation, smooth motion, premium brand intro, stable camera",
-    ];
-  }
+async function buildStoryScenes(input: {
+  prompt: string;
+  sceneCount: number;
+  style: VideoStyle;
+}) {
+  const storyboard = await generateStoryboard(input.prompt, input.sceneCount);
+  const continuity = createCharacterContinuity(input.prompt);
 
-  if (sceneCount === 1) {
-    return [`${prompt}, cinematic master shot, clear subject, premium ad look`];
-  }
+  const scenePrompts = storyboard.map((scene, index) => {
+    const linkedPrompt =
+      index === 0
+        ? `${scene.prompt}, beginning of the story`
+        : index === storyboard.length - 1
+        ? `${scene.prompt}, final part of the same story`
+        : `${scene.prompt}, continuation of the same story`;
 
-  if (sceneCount === 2) {
-    return [
-      `${prompt}, opening hero shot, cinematic lighting, premium commercial style`,
-      `${prompt}, follow-up motion shot, smooth camera move, clear subject, premium commercial style`,
-    ];
-  }
+    return applyStyle(
+      `${linkedPrompt}, ${continuity.continuityPrompt}, preserve the same main subject and environment continuity`,
+      input.style
+    );
+  });
 
-  if (sceneCount === 3) {
-    return [
-      `${prompt}, opening wide hero shot, cinematic lighting, premium ad look`,
-      `${prompt}, middle motion shot, stronger movement, realistic commercial scene`,
-      `${prompt}, final close shot, polished ending frame, premium ad finish`,
-    ];
-  }
-
-  return [
-    `${prompt}, opening hero shot, cinematic premium composition`,
-    `${prompt}, second motion scene, realistic product-commercial feel`,
-    `${prompt}, third scene, stronger movement, polished ad style`,
-    `${prompt}, final closing scene, premium ending frame, brand finish`,
-  ];
+  return {
+    scenePrompts,
+  };
 }
 
 async function generateSceneImages(
@@ -184,22 +175,25 @@ export async function generateContent(
   input: GenerateContentInput
 ): Promise<GenerateContentResult> {
   const durationSec = normalizeDurationSec(input.durationSec);
+  const style = input.style ?? "cinematic";
 
   switch (input.mode) {
     case "logo_to_video": {
       const image = resolveImageSource(input);
 
-      const logoVideoPrompt =
-        "clean cinematic logo reveal, subtle glow animation, smooth premium brand intro, stable camera, elegant motion";
+      const logoPrompt = applyStyle(
+        "clean cinematic logo reveal, subtle glow animation, smooth premium brand intro, elegant motion, stable composition",
+        style === "realistic" ? "cinematic" : style
+      );
 
       const logoNegativePrompt = mergeNegativePrompts(
         input.negativePrompt,
-        "fire, explosion, distorted logo, broken text, messy background, warped letters"
+        "fire, explosion, broken logo, distorted text, messy animation"
       );
 
       const videoUrl = await generateImageToVideo({
         image,
-        prompt: logoVideoPrompt,
+        prompt: logoPrompt,
         negativePrompt: logoNegativePrompt,
         durationSec: Math.min(durationSec, 10),
       });
@@ -212,7 +206,7 @@ export async function generateContent(
         model: "wan-video/wan-2.2-i2v-fast",
         durationSec: Math.min(durationSec, 10),
         sceneImages: [image],
-        scenePrompts: [logoVideoPrompt],
+        scenePrompts: [logoPrompt],
         sceneVideoUrls: [videoUrl],
         actualClipDurationSec: Math.min(durationSec, 10),
       };
@@ -223,16 +217,17 @@ export async function generateContent(
       const baseImage = resolveImageSource(input);
       const sceneCount = getSceneCount(durationSec, input.plan);
 
-      const scenePrompts = buildScenePrompts(prompt, sceneCount);
+      const { scenePrompts } = await buildStoryScenes({
+        prompt,
+        sceneCount,
+        style,
+      });
+
       const sceneImages = await generateSceneImages(
         scenePrompts,
         input.negativePrompt,
         "horizontal"
       );
-
-      if (!sceneImages.length) {
-        sceneImages.push(baseImage);
-      }
 
       const requestedSceneDuration = getRequestedSceneDuration(
         durationSec,
@@ -250,12 +245,10 @@ export async function generateContent(
         )
       );
 
-     const mergedVideoUrl = sceneVideoUrls[0];
-
       return {
         mode: "image_to_video",
         imageUrl: baseImage,
-        videoUrl: mergedVideoUrl,
+        videoUrl: sceneVideoUrls[0],
         provider: "replicate",
         model: "wan-video/wan-2.2-i2v-fast",
         durationSec,
@@ -271,7 +264,12 @@ export async function generateContent(
       const image = resolveImageSource(input);
       const sceneCount = getSceneCount(durationSec, input.plan);
 
-      const scenePrompts = buildScenePrompts(prompt, sceneCount);
+      const { scenePrompts } = await buildStoryScenes({
+        prompt,
+        sceneCount,
+        style,
+      });
+
       const sceneImages = await generateSceneImages(
         scenePrompts,
         input.negativePrompt,
@@ -294,12 +292,10 @@ export async function generateContent(
         )
       );
 
-      const mergedVideoUrl = sceneVideoUrls[0];
-
       return {
         mode: "url_to_video",
         imageUrl: image,
-        videoUrl: mergedVideoUrl,
+        videoUrl: sceneVideoUrls[0],
         provider: "replicate",
         model: "wan-video/wan-2.2-i2v-fast",
         durationSec,
@@ -314,7 +310,12 @@ export async function generateContent(
       const prompt = requirePrompt(input.prompt);
       const sceneCount = getSceneCount(durationSec, input.plan);
 
-      const scenePrompts = buildScenePrompts(prompt, sceneCount);
+      const { scenePrompts } = await buildStoryScenes({
+        prompt,
+        sceneCount,
+        style,
+      });
+
       const sceneImages = await generateSceneImages(
         scenePrompts,
         input.negativePrompt,
@@ -338,7 +339,12 @@ export async function generateContent(
       const prompt = requirePrompt(input.prompt);
       const sceneCount = getSceneCount(durationSec, input.plan);
 
-      const scenePrompts = buildScenePrompts(prompt, sceneCount);
+      const { scenePrompts } = await buildStoryScenes({
+        prompt,
+        sceneCount,
+        style,
+      });
+
       const sceneImages = await generateSceneImages(
         scenePrompts,
         input.negativePrompt,
@@ -361,12 +367,10 @@ export async function generateContent(
         )
       );
 
-     const mergedVideoUrl = sceneVideoUrls[0];
-
       return {
         mode: "text_to_video",
         imageUrl: sceneImages[0],
-        videoUrl: mergedVideoUrl,
+        videoUrl: sceneVideoUrls[0],
         provider: "replicate",
         model: "wan-video/wan-2.2-i2v-fast",
         durationSec,

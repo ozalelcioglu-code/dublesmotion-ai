@@ -26,6 +26,16 @@ const RequestSchema = z.object({
   imageUrl: z.string().url().optional(),
   sourceUrl: z.string().url().optional(),
   projectId: z.string().optional(),
+  style: z
+    .enum([
+      "realistic",
+      "cinematic",
+      "3d_animation",
+      "anime",
+      "pixar",
+      "cartoon",
+    ])
+    .optional(),
 });
 
 function createSeed() {
@@ -153,24 +163,20 @@ export async function POST(req: Request) {
       await incrementMonthlyVideoCount(session.user.id);
     }
 
-    let result;
-    try {
-      result = await generateContent({
-        mode: input.mode,
-        prompt:
-          input.prompt ||
-          (input.mode === "logo_to_video"
-            ? "clean premium technology logo reveal"
-            : undefined),
-        negativePrompt: input.negativePrompt,
-        imageUrl: input.imageUrl,
-        sourceUrl: input.sourceUrl,
-        durationSec: targetDurationSec,
-        plan: activePlan,
-      });
-    } catch (generationError: any) {
-      throw generationError;
-    }
+    const result = await generateContent({
+      mode: input.mode,
+      prompt:
+        input.prompt ||
+        (input.mode === "logo_to_video"
+          ? "clean premium technology logo reveal"
+          : undefined),
+      negativePrompt: input.negativePrompt,
+      imageUrl: input.imageUrl,
+      sourceUrl: input.sourceUrl,
+      durationSec: targetDurationSec,
+      plan: activePlan,
+      style: input.style,
+    });
 
     const sql = getSql();
 
@@ -178,9 +184,7 @@ export async function POST(req: Request) {
     const seed = createSeed();
     const title = makeVideoTitle(
       input.prompt ||
-        (input.mode === "logo_to_video"
-          ? "Logo Animation"
-          : "AI Video")
+        (input.mode === "logo_to_video" ? "Logo Animation" : "AI Video")
     );
     const dbMode = toDbMode(input.mode);
 
