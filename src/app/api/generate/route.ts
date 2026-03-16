@@ -9,6 +9,7 @@ import {
   incrementMonthlyVideoCount,
   resetMonthlyUsageIfNeeded,
 } from "../../../lib/user-profile-repository";
+import { buildCinematicPlan } from "../../../lib/ai/cinematic-prompt-engine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -119,23 +120,21 @@ export async function POST(req: Request) {
     if (planInfo.monthlyVideoLimit !== null) {
       await incrementMonthlyVideoCount(session.user.id);
     }
+    const cinematicPlan = buildCinematicPlan({
+  prompt: input.prompt,
+  plan: activePlan,
+  mode: input.mode,
+});
 
-    let result;
-    try {
-      result = await generateContent({
-        mode: input.mode,
-        prompt: input.prompt,
-        negativePrompt: input.negativePrompt,
-        imageUrl: input.imageUrl,
-        sourceUrl: input.sourceUrl,
-        durationSec: targetDurationSec,
-      });
-    } catch (generationError: any) {
-      // Not:
-      // Şu an elde decrement/revert helper olmadığı için burada kullanım geri alınmıyor.
-      // Ama bu değişiklik sınırsız kullanım açığını hemen kapatır.
-      throw generationError;
-    }
+    const result = await generateContent({
+  mode: input.mode,
+  prompt: input.prompt,
+  negativePrompt: input.negativePrompt,
+  imageUrl: input.imageUrl,
+  sourceUrl: input.sourceUrl,
+  durationSec: targetDurationSec,
+  plan: activePlan,
+});
 
     const sql = getSql();
 

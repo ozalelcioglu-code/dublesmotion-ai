@@ -1,5 +1,6 @@
 import { generateImageToVideo } from "./video";
 import { generateTextToImage } from "./image";
+import { buildCinematicPlan } from "./cinematic-prompt-engine";
 
 export type GenerationMode =
   | "text_to_image"
@@ -14,6 +15,7 @@ export type GenerateContentInput = {
   imageUrl?: string;
   sourceUrl?: string;
   durationSec?: number;
+  plan?: string;
 };
 
 export type GenerateContentResult =
@@ -76,49 +78,61 @@ function normalizeDurationSec(durationSec?: number) {
   return 10;
 }
 
-function buildScenePrompts(prompt: string, durationSec: number) {
-  const sceneCount = durationSec >= 30 ? 3 : durationSec >= 20 ? 2 : 1;
-
-  if (sceneCount === 1) {
-    return [`${prompt}, cinematic master shot, detailed composition`];
-  }
-
-  if (sceneCount === 2) {
-    return [
-      `${prompt}, opening wide establishing shot, cinematic lighting`,
-      `${prompt}, second scene with closer composition and stronger motion`,
-    ];
-  }
-
-  return [
-    `${prompt}, opening establishing shot, cinematic wide composition`,
-    `${prompt}, middle action shot, stronger motion and closer framing`,
-    `${prompt}, final closing shot, dramatic cinematic ending frame`,
-  ];
+function getSceneCountFromDuration(durationSec: number) {
+  if (durationSec >= 30) return 3;
+  if (durationSec >= 20) return 2;
+  return 1;
 }
 
-async function generateSceneImages(
+function getRequestedSceneDuration(totalDurationSec: number, sceneCount: number) {
+  return Math.max(5, Math.round(totalDurationSec / Math.max(sceneCount, 1)));
+}
+
+function mergeNegativePrompts(
+  baseNegativePrompt?: string,
+  sceneNegativePrompt?: string
+) {
+  if (baseNegativePrompt?.trim() && sceneNegativePrompt?.trim()) {
+    return `${baseNegativePrompt.trim()}, ${sceneNegativePrompt.trim()}`;
+  }
+
+  return baseNegativePrompt?.trim() || sceneNegativePrompt?.trim() || undefined;
+}
+
+async function generateSceneAssets(
+  input: GenerateContentInput,
   prompt: string,
-  negativePrompt: string | undefined,
   durationSec: number
 ) {
-  const scenePrompts = buildScenePrompts(prompt, durationSec);
+  const sceneCount = getSceneCountFromDuration(durationSec);
+
+  const cinematicPlan = buildCinematicPlan({
+    prompt,
+    plan: input.plan || "free",
+    mode: input.mode,
+    sceneCount,
+  });
+
+  const scenePrompts = cinematicPlan.scenes.map((scene) => scene.videoPrompt);
 
   const sceneImages = await Promise.all(
-    scenePrompts.map((scenePrompt) =>
+    cinematicPlan.scenes.map((scene) =>
       generateTextToImage({
-        prompt: scenePrompt,
-        negativePrompt,
+        prompt: scene.imagePrompt,
+        negativePrompt: mergeNegativePrompts(
+          input.negativePrompt,
+          scene.negativePrompt
+        ),
         ratio: "square",
       })
     )
   );
 
-  return { scenePrompts, sceneImages };
-}
-
-function getRequestedSceneDuration(totalDurationSec: number, sceneCount: number) {
-  return Math.max(7, Math.round(totalDurationSec / Math.max(sceneCount, 1)));
+  return {
+    cinematicPlan,
+    scenePrompts,
+    sceneImages,
+  };
 }
 
 export async function generateContent(
@@ -131,23 +145,23 @@ export async function generateContent(
       const prompt = requirePrompt(input.prompt);
       const image = resolveImageSource(input);
 
-      const { scenePrompts, sceneImages } = await generateSceneImages(
-        prompt,
-        input.negativePrompt,
-        durationSec
-      );
+      const { cinematicPlan, scenePrompts, sceneImages } =
+        await generateSceneAssets(input, prompt, durationSec);
 
       const requestedSceneDuration = getRequestedSceneDuration(
         durationSec,
-        scenePrompts.length
+        cinematicPlan.scenes.length
       );
 
       const sceneVideoUrls = await Promise.all(
-        scenePrompts.map((scenePrompt, index) =>
+        cinematicPlan.scenes.map((scene, index) =>
           generateImageToVideo({
             image: sceneImages[index] ?? image,
-            prompt: scenePrompt,
-            negativePrompt: input.negativePrompt,
+            prompt: scene.videoPrompt,
+            negativePrompt: mergeNegativePrompts(
+              input.negativePrompt,
+              scene.negativePrompt
+            ),
             durationSec: requestedSceneDuration,
           })
         )
@@ -165,7 +179,7 @@ export async function generateContent(
         sceneImages,
         scenePrompts,
         sceneVideoUrls,
-        actualClipDurationSec: 7,
+        actualClipDurationSec: requestedSceneDuration,
       };
     }
 
@@ -173,23 +187,23 @@ export async function generateContent(
       const prompt = requirePrompt(input.prompt);
       const image = resolveImageSource(input);
 
-      const { scenePrompts, sceneImages } = await generateSceneImages(
-        prompt,
-        input.negativePrompt,
-        durationSec
-      );
+      const { cinematicPlan, scenePrompts, sceneImages } =
+        await generateSceneAssets(input, prompt, durationSec);
 
       const requestedSceneDuration = getRequestedSceneDuration(
         durationSec,
-        scenePrompts.length
+        cinematicPlan.scenes.length
       );
 
       const sceneVideoUrls = await Promise.all(
-        scenePrompts.map((scenePrompt, index) =>
+        cinematicPlan.scenes.map((scene, index) =>
           generateImageToVideo({
             image: sceneImages[index] ?? image,
-            prompt: scenePrompt,
-            negativePrompt: input.negativePrompt,
+            prompt: scene.videoPrompt,
+            negativePrompt: mergeNegativePrompts(
+              input.negativePrompt,
+              scene.negativePrompt
+            ),
             durationSec: requestedSceneDuration,
           })
         )
@@ -207,22 +221,24 @@ export async function generateContent(
         sceneImages,
         scenePrompts,
         sceneVideoUrls,
-        actualClipDurationSec: 7,
+        actualClipDurationSec: requestedSceneDuration,
       };
     }
 
     case "text_to_image": {
       const prompt = requirePrompt(input.prompt);
 
-      const { scenePrompts, sceneImages } = await generateSceneImages(
-        prompt,
-        input.negativePrompt,
-        durationSec
-      );
+      const { cinematicPlan, scenePrompts, sceneImages } =
+        await generateSceneAssets(input, prompt, durationSec);
+
+      const heroScene = cinematicPlan.scenes[0];
 
       const imageUrl = await generateTextToImage({
-        prompt,
-        negativePrompt: input.negativePrompt,
+        prompt: heroScene?.imagePrompt || prompt,
+        negativePrompt: mergeNegativePrompts(
+          input.negativePrompt,
+          heroScene?.negativePrompt
+        ),
       });
 
       return {
@@ -241,23 +257,23 @@ export async function generateContent(
     case "text_to_video": {
       const prompt = requirePrompt(input.prompt);
 
-      const { scenePrompts, sceneImages } = await generateSceneImages(
-        prompt,
-        input.negativePrompt,
-        durationSec
-      );
+      const { cinematicPlan, scenePrompts, sceneImages } =
+        await generateSceneAssets(input, prompt, durationSec);
 
       const requestedSceneDuration = getRequestedSceneDuration(
         durationSec,
-        scenePrompts.length
+        cinematicPlan.scenes.length
       );
 
       const sceneVideoUrls = await Promise.all(
-        scenePrompts.map((scenePrompt, index) =>
+        cinematicPlan.scenes.map((scene, index) =>
           generateImageToVideo({
             image: sceneImages[index],
-            prompt: scenePrompt,
-            negativePrompt: input.negativePrompt,
+            prompt: scene.videoPrompt,
+            negativePrompt: mergeNegativePrompts(
+              input.negativePrompt,
+              scene.negativePrompt
+            ),
             durationSec: requestedSceneDuration,
           })
         )
@@ -276,7 +292,7 @@ export async function generateContent(
         sceneImages,
         scenePrompts,
         sceneVideoUrls,
-        actualClipDurationSec: 7,
+        actualClipDurationSec: requestedSceneDuration,
       };
     }
 
