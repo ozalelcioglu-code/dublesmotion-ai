@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import {
   Suspense,
   ChangeEvent,
@@ -91,6 +92,8 @@ function PageContent() {
   >([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (
@@ -103,6 +106,16 @@ function PageContent() {
       setActiveNav(tab);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    const updateViewport = () => {
+      setIsMobileViewport(window.innerWidth <= 980);
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -656,7 +669,8 @@ function PageContent() {
 
         {mode === "logo_to_video" ? (
           <div style={styles.logoInfoBox}>
-            Upload your logo for a clean cinematic brand reveal. PNG logos with transparent background work best.
+            Upload your logo for a clean cinematic brand reveal. PNG logos with
+            transparent background work best.
           </div>
         ) : null}
 
@@ -853,7 +867,17 @@ function PageContent() {
       case "tool":
       default:
         return (
-          <section className="studio-responsive">
+          <section
+            className="studio-responsive"
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobileViewport
+                ? "1fr"
+                : "minmax(320px, 420px) minmax(0, 1fr)",
+              gap: isMobileViewport ? 16 : 20,
+              alignItems: "start",
+            }}
+          >
             <div style={styles.studioRail}>
               <div style={styles.mobileTopTabs} className="mobile-top-tabs">
                 {(
@@ -1191,7 +1215,7 @@ function getDefaultPrompt(language: AppLanguage) {
   return "A cinematic traveler walking through Berlin streets, soft light, premium ad mood";
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   root: {
     display: "flex",
     minHeight: "100vh",
@@ -1202,20 +1226,20 @@ const styles: Record<string, React.CSSProperties> = {
 
   main: {
     flex: 1,
-    padding: 24,
+    padding: 20,
     display: "flex",
     flexDirection: "column",
-    gap: 20,
+    gap: 18,
     minWidth: 0,
     background:
-      "radial-gradient(circle at top left, rgba(126, 87, 255, 0.10), transparent 28%), radial-gradient(circle at top right, rgba(77, 182, 255, 0.12), transparent 24%)",
+      "radial-gradient(circle at top left, rgba(126, 87, 255, 0.08), transparent 28%), radial-gradient(circle at top right, rgba(77, 182, 255, 0.10), transparent 24%)",
   },
 
   topBar: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 16,
+    gap: 14,
     flexWrap: "wrap",
   },
 
@@ -1228,15 +1252,19 @@ const styles: Record<string, React.CSSProperties> = {
 
   title: {
     margin: "4px 0 0 0",
-    fontSize: 42,
-    lineHeight: 1.05,
+    fontSize: 34,
+    lineHeight: 1.08,
     color: "#0f172a",
+    fontWeight: 900,
+    letterSpacing: -0.8,
   },
 
   topSub: {
     marginTop: 8,
     color: "#64748b",
-    fontSize: 14,
+    fontSize: 13,
+    lineHeight: 1.5,
+    maxWidth: 720,
   },
 
   studioRail: {
@@ -1248,16 +1276,17 @@ const styles: Record<string, React.CSSProperties> = {
   canvasColumn: {
     display: "flex",
     flexDirection: "column",
-    gap: 16,
+    gap: 14,
     minWidth: 0,
+    alignItems: "stretch",
   },
 
   accountCardLarge: {
     padding: 18,
-    borderRadius: 24,
-    background: "rgba(255,255,255,0.86)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 18px 44px rgba(15,23,42,0.08)",
+    borderRadius: 22,
+    background: "rgba(255,255,255,0.90)",
+    border: "1px solid rgba(15,23,42,0.06)",
+    boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
     display: "flex",
     flexDirection: "column",
     gap: 14,
@@ -1363,10 +1392,10 @@ const styles: Record<string, React.CSSProperties> = {
 
   toolCard: {
     padding: 18,
-    borderRadius: 24,
-    background: "rgba(255,255,255,0.86)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 18px 44px rgba(15,23,42,0.08)",
+    borderRadius: 22,
+    background: "rgba(255,255,255,0.90)",
+    border: "1px solid rgba(15,23,42,0.06)",
+    boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
   },
 
   sectionTitle: {
@@ -1522,7 +1551,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#fff",
     cursor: "pointer",
     fontWeight: 800,
-    boxShadow: "0 14px 30px rgba(77,182,255,0.18)",
+    boxShadow: "0 10px 22px rgba(77,182,255,0.16)",
   },
 
   generateDisabled: {
@@ -1598,17 +1627,17 @@ const styles: Record<string, React.CSSProperties> = {
 
   previewBoxLarge: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 400,
     aspectRatio: "1 / 1",
     margin: "0 auto",
-    borderRadius: 24,
-    background: "#000",
+    borderRadius: 22,
+    background: "#05070b",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 24px 60px rgba(15,23,42,0.10)",
+    border: "1px solid rgba(15,23,42,0.06)",
+    boxShadow: "0 16px 36px rgba(15,23,42,0.10)",
   },
 
   previewImage: {
@@ -1669,10 +1698,10 @@ const styles: Record<string, React.CSSProperties> = {
 
   outputCard: {
     padding: 16,
-    borderRadius: 20,
-    background: "rgba(255,255,255,0.78)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 16px 40px rgba(15,23,42,0.06)",
+    borderRadius: 18,
+    background: "rgba(255,255,255,0.88)",
+    border: "1px solid rgba(15,23,42,0.06)",
+    boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
   },
 
   infoRow: {
@@ -1718,19 +1747,19 @@ const styles: Record<string, React.CSSProperties> = {
 
   scenesRailCard: {
     padding: 16,
-    borderRadius: 20,
-    background: "rgba(255,255,255,0.78)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 16px 40px rgba(15,23,42,0.06)",
+    borderRadius: 18,
+    background: "rgba(255,255,255,0.88)",
+    border: "1px solid rgba(15,23,42,0.06)",
+    boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
   },
 
   sceneCard: {
     padding: 10,
-    borderRadius: 16,
+    borderRadius: 14,
     background: "#fff",
-    border: "1px solid rgba(15,23,42,0.08)",
-    minWidth: 190,
-    maxWidth: 220,
+    border: "1px solid rgba(15,23,42,0.06)",
+    minWidth: 170,
+    maxWidth: 200,
   },
 
   sceneCardActive: {
@@ -1741,9 +1770,9 @@ const styles: Record<string, React.CSSProperties> = {
   sceneThumbWrap: {
     width: "100%",
     aspectRatio: "1 / 1",
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: "hidden",
-    marginBottom: 10,
+    marginBottom: 8,
     background: "#f1f5f9",
   },
 
@@ -1764,13 +1793,16 @@ const styles: Record<string, React.CSSProperties> = {
   sceneThumbPlaceholder: {
     width: "100%",
     aspectRatio: "1 / 1",
-    borderRadius: 12,
-    marginBottom: 10,
+    borderRadius: 10,
+    marginBottom: 8,
     background: "#e2e8f0",
     display: "grid",
     placeItems: "center",
     color: "#475569",
     fontWeight: 800,
+    fontSize: 12,
+    textAlign: "center",
+    padding: 10,
   },
 
   sceneTitleRow: {
@@ -1785,8 +1817,8 @@ const styles: Record<string, React.CSSProperties> = {
   sceneDescription: {
     color: "#64748b",
     fontSize: 11,
-    lineHeight: 1.4,
-    minHeight: 46,
+    lineHeight: 1.35,
+    minHeight: 42,
     display: "-webkit-box",
     WebkitLineClamp: 3,
     WebkitBoxOrient: "vertical",
@@ -1891,20 +1923,20 @@ const styles: Record<string, React.CSSProperties> = {
   outlineButton: {
     padding: "10px 14px",
     borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.10)",
-    background: "#fff",
+    border: "1px solid rgba(15,23,42,0.08)",
+    background: "rgba(255,255,255,0.92)",
     color: "#0f172a",
     fontWeight: 800,
     cursor: "pointer",
   },
 
   cardTitle: {
-    marginBottom: 12,
+    marginBottom: 10,
     fontWeight: 900,
-    fontSize: 13,
+    fontSize: 12,
     textTransform: "uppercase",
-    letterSpacing: 0.4,
-    color: "#334155",
+    letterSpacing: 0.5,
+    color: "#475569",
   },
 
   accountMeta: {
