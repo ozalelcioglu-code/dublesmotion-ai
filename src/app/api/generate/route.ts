@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "../../../lib/auth";
 import { generateContent } from "../../../lib/ai/generation";
+import { getSql } from "../../../lib/db";
 import {
   ensureUserProfile,
   getResolvedUserPlan,
-  getUserPlanUsage,
+  incrementMonthlyVideoCount,
+  resetMonthlyUsageIfNeeded,
 } from "../../../lib/user-profile-repository";
 
 export const runtime = "nodejs";
@@ -27,6 +29,19 @@ const RequestSchema = z.object({
 
 function createSeed() {
   return Math.floor(Math.random() * 1_000_000_000).toString();
+}
+
+function getPlanDurationSec(plan: string) {
+  switch (plan) {
+    case "starter":
+      return 20;
+    case "pro":
+    case "agency":
+      return 30;
+    case "free":
+    default:
+      return 10;
+  }
 }
 
 function makeVideoTitle(prompt: string) {
@@ -77,44 +92,27 @@ export async function POST(req: Request) {
       fullName: session.user.name ?? null,
     });
 
+    await resetMonthlyUsageIfNeeded(session.user.id);
+
     const planInfo = await getResolvedUserPlan(session.user.id);
-    const activePlan = planInfo.plan;
-    const planLabel = planInfo.planLabel;
-    const monthlyVideoLimit = planInfo.monthlyVideoLimit;
-    const targetDurationSec = planInfo.maxDurationSec;
 
-    const isVideoGeneration =
-      input.mode === "text_to_video" ||
-      input.mode === "url_to_video" ||
-      input.mode === "image_to_video";
-
-    if (isVideoGeneration) {
-      const usage = await getUserPlanUsage(session.user.id, activePlan);
-
-      if (
-        monthlyVideoLimit !== null &&
-        Number.isFinite(monthlyVideoLimit) &&
-        usage.used >= monthlyVideoLimit
-      ) {
-        return NextResponse.json(
-          {
-            ok: false,
-            code: "PLAN_LIMIT_REACHED",
-            error:
-              activePlan === "free"
-                ? "Your Free plan allows only 1 video. Please upgrade to continue."
-                : `Your ${planLabel} plan limit has been reached.`,
-            plan: activePlan,
-            planLabel,
-            usedThisMonth: usage.used,
-            monthlyVideoLimit,
-            remainingCredits: 0,
-            limitScope: planInfo.limitScope,
-          },
-          { status: 403 }
-        );
-      }
+    if (
+      planInfo.monthlyVideoLimit !== null &&
+      planInfo.usedThisMonth >= planInfo.monthlyVideoLimit
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "PLAN_LIMIT_REACHED",
+          error: `Your ${planInfo.planLabel} plan monthly limit has been reached.`,
+          plan: planInfo,
+        },
+        { status: 403 }
+      );
     }
+
+    const activePlan = planInfo.plan;
+    const targetDurationSec = getPlanDurationSec(activePlan);
 
     const result = await generateContent({
       mode: input.mode,
@@ -125,7 +123,7 @@ export async function POST(req: Request) {
       durationSec: targetDurationSec,
     });
 
-    const sql = (await import("../../../lib/db")).getSql();
+    const sql = getSql();
 
     const videoId = crypto.randomUUID();
     const seed = createSeed();
@@ -175,6 +173,10 @@ export async function POST(req: Request) {
             now()
           )
         `;
+
+        // 🔴 KULLANIM SAYACI ARTIR
+        await incrementMonthlyVideoCount(session.user.id);
+
       } catch (saveErr: any) {
         console.error("Video generated but DB save failed:", saveErr);
         saveWarning =
@@ -182,11 +184,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const usageAfter = await getUserPlanUsage(session.user.id, activePlan);
-    const remainingCredits =
-      monthlyVideoLimit === null
-        ? null
-        : Math.max(monthlyVideoLimit - usageAfter.used, 0);
+    const updatedPlan = await getResolvedUserPlan(session.user.id);
 
     return NextResponse.json(
       {
@@ -200,15 +198,16 @@ export async function POST(req: Request) {
         durationSec: result.durationSec,
         sceneImages: result.sceneImages,
         scenePrompts: result.scenePrompts,
+        sceneVideoUrls: result.sceneVideoUrls,
+        actualClipDurationSec: result.actualClipDurationSec,
         saveWarning,
         plan: {
-          code: activePlan,
-          label: planLabel,
-          monthlyVideoLimit,
-          usedThisMonth: usageAfter.used,
-          remainingCredits,
-          maxDurationSec: targetDurationSec,
-          limitScope: planInfo.limitScope,
+          code: updatedPlan.plan,
+          label: updatedPlan.planLabel,
+          monthlyVideoLimit: updatedPlan.monthlyVideoLimit,
+          usedThisMonth: updatedPlan.usedThisMonth,
+          remainingCredits: updatedPlan.remainingCredits,
+          maxDurationSec: updatedPlan.maxDurationSec,
         },
       },
       { status: 200 }
@@ -222,7 +221,6 @@ export async function POST(req: Request) {
           ok: false,
           code: "INVALID_REQUEST",
           error: "Invalid generation request payload.",
-          details: err.flatten?.() ?? null,
         },
         { status: 400 }
       );
