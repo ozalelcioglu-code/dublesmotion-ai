@@ -868,7 +868,14 @@ function PageContent() {
             <div style={styles.studioRail}>{renderWorkspaceBody()}</div>
 
             <div style={styles.canvasColumn}>
-              <div style={styles.previewMainRow}>
+              <div
+                style={{
+                  ...styles.previewMainRow,
+                  gridTemplateColumns: isMobileViewport
+                    ? "1fr"
+                    : "minmax(0, 560px) minmax(260px, 340px)",
+                }}
+              >
                 <div style={styles.previewMainLeft}>
                   <div style={styles.previewHeader}>
                     <div>
@@ -885,13 +892,32 @@ function PageContent() {
                     </div>
                   </div>
 
-                  <div style={styles.previewBoxLarge}>{renderPreviewContent()}</div>
+                  <div
+                    style={{
+                      ...styles.previewBoxLarge,
+                      maxWidth: isMobileViewport ? "100%" : 560,
+                    }}
+                  >
+                    {renderPreviewContent()}
+                  </div>
 
                   {generation.status === "done" && generation.saveWarning ? (
-                    <div style={styles.warningBox}>{generation.saveWarning}</div>
+                    <div
+                      style={{
+                        ...styles.warningBox,
+                        maxWidth: isMobileViewport ? "100%" : 560,
+                      }}
+                    >
+                      {generation.saveWarning}
+                    </div>
                   ) : null}
 
-                  <div style={styles.outputCard}>
+                  <div
+                    style={{
+                      ...styles.outputCard,
+                      maxWidth: isMobileViewport ? "100%" : 560,
+                    }}
+                  >
                     <div style={styles.cardTitle}>{t.home.outputTitle}</div>
 
                     <div style={styles.infoRow}>
@@ -1019,22 +1045,54 @@ function PageContent() {
   };
 
   return (
-    <div style={styles.root}>
+    <div
+      style={{
+        ...styles.root,
+        flexDirection: isMobileViewport ? "column" : "row",
+      }}
+    >
       <AppSidebar activeKey={activeNav} onSelect={setActiveNav} />
 
-      <main style={styles.main}>
-        <div style={styles.topBar}>
-          <div>
+      <main
+        style={{
+          ...styles.main,
+          padding: isMobileViewport ? 14 : 20,
+        }}
+      >
+        <div
+          style={{
+            ...styles.topBar,
+            alignItems: isMobileViewport ? "stretch" : "flex-start",
+            flexDirection: isMobileViewport ? "column" : "row",
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
             <div style={styles.kicker}>DUBLE-S MOTION</div>
-            <h1 style={styles.title}>{t.home.title}</h1>
+            <h1
+              style={{
+                ...styles.title,
+                fontSize: isMobileViewport ? 26 : 34,
+              }}
+            >
+              {t.home.title}
+            </h1>
             <div style={styles.topSub}>{t.home.subtitle}</div>
           </div>
 
-          <div style={styles.topBarRight}>
+          <div
+            style={{
+              ...styles.topBarRight,
+              width: isMobileViewport ? "100%" : "auto",
+              justifyContent: isMobileViewport ? "stretch" : "flex-end",
+              display: "grid",
+              gridTemplateColumns: isMobileViewport ? "1fr" : undefined,
+            }}
+          >
             <button
               type="button"
               style={{
                 ...styles.topActionButton,
+                width: isMobileViewport ? "100%" : "auto",
                 ...(previewTarget === "final" ? styles.topActionButtonActive : {}),
               }}
               onClick={() => setPreviewTarget("final")}
@@ -1044,16 +1102,28 @@ function PageContent() {
 
             <button
               type="button"
-              style={styles.topActionButton}
+              style={{
+                ...styles.topActionButton,
+                width: isMobileViewport ? "100%" : "auto",
+              }}
               onClick={() => router.push("/billing")}
             >
               {t.home.upgradeCta}
             </button>
 
-            <div style={styles.accountTopRight} ref={accountMenuRef}>
+            <div
+              style={{
+                ...styles.accountTopRight,
+                width: isMobileViewport ? "100%" : "auto",
+              }}
+              ref={accountMenuRef}
+            >
               <button
                 type="button"
-                style={styles.accountMiniButton}
+                style={{
+                  ...styles.accountMiniButton,
+                  width: isMobileViewport ? "100%" : undefined,
+                }}
                 onClick={() => setAccountMenuOpen((prev) => !prev)}
               >
                 <div style={styles.accountMiniAvatar}>
@@ -1073,7 +1143,14 @@ function PageContent() {
               </button>
 
               {accountMenuOpen ? (
-                <div style={styles.accountDropdown}>
+                <div
+                  style={{
+                    ...styles.accountDropdown,
+                    width: isMobileViewport ? "100%" : 280,
+                    right: 0,
+                    left: isMobileViewport ? 0 : "auto",
+                  }}
+                >
                   <div style={styles.accountDropdownHeader}>
                     <div style={styles.accountDropdownName}>
                       {isAuthenticated ? user?.name || "User" : "Guest"}
@@ -1179,25 +1256,26 @@ const styles: Record<string, CSSProperties> = {
     background:
       "linear-gradient(135deg, #f8fbff 0%, #eef4ff 38%, #f7f2ff 100%)",
     color: "#0f172a",
+    overflowX: "hidden",
   },
 
   main: {
     flex: 1,
-    padding: 20,
     display: "flex",
     flexDirection: "column",
     gap: 18,
     minWidth: 0,
     background:
       "radial-gradient(circle at top left, rgba(126, 87, 255, 0.08), transparent 28%), radial-gradient(circle at top right, rgba(77, 182, 255, 0.10), transparent 24%)",
+    overflowX: "hidden",
   },
 
   topBar: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
     gap: 14,
     flexWrap: "wrap",
+    minWidth: 0,
   },
 
   topBarRight: {
@@ -1205,7 +1283,7 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "center",
     gap: 10,
     flexWrap: "wrap",
-    justifyContent: "flex-end",
+    minWidth: 0,
   },
 
   topActionButton: {
@@ -1235,7 +1313,6 @@ const styles: Record<string, CSSProperties> = {
 
   title: {
     margin: "4px 0 0 0",
-    fontSize: 34,
     lineHeight: 1.08,
     color: "#0f172a",
     fontWeight: 900,
@@ -1255,6 +1332,7 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "flex-start",
+    minWidth: 0,
   },
 
   accountMiniButton: {
@@ -1268,6 +1346,7 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
     boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
     minWidth: 180,
+    maxWidth: "100%",
   },
 
   accountMiniAvatar: {
@@ -1316,8 +1395,6 @@ const styles: Record<string, CSSProperties> = {
   accountDropdown: {
     position: "absolute",
     top: "calc(100% + 10px)",
-    right: 0,
-    width: 280,
     borderRadius: 18,
     background: "rgba(255,255,255,0.98)",
     border: "1px solid rgba(15,23,42,0.08)",
@@ -1423,6 +1500,7 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: 16,
+    minWidth: 0,
   },
 
   canvasColumn: {
@@ -1439,6 +1517,8 @@ const styles: Record<string, CSSProperties> = {
     background: "rgba(255,255,255,0.90)",
     border: "1px solid rgba(15,23,42,0.06)",
     boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
+    width: "100%",
+    minWidth: 0,
   },
 
   sectionTitle: {
@@ -1456,14 +1536,14 @@ const styles: Record<string, CSSProperties> = {
   },
 
   modeTabs: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: 8,
-    flexWrap: "wrap",
     marginBottom: 14,
   },
 
   modeTab: {
-    padding: "9px 14px",
+    padding: "11px 12px",
     borderRadius: 12,
     border: "1px solid rgba(15,23,42,0.08)",
     background: "#fff",
@@ -1471,6 +1551,7 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
     fontWeight: 700,
     textTransform: "capitalize",
+    width: "100%",
   },
 
   modeTabActive: {
@@ -1489,6 +1570,7 @@ const styles: Record<string, CSSProperties> = {
 
   inputGroup: {
     marginTop: 12,
+    minWidth: 0,
   },
 
   prompt: {
@@ -1500,6 +1582,7 @@ const styles: Record<string, CSSProperties> = {
     background: "#fff",
     color: "#111827",
     resize: "vertical",
+    minWidth: 0,
   },
 
   input: {
@@ -1510,6 +1593,7 @@ const styles: Record<string, CSSProperties> = {
     padding: "0 12px",
     background: "#fff",
     color: "#111827",
+    minWidth: 0,
   },
 
   selectWide: {
@@ -1520,6 +1604,7 @@ const styles: Record<string, CSSProperties> = {
     padding: "0 12px",
     background: "#fff",
     color: "#111827",
+    minWidth: 0,
   },
 
   uploadRow: {
@@ -1569,10 +1654,10 @@ const styles: Record<string, CSSProperties> = {
   },
 
   controls: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: 10,
     marginTop: 14,
-    flexWrap: "wrap",
     alignItems: "center",
   },
 
@@ -1584,6 +1669,7 @@ const styles: Record<string, CSSProperties> = {
     color: "#0f172a",
     cursor: "pointer",
     fontWeight: 700,
+    width: "100%",
   },
 
   generate: {
@@ -1595,6 +1681,7 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
     fontWeight: 800,
     boxShadow: "0 10px 22px rgba(77,182,255,0.16)",
+    width: "100%",
   },
 
   generateDisabled: {
@@ -1635,10 +1722,10 @@ const styles: Record<string, CSSProperties> = {
 
   previewMainRow: {
     display: "grid",
-    gridTemplateColumns: "minmax(0, 560px) minmax(260px, 340px)",
     gap: 18,
     alignItems: "start",
     width: "100%",
+    minWidth: 0,
   },
 
   previewMainLeft: {
@@ -1672,7 +1759,6 @@ const styles: Record<string, CSSProperties> = {
 
   previewBoxLarge: {
     width: "100%",
-    maxWidth: 560,
     aspectRatio: "1 / 1",
     margin: "0",
     borderRadius: 22,
@@ -1683,6 +1769,7 @@ const styles: Record<string, CSSProperties> = {
     overflow: "hidden",
     border: "1px solid rgba(15,23,42,0.06)",
     boxShadow: "0 16px 36px rgba(15,23,42,0.10)",
+    minWidth: 0,
   },
 
   previewImage: {
@@ -1740,7 +1827,6 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 700,
     fontSize: 14,
     width: "100%",
-    maxWidth: 560,
   },
 
   outputCard: {
@@ -1750,7 +1836,7 @@ const styles: Record<string, CSSProperties> = {
     border: "1px solid rgba(15,23,42,0.06)",
     boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
     width: "100%",
-    maxWidth: 560,
+    minWidth: 0,
   },
 
   infoRow: {
@@ -1802,6 +1888,7 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
     width: "100%",
     minHeight: 100,
+    minWidth: 0,
   },
 
   scenesStack: {
@@ -1809,6 +1896,7 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: "column",
     gap: 12,
     width: "100%",
+    minWidth: 0,
   },
 
   sceneCard: {
@@ -1817,6 +1905,7 @@ const styles: Record<string, CSSProperties> = {
     background: "#fff",
     border: "1px solid rgba(15,23,42,0.06)",
     width: "100%",
+    minWidth: 0,
   },
 
   sceneCardActive: {
@@ -1876,16 +1965,17 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 11,
     lineHeight: 1.45,
     minHeight: 42,
+    wordBreak: "break-word",
   },
 
   sceneActions: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: 8,
     marginTop: 10,
   },
 
   sceneActionButton: {
-    flex: 1,
     padding: "8px 9px",
     borderRadius: 10,
     border: "1px solid rgba(15,23,42,0.10)",
@@ -1894,10 +1984,10 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
     fontWeight: 700,
     fontSize: 11,
+    width: "100%",
   },
 
   sceneActionButtonDanger: {
-    flex: 1,
     padding: "8px 9px",
     borderRadius: 10,
     border: "1px solid rgba(239,68,68,0.16)",
@@ -1906,6 +1996,7 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
     fontWeight: 700,
     fontSize: 11,
+    width: "100%",
   },
 
   secondaryPanel: {
