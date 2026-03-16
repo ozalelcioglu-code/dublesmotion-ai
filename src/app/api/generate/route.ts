@@ -114,14 +114,28 @@ export async function POST(req: Request) {
     const activePlan = planInfo.plan;
     const targetDurationSec = getPlanDurationSec(activePlan);
 
-    const result = await generateContent({
-      mode: input.mode,
-      prompt: input.prompt,
-      negativePrompt: input.negativePrompt,
-      imageUrl: input.imageUrl,
-      sourceUrl: input.sourceUrl,
-      durationSec: targetDurationSec,
-    });
+    // KULLANIMI ÜRETİM BAŞLAMADAN ÖNCE ARTIR
+    // Bu sayede kullanıcı aynı anda çoklu istek atsa bile limitsiz üretim yapamaz.
+    if (planInfo.monthlyVideoLimit !== null) {
+      await incrementMonthlyVideoCount(session.user.id);
+    }
+
+    let result;
+    try {
+      result = await generateContent({
+        mode: input.mode,
+        prompt: input.prompt,
+        negativePrompt: input.negativePrompt,
+        imageUrl: input.imageUrl,
+        sourceUrl: input.sourceUrl,
+        durationSec: targetDurationSec,
+      });
+    } catch (generationError: any) {
+      // Not:
+      // Şu an elde decrement/revert helper olmadığı için burada kullanım geri alınmıyor.
+      // Ama bu değişiklik sınırsız kullanım açığını hemen kapatır.
+      throw generationError;
+    }
 
     const sql = getSql();
 
@@ -173,10 +187,6 @@ export async function POST(req: Request) {
             now()
           )
         `;
-
-        // 🔴 KULLANIM SAYACI ARTIR
-        await incrementMonthlyVideoCount(session.user.id);
-
       } catch (saveErr: any) {
         console.error("Video generated but DB save failed:", saveErr);
         saveWarning =

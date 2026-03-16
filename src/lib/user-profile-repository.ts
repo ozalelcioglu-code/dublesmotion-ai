@@ -207,30 +207,17 @@ export async function getUserPlanUsage(userId: string, plan: PlanName) {
   const sql = getSql();
   const rule = PLAN_RULES[plan];
 
-  if (rule.limitScope === "lifetime") {
-    const rows: any[] = await sql`
-      select count(*)::text as count
-      from videos
-      where user_id = ${userId}
-    `;
-
-    return {
-      used: Number(rows[0]?.count ?? "0"),
-      scope: "lifetime" as const,
-    };
-  }
-
   const rows: any[] = await sql`
-    select count(*)::text as count
-    from videos
-    where user_id = ${userId}
-      and created_at >= date_trunc('month', now())
-      and created_at < date_trunc('month', now()) + interval '1 month'
+    select
+      coalesce(monthly_video_count, 0)::int as count
+    from user_profiles
+    where user_id = ${userId}::text
+    limit 1
   `;
 
   return {
-    used: Number(rows[0]?.count ?? "0"),
-    scope: "monthly" as const,
+    used: Number(rows[0]?.count ?? 0),
+    scope: rule.limitScope === "lifetime" ? "lifetime" as const : "monthly" as const,
   };
 }
 
