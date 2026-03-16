@@ -1,6 +1,12 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  ChangeEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "../lib/auth-client";
 import { useSession } from "../provider/SessionProvider";
@@ -33,6 +39,14 @@ type GenerationState =
   | { status: "error"; message: string };
 
 export default function Page() {
+  return (
+    <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
+      <PageContent />
+    </Suspense>
+  );
+}
+
+function PageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading, clearSession } = useSession();
@@ -313,8 +327,8 @@ export default function Page() {
           <section style={styles.secondaryPanel}>
             <div style={styles.secondaryTitle}>AI Chat Assistant</div>
             <div style={styles.chatBox}>
-              Buradan ileride prompt iyileştirme, reklam metni üretimi ve otomatik
-              storyboard önerileri gelecek.
+              Buradan ileride prompt iyileştirme, reklam metni üretimi ve
+              otomatik storyboard önerileri gelecek.
             </div>
           </section>
         );
@@ -364,7 +378,9 @@ export default function Page() {
                 ) : generation.status === "error" ? (
                   <div style={styles.centerBox}>
                     <div style={styles.previewText}>Generation failed</div>
-                    <div style={styles.previewSubtext}>{generation.message}</div>
+                    <div style={styles.previewSubtext}>
+                      {generation.message}
+                    </div>
                   </div>
                 ) : (
                   <div style={styles.centerBox}>
@@ -603,7 +619,9 @@ export default function Page() {
 
                 <div style={styles.infoRow}>
                   <span style={styles.infoLabel}>Scenes</span>
-                  <strong style={styles.infoValue}>{derivedScenes.length}</strong>
+                  <strong style={styles.infoValue}>
+                    {derivedScenes.length}
+                  </strong>
                 </div>
 
                 <div style={styles.infoRow}>
@@ -617,7 +635,11 @@ export default function Page() {
                 </div>
 
                 {generation.status === "done" ? (
-                  <a href={generation.videoUrl} download style={styles.downloadLink}>
+                  <a
+                    href={generation.videoUrl}
+                    download
+                    style={styles.downloadLink}
+                  >
                     Download video
                   </a>
                 ) : null}
