@@ -873,9 +873,12 @@ function PageContent() {
               display: "grid",
               gridTemplateColumns: isMobileViewport
                 ? "1fr"
-                : "minmax(320px, 420px) minmax(0, 1fr)",
-              gap: isMobileViewport ? 16 : 20,
+                : "360px minmax(520px, 760px)",
+              justifyContent: isMobileViewport ? "stretch" : "space-between",
+              gap: isMobileViewport ? 16 : 24,
               alignItems: "start",
+              width: "100%",
+              maxWidth: 1180,
             }}
           >
             <div style={styles.studioRail}>
@@ -1278,11 +1281,11 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: "column",
     gap: 14,
     minWidth: 0,
-    alignItems: "stretch",
+    alignItems: "flex-start",
   },
 
   accountCardLarge: {
-    padding: 18,
+    padding: 16,
     borderRadius: 22,
     background: "rgba(255,255,255,0.90)",
     border: "1px solid rgba(15,23,42,0.06)",
@@ -1391,7 +1394,7 @@ const styles: Record<string, CSSProperties> = {
   },
 
   toolCard: {
-    padding: 18,
+    padding: 16,
     borderRadius: 22,
     background: "rgba(255,255,255,0.90)",
     border: "1px solid rgba(15,23,42,0.06)",
@@ -1596,6 +1599,8 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "center",
     gap: 16,
     flexWrap: "wrap",
+    width: "100%",
+    maxWidth: 760,
   },
 
   previewHeaderSub: {
@@ -1627,9 +1632,9 @@ const styles: Record<string, CSSProperties> = {
 
   previewBoxLarge: {
     width: "100%",
-    maxWidth: 400,
+    maxWidth: 520,
     aspectRatio: "1 / 1",
-    margin: "0 auto",
+    margin: "0",
     borderRadius: 22,
     background: "#05070b",
     display: "flex",
@@ -1702,6 +1707,8 @@ const styles: Record<string, CSSProperties> = {
     background: "rgba(255,255,255,0.88)",
     border: "1px solid rgba(15,23,42,0.06)",
     boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
+    width: "100%",
+    maxWidth: 760,
   },
 
   infoRow: {
@@ -1751,6 +1758,8 @@ const styles: Record<string, CSSProperties> = {
     background: "rgba(255,255,255,0.88)",
     border: "1px solid rgba(15,23,42,0.06)",
     boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
+    width: "100%",
+    maxWidth: 760,
   },
 
   sceneCard: {
@@ -1758,8 +1767,8 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 14,
     background: "#fff",
     border: "1px solid rgba(15,23,42,0.06)",
-    minWidth: 170,
-    maxWidth: 200,
+    minWidth: 210,
+    maxWidth: 240,
   },
 
   sceneCardActive: {
