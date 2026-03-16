@@ -6,6 +6,7 @@ import {
   ChangeEvent,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -93,6 +94,8 @@ function PageContent() {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -115,6 +118,18 @@ function PageContent() {
     updateViewport();
     window.addEventListener("resize", updateViewport);
     return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  useEffect(() => {
+    const onPointerDown = (event: MouseEvent) => {
+      if (!accountMenuRef.current) return;
+      if (!accountMenuRef.current.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("mousedown", onPointerDown);
+    return () => window.removeEventListener("mousedown", onPointerDown);
   }, []);
 
   useEffect(() => {
@@ -881,100 +896,6 @@ function PageContent() {
                 ))}
               </div>
 
-              <div style={styles.accountCardLarge}>
-                <div style={styles.accountHeadRow}>
-                  <div>
-                    <div style={styles.cardTitle}>{t.home.accountCardTitle}</div>
-                    {isLoading ? (
-                      <div style={styles.accountMeta}>{t.common.loading}</div>
-                    ) : isAuthenticated ? (
-                      <div style={styles.accountMeta}>
-                        <strong>{user?.name || user?.email || "User"}</strong>
-                        <br />
-                        {user?.email}
-                      </div>
-                    ) : (
-                      <div style={styles.accountMeta}>{t.header.guestText}</div>
-                    )}
-                  </div>
-
-                  <select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value as AppLanguage)}
-                    style={styles.languageSelect}
-                  >
-                    {Object.entries(LANGUAGE_LABELS).map(([key, label]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div style={styles.accountStats}>
-                  <div style={styles.statMini}>
-                    <span style={styles.statMiniLabel}>{t.home.currentPlan}</span>
-                    <strong style={styles.statMiniValue}>
-                      {user?.planLabel ?? "Free"}
-                    </strong>
-                  </div>
-
-                  <div style={styles.statMini}>
-                    <span style={styles.statMiniLabel}>
-                      {t.home.remainingCredits}
-                    </span>
-                    <strong style={styles.statMiniValue}>
-                      {remainingCreditsText}
-                    </strong>
-                  </div>
-
-                  <div style={styles.statMini}>
-                    <span style={styles.statMiniLabel}>{t.home.maxDuration}</span>
-                    <strong style={styles.statMiniValue}>
-                      {user?.maxDurationSec ?? 10}s
-                    </strong>
-                  </div>
-                </div>
-
-                <div style={styles.accountActionsRow}>
-                  {!isAuthenticated ? (
-                    <>
-                      <button
-                        type="button"
-                        style={styles.outlineButton}
-                        onClick={() => router.push("/login")}
-                      >
-                        {t.common.login}
-                      </button>
-                      <button
-                        type="button"
-                        style={styles.outlineButton}
-                        onClick={() => router.push("/billing")}
-                      >
-                        {t.common.billing}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        style={styles.outlineButton}
-                        onClick={() => router.push("/billing")}
-                      >
-                        {t.common.billing}
-                      </button>
-                      <button
-                        type="button"
-                        style={styles.outlineButton}
-                        onClick={handleLogout}
-                      >
-                        {t.common.logout}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-
               <div style={styles.workspaceSwitch} className="desktop-only">
                 {(
                   [
@@ -1181,6 +1102,110 @@ function PageContent() {
             <h1 style={styles.title}>{t.home.title}</h1>
             <div style={styles.topSub}>{t.home.subtitle}</div>
           </div>
+
+          <div style={styles.accountTopRight} ref={accountMenuRef}>
+            <button
+              type="button"
+              style={styles.accountMiniButton}
+              onClick={() => setAccountMenuOpen((prev) => !prev)}
+            >
+              <div style={styles.accountMiniAvatar}>
+                {(user?.name?.[0] || user?.email?.[0] || "D").toUpperCase()}
+              </div>
+
+              <div style={styles.accountMiniText}>
+                <strong style={styles.accountMiniName}>
+                  {isAuthenticated ? user?.name || "User" : "Guest"}
+                </strong>
+                <span style={styles.accountMiniPlan}>
+                  {user?.planLabel ?? "Free"}
+                </span>
+              </div>
+
+              <span style={styles.accountMiniCaret}>▾</span>
+            </button>
+
+            {accountMenuOpen ? (
+              <div style={styles.accountDropdown}>
+                <div style={styles.accountDropdownHeader}>
+                  <div style={styles.accountDropdownName}>
+                    {isAuthenticated ? user?.name || "User" : "Guest"}
+                  </div>
+                  <div style={styles.accountDropdownEmail}>
+                    {isAuthenticated ? user?.email : t.header.guestText}
+                  </div>
+                </div>
+
+                <div style={styles.accountDropdownStats}>
+                  <div style={styles.accountDropdownStatRow}>
+                    <span>{t.home.currentPlan}</span>
+                    <strong>{user?.planLabel ?? "Free"}</strong>
+                  </div>
+                  <div style={styles.accountDropdownStatRow}>
+                    <span>{t.home.remainingCredits}</span>
+                    <strong>{remainingCreditsText}</strong>
+                  </div>
+                  <div style={styles.accountDropdownStatRow}>
+                    <span>{t.home.maxDuration}</span>
+                    <strong>{user?.maxDurationSec ?? 10}s</strong>
+                  </div>
+                </div>
+
+                <div style={styles.accountDropdownGroup}>
+                  <label style={styles.accountDropdownLabel}>Language</label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as AppLanguage)}
+                    style={styles.accountDropdownSelect}
+                  >
+                    {Object.entries(LANGUAGE_LABELS).map(([key, label]) => (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={styles.accountDropdownActions}>
+                  {!isAuthenticated ? (
+                    <>
+                      <button
+                        type="button"
+                        style={styles.accountDropdownButton}
+                        onClick={() => router.push("/login")}
+                      >
+                        {t.common.login}
+                      </button>
+                      <button
+                        type="button"
+                        style={styles.accountDropdownButton}
+                        onClick={() => router.push("/billing")}
+                      >
+                        {t.common.billing}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        style={styles.accountDropdownButton}
+                        onClick={() => router.push("/billing")}
+                      >
+                        {t.common.billing}
+                      </button>
+                      <button
+                        type="button"
+                        style={styles.accountDropdownButtonDanger}
+                        onClick={handleLogout}
+                      >
+                        {t.common.logout}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         {renderPanel()}
@@ -1251,6 +1276,175 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: 720,
   },
 
+  accountTopRight: {
+    position: "relative",
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "flex-start",
+  },
+
+  accountMiniButton: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    border: "1px solid rgba(15,23,42,0.08)",
+    background: "rgba(255,255,255,0.94)",
+    borderRadius: 16,
+    padding: "8px 10px",
+    cursor: "pointer",
+    boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
+    minWidth: 180,
+  },
+
+  accountMiniAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    display: "grid",
+    placeItems: "center",
+    background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
+    color: "#fff",
+    fontWeight: 900,
+    fontSize: 14,
+    flexShrink: 0,
+  },
+
+  accountMiniText: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    minWidth: 0,
+    flex: 1,
+  },
+
+  accountMiniName: {
+    fontSize: 13,
+    color: "#0f172a",
+    lineHeight: 1.2,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: 120,
+  },
+
+  accountMiniPlan: {
+    fontSize: 11,
+    color: "#64748b",
+    lineHeight: 1.2,
+  },
+
+  accountMiniCaret: {
+    color: "#64748b",
+    fontSize: 12,
+    fontWeight: 800,
+  },
+
+  accountDropdown: {
+    position: "absolute",
+    top: "calc(100% + 10px)",
+    right: 0,
+    width: 280,
+    borderRadius: 18,
+    background: "rgba(255,255,255,0.98)",
+    border: "1px solid rgba(15,23,42,0.08)",
+    boxShadow: "0 22px 50px rgba(15,23,42,0.12)",
+    padding: 14,
+    zIndex: 50,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+
+  accountDropdownHeader: {
+    paddingBottom: 10,
+    borderBottom: "1px solid rgba(15,23,42,0.06)",
+  },
+
+  accountDropdownName: {
+    fontSize: 14,
+    fontWeight: 900,
+    color: "#0f172a",
+    marginBottom: 4,
+  },
+
+  accountDropdownEmail: {
+    fontSize: 12,
+    color: "#64748b",
+    lineHeight: 1.4,
+    wordBreak: "break-word",
+  },
+
+  accountDropdownStats: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+
+  accountDropdownStatRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    fontSize: 12,
+    color: "#475569",
+  },
+
+  accountDropdownGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+
+  accountDropdownLabel: {
+    fontSize: 11,
+    fontWeight: 800,
+    color: "#64748b",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+
+  accountDropdownSelect: {
+    width: "100%",
+    height: 42,
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.08)",
+    background: "#fff",
+    color: "#0f172a",
+    padding: "0 12px",
+    fontWeight: 700,
+  },
+
+  accountDropdownActions: {
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap",
+    paddingTop: 6,
+  },
+
+  accountDropdownButton: {
+    flex: 1,
+    minWidth: 110,
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.08)",
+    background: "#fff",
+    color: "#0f172a",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
+  accountDropdownButtonDanger: {
+    flex: 1,
+    minWidth: 110,
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(239,68,68,0.16)",
+    background: "#fff5f5",
+    color: "#b91c1c",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
   studioRail: {
     display: "flex",
     flexDirection: "column",
@@ -1263,70 +1457,6 @@ const styles: Record<string, CSSProperties> = {
     gap: 14,
     minWidth: 0,
     alignItems: "flex-start",
-  },
-
-  accountCardLarge: {
-    padding: 16,
-    borderRadius: 22,
-    background: "rgba(255,255,255,0.90)",
-    border: "1px solid rgba(15,23,42,0.06)",
-    boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 14,
-  },
-
-  accountHeadRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 12,
-    alignItems: "flex-start",
-    flexWrap: "wrap",
-  },
-
-  languageSelect: {
-    height: 40,
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-    padding: "0 12px",
-    color: "#0f172a",
-    fontWeight: 700,
-  },
-
-  accountStats: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: 10,
-  },
-
-  statMini: {
-    padding: 12,
-    borderRadius: 14,
-    background: "#f8fafc",
-    border: "1px solid rgba(15,23,42,0.06)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-  },
-
-  statMiniLabel: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-    color: "#64748b",
-    fontWeight: 800,
-  },
-
-  statMiniValue: {
-    fontSize: 15,
-    color: "#0f172a",
-  },
-
-  accountActionsRow: {
-    display: "flex",
-    gap: 8,
-    flexWrap: "wrap",
   },
 
   workspaceSwitch: {
@@ -1932,12 +2062,5 @@ const styles: Record<string, CSSProperties> = {
     textTransform: "uppercase",
     letterSpacing: 0.5,
     color: "#475569",
-  },
-
-  accountMeta: {
-    fontSize: 13,
-    color: "#64748b",
-    fontWeight: 700,
-    lineHeight: 1.5,
   },
 };
