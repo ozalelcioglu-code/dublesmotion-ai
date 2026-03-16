@@ -1,6 +1,6 @@
 import { generateImageToVideo } from "./video";
 import { generateTextToImage } from "./image";
-import { mergeSceneVideos } from "./merge-scene-videos";
+
 
 export type GenerationMode =
   | "text_to_image"
@@ -250,7 +250,7 @@ export async function generateContent(
         )
       );
 
-      const mergedVideoUrl = await mergeSceneVideos(sceneVideoUrls);
+     const mergedVideoUrl = sceneVideoUrls[0];
 
       return {
         mode: "image_to_video",
@@ -294,7 +294,7 @@ export async function generateContent(
         )
       );
 
-      const mergedVideoUrl = await mergeSceneVideos(sceneVideoUrls);
+      const mergedVideoUrl = sceneVideoUrls[0];
 
       return {
         mode: "url_to_video",
@@ -361,7 +361,7 @@ export async function generateContent(
         )
       );
 
-      const mergedVideoUrl = await mergeSceneVideos(sceneVideoUrls);
+     const mergedVideoUrl = sceneVideoUrls[0];
 
       return {
         mode: "text_to_video",
