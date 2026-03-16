@@ -9,7 +9,6 @@ import {
   incrementMonthlyVideoCount,
   resetMonthlyUsageIfNeeded,
 } from "../../../lib/user-profile-repository";
-import { buildCinematicPlan } from "../../../lib/ai/cinematic-prompt-engine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,8 +19,9 @@ const RequestSchema = z.object({
     "url_to_video",
     "text_to_image",
     "text_to_video",
+    "logo_to_video",
   ]),
-  prompt: z.string().min(3),
+  prompt: z.string().min(3).optional(),
   negativePrompt: z.string().optional(),
   imageUrl: z.string().url().optional(),
   sourceUrl: z.string().url().optional(),
@@ -45,14 +45,19 @@ function getPlanDurationSec(plan: string) {
   }
 }
 
-function makeVideoTitle(prompt: string) {
-  const clean = prompt.trim().replace(/\s+/g, " ");
+function makeVideoTitle(prompt?: string) {
+  const clean = (prompt || "AI Video").trim().replace(/\s+/g, " ");
   if (!clean) return "AI Video";
   return clean.length > 80 ? `${clean.slice(0, 80)}...` : clean;
 }
 
 function toDbMode(
-  mode: "image_to_video" | "url_to_video" | "text_to_image" | "text_to_video"
+  mode:
+    | "image_to_video"
+    | "url_to_video"
+    | "text_to_image"
+    | "text_to_video"
+    | "logo_to_video"
 ) {
   switch (mode) {
     case "text_to_video":
@@ -62,6 +67,8 @@ function toDbMode(
       return "image";
     case "url_to_video":
       return "url";
+    case "logo_to_video":
+      return "image";
     default:
       return "text";
   }
@@ -86,6 +93,33 @@ export async function POST(req: Request) {
 
     const json = await req.json();
     const input = RequestSchema.parse(json);
+
+    if (input.mode === "logo_to_video" && !input.imageUrl && !input.sourceUrl) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "LOGO_IMAGE_REQUIRED",
+          error: "Logo Animation Mode requires an uploaded logo image.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      input.mode !== "logo_to_video" &&
+      input.mode !== "image_to_video" &&
+      input.mode !== "url_to_video" &&
+      !input.prompt?.trim()
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "PROMPT_REQUIRED",
+          error: "Prompt is required for this generation mode.",
+        },
+        { status: 400 }
+      );
+    }
 
     await ensureUserProfile({
       userId: session.user.id,
@@ -115,32 +149,39 @@ export async function POST(req: Request) {
     const activePlan = planInfo.plan;
     const targetDurationSec = getPlanDurationSec(activePlan);
 
-    // KULLANIMI ÜRETİM BAŞLAMADAN ÖNCE ARTIR
-    // Bu sayede kullanıcı aynı anda çoklu istek atsa bile limitsiz üretim yapamaz.
     if (planInfo.monthlyVideoLimit !== null) {
       await incrementMonthlyVideoCount(session.user.id);
     }
-    const cinematicPlan = buildCinematicPlan({
-  prompt: input.prompt,
-  plan: activePlan,
-  mode: input.mode,
-});
 
-    const result = await generateContent({
-  mode: input.mode,
-  prompt: input.prompt,
-  negativePrompt: input.negativePrompt,
-  imageUrl: input.imageUrl,
-  sourceUrl: input.sourceUrl,
-  durationSec: targetDurationSec,
-  plan: activePlan,
-});
+    let result;
+    try {
+      result = await generateContent({
+        mode: input.mode,
+        prompt:
+          input.prompt ||
+          (input.mode === "logo_to_video"
+            ? "clean premium technology logo reveal"
+            : undefined),
+        negativePrompt: input.negativePrompt,
+        imageUrl: input.imageUrl,
+        sourceUrl: input.sourceUrl,
+        durationSec: targetDurationSec,
+        plan: activePlan,
+      });
+    } catch (generationError: any) {
+      throw generationError;
+    }
 
     const sql = getSql();
 
     const videoId = crypto.randomUUID();
     const seed = createSeed();
-    const title = makeVideoTitle(input.prompt);
+    const title = makeVideoTitle(
+      input.prompt ||
+        (input.mode === "logo_to_video"
+          ? "Logo Animation"
+          : "AI Video")
+    );
     const dbMode = toDbMode(input.mode);
 
     const finalVideoUrl = "videoUrl" in result ? result.videoUrl : null;
@@ -174,10 +215,15 @@ export async function POST(req: Request) {
             ${input.projectId ?? null},
             ${title},
             ${dbMode},
-            ${input.prompt},
+            ${
+              input.prompt ||
+              (input.mode === "logo_to_video"
+                ? "clean premium technology logo reveal"
+                : "AI Video")
+            },
             ${result.model},
             ${seed},
-            ${"done"},
+            ${"ready"},
             ${finalVideoUrl},
             ${finalImageUrl},
             ${0},

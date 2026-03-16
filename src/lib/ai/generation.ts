@@ -7,7 +7,8 @@ export type GenerationMode =
   | "text_to_image"
   | "text_to_video"
   | "url_to_video"
-  | "image_to_video";
+  | "image_to_video"
+  | "logo_to_video";
 
 export type GenerateContentInput = {
   mode: GenerationMode;
@@ -21,7 +22,7 @@ export type GenerateContentInput = {
 
 export type GenerateContentResult =
   | {
-      mode: "image_to_video" | "url_to_video";
+      mode: "image_to_video" | "url_to_video" | "logo_to_video";
       imageUrl: string;
       videoUrl: string;
       provider: "replicate";
@@ -107,8 +108,8 @@ function mergeNegativePrompts(
   const defaults = [
     "low quality",
     "blurry",
-    "text",
-    "letters",
+    "text distortion",
+    "letters deformation",
     "watermark",
     "duplicate subject",
     "extra objects",
@@ -139,17 +140,53 @@ function buildShortVideoPrompt(input: {
   action?: string;
   cameraMotion?: string;
 }) {
-  const parts = [
+  return [
     input.subjectOrScene,
     input.action || "realistic motion",
     input.cameraMotion || "stable camera",
-  ];
-
-  return parts
+  ]
     .filter(Boolean)
     .join(", ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function buildLogoPrompt(userPrompt?: string) {
+  const cleanUserPrompt = userPrompt?.trim();
+
+  return {
+    imagePrompt: [
+      "clean premium technology logo on dark background",
+      "minimal cinematic lighting",
+      "soft reflections",
+      "subtle glow",
+      cleanUserPrompt || "modern brand identity",
+      "center composition",
+      "high contrast",
+      "ultra clean edges",
+    ].join(", "),
+    videoPrompt: [
+      "clean cinematic logo reveal",
+      "subtle glow animation",
+      "soft particles",
+      "slow push in",
+      "stable camera",
+      "premium technology brand intro",
+    ].join(", "),
+    negativePrompt: [
+      "fire",
+      "explosion",
+      "burning building",
+      "destroyed structure",
+      "distorted logo",
+      "broken text",
+      "warped letters",
+      "duplicate logo",
+      "messy background",
+      "cheap CGI",
+      "blurry",
+    ].join(", "),
+  };
 }
 
 async function generateSceneAssets(
@@ -161,39 +198,23 @@ async function generateSceneAssets(
   const safePrompt = promptInfo.safePrompt;
   const sceneCount = getSceneCount(durationSec, input.plan, promptInfo.kind);
 
-  // Logo/text-like promptlarda tek güvenli sahne
   if (promptInfo.kind === "logo_animation" || promptInfo.kind === "text_animation") {
-    const imagePrompt = [
-      safePrompt,
-      "ultra realistic",
-      "clean composition",
-      "premium lighting",
-      "minimal background",
-    ].join(", ");
-
-    const videoPrompt = buildShortVideoPrompt({
-      subjectOrScene: "clean cinematic logo reveal",
-      action: "subtle glow and particles",
-      cameraMotion: "slow zoom in",
-    });
+    const logoPreset = buildLogoPrompt(prompt);
 
     const imageUrl = await generateTextToImage({
-      prompt: imagePrompt,
+      prompt: logoPreset.imagePrompt,
       negativePrompt: mergeNegativePrompts(
         input.negativePrompt,
-        "fire, explosion, distorted logo, broken text"
+        logoPreset.negativePrompt
       ),
       ratio: "horizontal",
     });
 
     return {
-      scenePrompts: [videoPrompt],
+      scenePrompts: [logoPreset.videoPrompt],
       sceneImages: [imageUrl],
       sceneNegativePrompts: [
-        mergeNegativePrompts(
-          input.negativePrompt,
-          "fire, explosion, distorted logo, broken text"
-        ),
+        mergeNegativePrompts(input.negativePrompt, logoPreset.negativePrompt),
       ],
     };
   }
@@ -205,7 +226,6 @@ async function generateSceneAssets(
     sceneCount,
   });
 
-  // İlk sahneyi hero'a yakın tutmak için establishing yerine ana özneyi görünür kılan promptlar
   const scenePrompts = cinematicPlan.scenes.map((scene) =>
     buildShortVideoPrompt({
       subjectOrScene:
@@ -252,6 +272,44 @@ export async function generateContent(
   const durationSec = normalizeDurationSec(input.durationSec);
 
   switch (input.mode) {
+    case "logo_to_video": {
+      const image = resolveImageSource(input);
+
+      const logoVideoPrompt = [
+        "clean cinematic logo reveal",
+        "subtle glow animation",
+        "soft particles",
+        "slow push in",
+        "stable camera",
+        "premium technology brand intro",
+      ].join(", ");
+
+      const logoNegativePrompt = mergeNegativePrompts(
+        input.negativePrompt,
+        "fire, explosion, distorted logo, broken text, messy background, warped letters"
+      );
+
+      const videoUrl = await generateImageToVideo({
+        image,
+        prompt: logoVideoPrompt,
+        negativePrompt: logoNegativePrompt,
+        durationSec: Math.min(durationSec, 10),
+      });
+
+      return {
+        mode: "logo_to_video",
+        imageUrl: image,
+        videoUrl,
+        provider: "replicate",
+        model: "wan-video/wan-2.2-i2v-fast",
+        durationSec: Math.min(durationSec, 10),
+        sceneImages: [image],
+        scenePrompts: [logoVideoPrompt],
+        sceneVideoUrls: [videoUrl],
+        actualClipDurationSec: Math.min(durationSec, 10),
+      };
+    }
+
     case "image_to_video": {
       const prompt = requirePrompt(input.prompt);
       const image = resolveImageSource(input);
@@ -333,20 +391,12 @@ export async function generateContent(
     case "text_to_image": {
       const prompt = requirePrompt(input.prompt);
 
-      const { scenePrompts, sceneImages, sceneNegativePrompts } =
+      const { scenePrompts, sceneImages } =
         await generateSceneAssets(input, prompt, durationSec);
-
-      const imageUrl = await generateTextToImage({
-        prompt: sceneImages[0] ? undefined as never : prompt,
-        negativePrompt: sceneNegativePrompts[0],
-        ratio: "horizontal",
-      }).catch(async () => {
-        return sceneImages[0];
-      });
 
       return {
         mode: "text_to_image",
-        imageUrl: imageUrl || sceneImages[0],
+        imageUrl: sceneImages[0],
         provider: "replicate",
         model: "black-forest-labs/flux-schnell",
         durationSec,
