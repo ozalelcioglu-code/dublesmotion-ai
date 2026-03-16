@@ -1,4 +1,5 @@
 // lib/ai/cinematic-prompt-engine.ts
+import { normalizeUserPrompt } from "./prompt-normalizer";
 
 export type ShotType =
   | "establishing"
@@ -256,6 +257,7 @@ export function buildCinematicPlan(input: {
   mode?: string;
   sceneCount?: number;
 }) {
+  const normalized = normalizeUserPrompt(input.prompt);  
   const masterPrompt = normalizePrompt(input.prompt);
   const plan = input.plan || "free";
   const detectedSceneCount = detectSceneCountByPlan(plan);
