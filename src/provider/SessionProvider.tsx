@@ -13,8 +13,11 @@ import { authClient } from "../lib/auth-client";
 export type SessionUser = {
   name?: string | null;
   email?: string | null;
+  planCode?: string | null;
   planLabel?: string | null;
   remainingCredits?: number | null;
+  maxDurationSec?: number | null;
+  usedThisMonth?: number | null;
 };
 
 type SessionContextValue = {
@@ -45,15 +48,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Önce session bilgisini hemen yaz
       setUser({
         name: sessionUser.name ?? null,
         email: sessionUser.email ?? null,
+        planCode: null,
         planLabel: null,
         remainingCredits: null,
+        maxDurationSec: null,
+        usedThisMonth: null,
       });
 
-      // Sonra ek kullanıcı bilgisini çek
       try {
         const res = await fetch("/api/me", {
           method: "GET",
@@ -69,11 +73,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           setUser({
             name: data.user.name ?? sessionUser.name ?? null,
             email: data.user.email ?? sessionUser.email ?? null,
+            planCode: data.user.plan ?? null,
             planLabel: data.user.planLabel ?? null,
             remainingCredits:
               typeof data.user.remainingCredits === "number" ||
               data.user.remainingCredits === null
                 ? data.user.remainingCredits
+                : null,
+            maxDurationSec:
+              typeof data.user.maxDurationSec === "number"
+                ? data.user.maxDurationSec
+                : null,
+            usedThisMonth:
+              typeof data.user.usedThisMonth === "number"
+                ? data.user.usedThisMonth
                 : null,
           });
         }

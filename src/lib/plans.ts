@@ -6,33 +6,38 @@ export const PLAN_RULES: Record<
     label: string;
     monthlyVideoLimit: number | null;
     maxDurationSec: number;
+    limitScope: "lifetime" | "monthly";
   }
 > = {
   free: {
     label: "Free",
     monthlyVideoLimit: 1,
     maxDurationSec: 10,
+    limitScope: "lifetime",
   },
   starter: {
     label: "Starter",
     monthlyVideoLimit: 20,
     maxDurationSec: 20,
+    limitScope: "monthly",
   },
   pro: {
     label: "Pro",
     monthlyVideoLimit: 50,
     maxDurationSec: 30,
+    limitScope: "monthly",
   },
   agency: {
     label: "Agency",
-    monthlyVideoLimit: null, // unlimited
+    monthlyVideoLimit: null,
     maxDurationSec: 30,
+    limitScope: "monthly",
   },
 };
 
 export function getRemainingCredits(
   plan: PlanName,
-  usedThisMonth: number
+  usedInScope: number
 ): number | null {
   const rule = PLAN_RULES[plan];
 
@@ -40,5 +45,5 @@ export function getRemainingCredits(
     return null;
   }
 
-  return Math.max(rule.monthlyVideoLimit - usedThisMonth, 0);
+  return Math.max(rule.monthlyVideoLimit - usedInScope, 0);
 }

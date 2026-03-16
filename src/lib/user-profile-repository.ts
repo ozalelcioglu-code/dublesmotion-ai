@@ -203,21 +203,53 @@ export async function resetMonthlyUsageIfNeeded(userId: string) {
   return (rows[0] ?? null) as UserProfileRow | null;
 }
 
+export async function getUserPlanUsage(userId: string, plan: PlanName) {
+  const sql = getSql();
+  const rule = PLAN_RULES[plan];
+
+  if (rule.limitScope === "lifetime") {
+    const rows: any[] = await sql`
+      select count(*)::text as count
+      from videos
+      where user_id = ${userId}
+    `;
+
+    return {
+      used: Number(rows[0]?.count ?? "0"),
+      scope: "lifetime" as const,
+    };
+  }
+
+  const rows: any[] = await sql`
+    select count(*)::text as count
+    from videos
+    where user_id = ${userId}
+      and created_at >= date_trunc('month', now())
+      and created_at < date_trunc('month', now()) + interval '1 month'
+  `;
+
+  return {
+    used: Number(rows[0]?.count ?? "0"),
+    scope: "monthly" as const,
+  };
+}
+
 export async function getResolvedUserPlan(userId: string) {
   const profile = await getUserProfileByUserId(userId);
 
   const plan = ((profile?.plan || "free") as PlanName) ?? "free";
   const rules = PLAN_RULES[plan];
-  const usedThisMonth = profile?.monthly_video_count ?? 0;
-  const remainingCredits = getRemainingCredits(plan, usedThisMonth);
+  const usage = await getUserPlanUsage(userId, plan);
+  const remainingCredits = getRemainingCredits(plan, usage.used);
 
   return {
     plan,
     planLabel: rules.label,
-    usedThisMonth,
+    usedThisMonth: usage.used,
     remainingCredits,
     maxDurationSec: rules.maxDurationSec,
     monthlyVideoLimit: rules.monthlyVideoLimit,
+    limitScope: rules.limitScope,
   };
 }
 

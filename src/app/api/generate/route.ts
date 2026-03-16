@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "../../../lib/auth";
 import { generateContent } from "../../../lib/ai/generation";
-import { getSql } from "../../../lib/db";
 import {
   ensureUserProfile,
   getResolvedUserPlan,
+  getUserPlanUsage,
 } from "../../../lib/user-profile-repository";
 
 export const runtime = "nodejs";
@@ -27,49 +27,6 @@ const RequestSchema = z.object({
 
 function createSeed() {
   return Math.floor(Math.random() * 1_000_000_000).toString();
-}
-
-function getPlanDurationSec(plan: string) {
-  switch (plan) {
-    case "starter":
-      return 20;
-    case "pro":
-    case "agency":
-      return 30;
-    case "free":
-    default:
-      return 10;
-  }
-}
-
-function getFallbackPlanLimits(plan: string) {
-  switch (plan) {
-    case "starter":
-      return {
-        monthlyVideoLimit: 20,
-        maxDurationSec: 20,
-        planLabel: "Starter",
-      };
-    case "pro":
-      return {
-        monthlyVideoLimit: 50,
-        maxDurationSec: 30,
-        planLabel: "Pro",
-      };
-    case "agency":
-      return {
-        monthlyVideoLimit: null,
-        maxDurationSec: 30,
-        planLabel: "Agency",
-      };
-    case "free":
-    default:
-      return {
-        monthlyVideoLimit: 1,
-        maxDurationSec: 10,
-        planLabel: "Free",
-      };
-  }
 }
 
 function makeVideoTitle(prompt: string) {
@@ -120,20 +77,11 @@ export async function POST(req: Request) {
       fullName: session.user.name ?? null,
     });
 
-    const sql = getSql();
-
     const planInfo = await getResolvedUserPlan(session.user.id);
-    const fallback = getFallbackPlanLimits(planInfo?.plan ?? "free");
-
-    const activePlan = planInfo?.plan ?? "free";
-    const planLabel = planInfo?.planLabel ?? fallback.planLabel;
-    const monthlyVideoLimit =
-      typeof planInfo?.monthlyVideoLimit === "number" ||
-      planInfo?.monthlyVideoLimit === null
-        ? planInfo.monthlyVideoLimit
-        : fallback.monthlyVideoLimit;
-
-    const targetDurationSec = getPlanDurationSec(activePlan);
+    const activePlan = planInfo.plan;
+    const planLabel = planInfo.planLabel;
+    const monthlyVideoLimit = planInfo.monthlyVideoLimit;
+    const targetDurationSec = planInfo.maxDurationSec;
 
     const isVideoGeneration =
       input.mode === "text_to_video" ||
@@ -141,30 +89,27 @@ export async function POST(req: Request) {
       input.mode === "image_to_video";
 
     if (isVideoGeneration) {
-      const usageResult = await sql<{ count: string }>`
-        select count(*)::text as count
-        from videos
-        where user_id = ${session.user.id}
-          and created_at >= date_trunc('month', now())
-          and created_at < date_trunc('month', now()) + interval '1 month'
-      `;
-
-      const usedThisMonth = Number(usageResult[0]?.count ?? "0");
+      const usage = await getUserPlanUsage(session.user.id, activePlan);
 
       if (
         monthlyVideoLimit !== null &&
         Number.isFinite(monthlyVideoLimit) &&
-        usedThisMonth >= monthlyVideoLimit
+        usage.used >= monthlyVideoLimit
       ) {
         return NextResponse.json(
           {
             ok: false,
             code: "PLAN_LIMIT_REACHED",
-            error: `Your ${planLabel} plan monthly limit has been reached.`,
+            error:
+              activePlan === "free"
+                ? "Your Free plan allows only 1 video. Please upgrade to continue."
+                : `Your ${planLabel} plan limit has been reached.`,
             plan: activePlan,
             planLabel,
-            usedThisMonth,
+            usedThisMonth: usage.used,
             monthlyVideoLimit,
+            remainingCredits: 0,
+            limitScope: planInfo.limitScope,
           },
           { status: 403 }
         );
@@ -179,6 +124,8 @@ export async function POST(req: Request) {
       sourceUrl: input.sourceUrl,
       durationSec: targetDurationSec,
     });
+
+    const sql = (await import("../../../lib/db")).getSql();
 
     const videoId = crypto.randomUUID();
     const seed = createSeed();
@@ -235,25 +182,11 @@ export async function POST(req: Request) {
       }
     }
 
-    let usedThisMonthAfter = 0;
-
-    try {
-      const usageAfterResult = await sql<{ count: string }>`
-        select count(*)::text as count
-        from videos
-        where user_id = ${session.user.id}
-          and created_at >= date_trunc('month', now())
-          and created_at < date_trunc('month', now()) + interval '1 month'
-      `;
-      usedThisMonthAfter = Number(usageAfterResult[0]?.count ?? "0");
-    } catch {
-      usedThisMonthAfter = 0;
-    }
-
+    const usageAfter = await getUserPlanUsage(session.user.id, activePlan);
     const remainingCredits =
       monthlyVideoLimit === null
         ? null
-        : Math.max(monthlyVideoLimit - usedThisMonthAfter, 0);
+        : Math.max(monthlyVideoLimit - usageAfter.used, 0);
 
     return NextResponse.json(
       {
@@ -272,9 +205,10 @@ export async function POST(req: Request) {
           code: activePlan,
           label: planLabel,
           monthlyVideoLimit,
-          usedThisMonth: usedThisMonthAfter,
+          usedThisMonth: usageAfter.used,
           remainingCredits,
           maxDurationSec: targetDurationSec,
+          limitScope: planInfo.limitScope,
         },
       },
       { status: 200 }
