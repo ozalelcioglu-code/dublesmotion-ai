@@ -1,5 +1,6 @@
 // lib/ai/cinematic-prompt-engine.ts
-import { normalizeUserPrompt } from "./prompt-normalizer";
+
+import { directUserPrompt } from "./prompt-director";
 
 export type ShotType =
   | "establishing"
@@ -89,9 +90,11 @@ function getStylePreset() {
   return "ultra realistic, cinematic lighting, high detail, premium commercial quality, filmic contrast";
 }
 
-function buildVisualAnchor(userPrompt: string) {
+function buildVisualAnchor(subject: string, environment: string, mood: string) {
   return [
-    `main subject: ${userPrompt}`,
+    `main subject: ${subject}`,
+    `environment: ${environment}`,
+    `mood: ${mood}`,
     "keep the same subject identity across scenes",
     "keep the same environment and mood across scenes",
     "preserve visual continuity and realism",
@@ -157,20 +160,20 @@ function shotTypeImageAddon(shotType: ShotType) {
   }
 }
 
-function shotTypeVideoAction(shotType: ShotType, prompt: string) {
+function buildSceneFocus(shotType: ShotType, directed: ReturnType<typeof directUserPrompt>) {
   switch (shotType) {
     case "establishing":
-      return `${prompt}, show the environment clearly in a wide cinematic shot`;
+      return `${directed.environment}, ${directed.timeOfDay}, the subject visible in the scene`;
     case "hero":
-      return `${prompt}, reveal the main subject clearly with a premium cinematic look`;
+      return `${directed.subject}, clearly revealed as the hero subject`;
     case "action":
-      return `${prompt}, show the main action clearly with realistic motion`;
+      return `${directed.subject}, ${directed.action}, in ${directed.environment}`;
     case "detail":
-      return `${prompt}, focus on close details of the subject`;
+      return `${directed.subject}, close detail view, texture and design emphasis`;
     case "closing":
-      return `${prompt}, end with a strong cinematic final image`;
+      return `${directed.subject}, cinematic final frame in ${directed.environment}`;
     default:
-      return prompt;
+      return directed.normalizedPrompt;
   }
 }
 
@@ -209,22 +212,19 @@ function getDurationPerScene(plan: string, sceneCount: number) {
 }
 
 function cleanPromptForModel(prompt: string) {
-  return prompt
-    .replace(/\s+/g, " ")
-    .replace(/[.]{2,}/g, ".")
-    .trim();
+  return prompt.replace(/\s+/g, " ").replace(/[.]{2,}/g, ".").trim();
 }
 
 function buildImagePrompt(params: {
-  masterPrompt: string;
-  shotType: ShotType;
+  sceneFocus: string;
   stylePreset: string;
   visualAnchor: string;
+  mood: string;
 }) {
   const parts = [
-    params.masterPrompt,
-    shotTypeImageAddon(params.shotType),
+    params.sceneFocus,
     params.stylePreset,
+    params.mood,
     "natural realistic textures",
     "realistic lighting",
     "clean composition",
@@ -236,12 +236,13 @@ function buildImagePrompt(params: {
 }
 
 function buildVideoPrompt(params: {
-  masterPrompt: string;
-  shotType: ShotType;
+  sceneFocus: string;
   cameraMotion: CameraMotion;
+  action: string;
 }) {
   const parts = [
-    shotTypeVideoAction(params.shotType, params.masterPrompt),
+    params.sceneFocus,
+    params.action,
     motionPromptAddon(params.cameraMotion),
     "realistic motion",
     "stable camera",
@@ -257,28 +258,34 @@ export function buildCinematicPlan(input: {
   mode?: string;
   sceneCount?: number;
 }) {
-  const normalized = normalizeUserPrompt(input.prompt);  
-  const masterPrompt = normalizePrompt(input.prompt);
+  const directed = directUserPrompt(input.prompt);
+  const masterPrompt = normalizePrompt(directed.normalizedPrompt);
   const plan = input.plan || "free";
   const detectedSceneCount = detectSceneCountByPlan(plan);
   const sceneCount = clampSceneCount(input.sceneCount ?? detectedSceneCount);
   const stylePreset = getStylePreset();
-  const visualAnchor = buildVisualAnchor(masterPrompt);
+  const visualAnchor = buildVisualAnchor(
+    directed.subject,
+    directed.environment,
+    directed.mood
+  );
   const blueprints = buildSceneBlueprints(sceneCount);
   const durationSec = getDurationPerScene(plan, sceneCount);
 
   const scenes: CinematicScene[] = blueprints.map((bp, i) => {
+    const sceneFocus = buildSceneFocus(bp.shotType, directed);
+
     const imagePrompt = buildImagePrompt({
-      masterPrompt,
-      shotType: bp.shotType,
+      sceneFocus,
       stylePreset,
       visualAnchor,
+      mood: directed.mood,
     });
 
     const videoPrompt = buildVideoPrompt({
-      masterPrompt,
-      shotType: bp.shotType,
+      sceneFocus,
       cameraMotion: bp.cameraMotion,
+      action: directed.action,
     });
 
     return {
