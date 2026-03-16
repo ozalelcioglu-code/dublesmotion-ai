@@ -95,7 +95,7 @@ export default function BillingPage() {
 
         {!loading && plan ? (
           <>
-            <div style={styles.stats}>
+            <div className="billing-stats-grid">
               <div style={styles.statCard}>
                 <div style={styles.statLabel}>Current Plan</div>
                 <div style={styles.statValue}>{plan.label}</div>
@@ -119,7 +119,7 @@ export default function BillingPage() {
               </div>
             </div>
 
-            <div style={styles.grid}>
+            <div className="billing-plan-grid">
               <PlanCard
                 title="Free"
                 price="$0"
@@ -249,12 +249,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
   },
 
-  stats: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-    gap: 16,
-  },
-
   statCard: {
     padding: 18,
     borderRadius: 20,
@@ -278,12 +272,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 30,
     fontWeight: 900,
     color: "#0f172a",
-  },
-
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-    gap: 18,
   },
 
   card: {

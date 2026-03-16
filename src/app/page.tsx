@@ -15,7 +15,6 @@ import { LANGUAGE_LABELS, type AppLanguage } from "../lib/i18n";
 import AppSidebar from "../components/AppSidebar";
 
 type Mode = "text_to_video" | "url_to_video" | "image_to_video";
-type Ratio = "square" | "vertical" | "horizontal";
 type NavKey = "tool" | "apps" | "chat" | "flow" | "live";
 type WorkspaceTab = "video" | "voice" | "support";
 
@@ -102,15 +101,7 @@ function PageContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (workspaceTab === "video" && prompt.trim().length === 0) {
-      setPrompt(getDefaultPrompt(language));
-    }
-  }, [language, workspaceTab, prompt]);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      return;
-    }
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices() || [];
@@ -125,17 +116,9 @@ function PageContent() {
     window.speechSynthesis.onvoiceschanged = loadVoices;
 
     return () => {
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.onvoiceschanged = null;
-      }
+      window.speechSynthesis.onvoiceschanged = null;
     };
   }, [voiceUri]);
-
-  const ratio = useMemo<Ratio>(() => {
-    if (ratioUi === "1:1") return "square";
-    if (ratioUi === "9:16") return "vertical";
-    return "horizontal";
-  }, [ratioUi]);
 
   const fallbackScenes = useMemo<SceneCard[]>(() => {
     const clean = prompt.trim() || "Cinematic AI video";
@@ -805,8 +788,32 @@ function PageContent() {
       case "tool":
       default:
         return (
-          <section style={styles.studioGrid}>
+          <section className="studio-responsive">
             <div style={styles.studioRail}>
+              <div style={styles.mobileTopTabs} className="mobile-top-tabs">
+                {(
+                  [
+                    ["video", t.home.videoTool],
+                    ["voice", t.home.voiceTool],
+                    ["support", t.home.supportTool],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setWorkspaceTab(key)}
+                    style={{
+                      ...styles.mobileTopTabButton,
+                      ...(workspaceTab === key
+                        ? styles.mobileTopTabButtonActive
+                        : {}),
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               <div style={styles.accountCardLarge}>
                 <div style={styles.accountHeadRow}>
                   <div>
@@ -901,7 +908,7 @@ function PageContent() {
                 </div>
               </div>
 
-              <div style={styles.workspaceSwitch}>
+              <div style={styles.workspaceSwitch} className="desktop-only">
                 {(
                   [
                     ["video", t.home.videoTool],
@@ -1015,60 +1022,62 @@ function PageContent() {
                 {displayScenes.length === 0 ? (
                   <div style={styles.smallNote}>{t.home.sceneEmpty}</div>
                 ) : (
-                  <div style={styles.scenesRailGrid}>
-                    {displayScenes.map((scene) => {
-                      const isSelected = scene.id === selectedSceneId;
+                  <div className="mobile-scene-scroll">
+                    <div className="scenes-grid-responsive">
+                      {displayScenes.map((scene) => {
+                        const isSelected = scene.id === selectedSceneId;
 
-                      return (
-                        <div
-                          key={scene.id}
-                          style={{
-                            ...styles.sceneCard,
-                            ...(isSelected ? styles.sceneCardActive : {}),
-                          }}
-                        >
-                          {scene.imageUrl ? (
-                            <div style={styles.sceneThumbWrap}>
-                              <img
-                                src={scene.imageUrl}
-                                alt={scene.title}
-                                style={styles.sceneThumb}
-                              />
+                        return (
+                          <div
+                            key={scene.id}
+                            style={{
+                              ...styles.sceneCard,
+                              ...(isSelected ? styles.sceneCardActive : {}),
+                            }}
+                          >
+                            {scene.imageUrl ? (
+                              <div style={styles.sceneThumbWrap}>
+                                <img
+                                  src={scene.imageUrl}
+                                  alt={scene.title}
+                                  style={styles.sceneThumb}
+                                />
+                              </div>
+                            ) : (
+                              <div style={styles.sceneThumbPlaceholder}>
+                                {scene.title}
+                              </div>
+                            )}
+
+                            <div style={styles.sceneTitleRow}>
+                              <strong>{scene.title}</strong>
+                              <span>{scene.durationSec}s</span>
                             </div>
-                          ) : (
-                            <div style={styles.sceneThumbPlaceholder}>
-                              {scene.title}
+
+                            <div style={styles.sceneDescription}>
+                              {scene.description}
                             </div>
-                          )}
 
-                          <div style={styles.sceneTitleRow}>
-                            <strong>{scene.title}</strong>
-                            <span>{scene.durationSec}s</span>
+                            <div style={styles.sceneActions}>
+                              <button
+                                type="button"
+                                style={styles.sceneActionButton}
+                                onClick={() => handleSelectScene(scene.id)}
+                              >
+                                {t.common.select}
+                              </button>
+                              <button
+                                type="button"
+                                style={styles.sceneActionButtonDanger}
+                                onClick={() => handleDeleteScene(scene.id)}
+                              >
+                                {t.common.delete}
+                              </button>
+                            </div>
                           </div>
-
-                          <div style={styles.sceneDescription}>
-                            {scene.description}
-                          </div>
-
-                          <div style={styles.sceneActions}>
-                            <button
-                              type="button"
-                              style={styles.sceneActionButton}
-                              onClick={() => handleSelectScene(scene.id)}
-                            >
-                              {t.common.select}
-                            </button>
-                            <button
-                              type="button"
-                              style={styles.sceneActionButtonDanger}
-                              onClick={() => handleDeleteScene(scene.id)}
-                            >
-                              {t.common.delete}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1155,13 +1164,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
   },
 
-  studioGrid: {
-    display: "grid",
-    gridTemplateColumns: "360px minmax(0, 1fr)",
-    gap: 20,
-    alignItems: "start",
-  },
-
   studioRail: {
     display: "flex",
     flexDirection: "column",
@@ -1191,6 +1193,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "space-between",
     gap: 12,
     alignItems: "flex-start",
+    flexWrap: "wrap",
   },
 
   languageSelect: {
@@ -1255,6 +1258,29 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   workspaceSwitchButtonActive: {
+    background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
+    color: "#fff",
+    border: "1px solid transparent",
+  },
+
+  mobileTopTabs: {
+    display: "flex",
+    gap: 8,
+    width: "100%",
+  },
+
+  mobileTopTabButton: {
+    flex: 1,
+    padding: "12px 12px",
+    borderRadius: 14,
+    border: "1px solid rgba(15,23,42,0.08)",
+    background: "#fff",
+    color: "#334155",
+    cursor: "pointer",
+    fontWeight: 800,
+  },
+
+  mobileTopTabButtonActive: {
     background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
     color: "#fff",
     border: "1px solid transparent",
@@ -1485,7 +1511,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   previewBoxLarge: {
     width: "100%",
-    minHeight: 500,
+    minHeight: 420,
     borderRadius: 24,
     background: "#000",
     display: "flex",
@@ -1608,17 +1634,12 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 16px 40px rgba(15,23,42,0.06)",
   },
 
-  scenesRailGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 14,
-  },
-
   sceneCard: {
     padding: 12,
     borderRadius: 16,
     background: "#fff",
     border: "1px solid rgba(15,23,42,0.08)",
+    minWidth: 240,
   },
 
   sceneCardActive: {
@@ -1716,7 +1737,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   appsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
     gap: 16,
   },
 

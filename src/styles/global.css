@@ -1,5 +1,11 @@
 :root {
-  --bg: #0b0d12;
+  --bg: #f5f8ff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --card: rgba(255, 255, 255, 0.82);
+  --line: rgba(15, 23, 42, 0.08);
+  --shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+  --radius: 24px;
 }
 
 * {
@@ -11,30 +17,158 @@ body {
   padding: 0;
   margin: 0;
   min-height: 100%;
+  width: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--bg);
-  font-family: Inter, system-ui, sans-serif;
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  overflow-x: hidden;
 }
-@media (max-width: 1100px) {
-  .preview-two-col {
-    grid-template-columns: 1fr !important;
+
+a {
+  color: inherit;
+}
+
+img,
+video {
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.desktop-only {
+  display: flex;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+.page-shell {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.studio-responsive {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.scenes-grid-responsive {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.billing-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.billing-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.login-page-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+}
+
+.mobile-top-tabs {
+  display: none;
+}
+
+.mobile-scene-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-scene-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.mobile-scene-scroll::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.16);
+  border-radius: 999px;
+}
+
+@media (max-width: 1280px) {
+  .billing-plan-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
-@media (max-width: 1200px) {
-  .workspace-two-col {
-    grid-template-columns: 1fr !important;
+
+  .billing-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 900px) {
-  .apps-grid-mobile {
-    grid-template-columns: 1fr !important;
+@media (max-width: 1180px) {
+  .studio-responsive {
+    grid-template-columns: 320px minmax(0, 1fr);
   }
 }
-@media (max-width: 900px) {
-  .login-mobile-stack {
-    grid-template-columns: 1fr !important;
+
+@media (max-width: 980px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .mobile-top-tabs {
+    display: flex;
+  }
+
+  .studio-responsive {
+    grid-template-columns: 1fr;
+  }
+
+  .login-page-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .billing-plan-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scenes-grid-responsive {
+    display: flex;
+    gap: 14px;
+    min-width: max-content;
+  }
+}
+
+@media (max-width: 768px) {
+  .billing-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-shell {
+    min-height: 100dvh;
   }
 }

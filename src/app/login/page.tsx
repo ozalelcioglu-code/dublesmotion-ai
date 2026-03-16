@@ -6,6 +6,24 @@ import { authClient } from "../../lib/auth-client";
 import { useLanguage } from "../../provider/LanguageProvider";
 import { useSession } from "../../provider/SessionProvider";
 
+function getTabStyle(active: boolean): React.CSSProperties {
+  return {
+    flex: 1,
+    padding: "12px 14px",
+    borderRadius: 14,
+    border: active
+      ? "1px solid transparent"
+      : "1px solid rgba(15,23,42,0.08)",
+    background: active
+      ? "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)"
+      : "#ffffff",
+    color: active ? "#fff" : "#334155",
+    cursor: "pointer",
+    fontWeight: 800,
+    boxShadow: active ? "0 12px 24px rgba(77,182,255,0.16)" : "none",
+  };
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { t } = useLanguage();
@@ -83,218 +101,8 @@ export default function LoginPage() {
     }
   };
 
-  const styles = {
-    page: {
-      minHeight: "100vh",
-      display: "grid",
-      gridTemplateColumns: "1.05fr 0.95fr",
-      background:
-        "linear-gradient(135deg, #f8fbff 0%, #eef4ff 38%, #f7f2ff 100%)",
-      color: "#0f172a",
-      fontFamily:
-        "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
-      position: "relative" as const,
-      overflow: "hidden",
-    } as React.CSSProperties,
-
-    backgroundGlowA: {
-      position: "absolute" as const,
-      top: -120,
-      left: -80,
-      width: 420,
-      height: 420,
-      borderRadius: "50%",
-      background: "rgba(109,93,252,0.12)",
-      filter: "blur(60px)",
-      pointerEvents: "none" as const,
-    } as React.CSSProperties,
-
-    backgroundGlowB: {
-      position: "absolute" as const,
-      top: 40,
-      right: -80,
-      width: 360,
-      height: 360,
-      borderRadius: "50%",
-      background: "rgba(77,182,255,0.14)",
-      filter: "blur(56px)",
-      pointerEvents: "none" as const,
-    } as React.CSSProperties,
-
-    hero: {
-      padding: "48px 42px",
-      display: "flex",
-      flexDirection: "column" as const,
-      justifyContent: "center",
-      gap: 24,
-      borderRight: "1px solid rgba(15,23,42,0.08)",
-      position: "relative" as const,
-      zIndex: 1,
-    } as React.CSSProperties,
-
-    heroLogo: {
-      display: "flex",
-      alignItems: "center",
-      gap: 14,
-    } as React.CSSProperties,
-
-    logo: {
-      width: 64,
-      height: 64,
-      borderRadius: 18,
-      overflow: "hidden",
-      border: "1px solid rgba(15,23,42,0.08)",
-      boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
-      background: "#fff",
-    } as React.CSSProperties,
-
-    heroTitle: {
-      fontSize: 46,
-      fontWeight: 950,
-      lineHeight: 1.06,
-      letterSpacing: -1.2,
-      margin: 0,
-      maxWidth: 620,
-      color: "#0f172a",
-    } as React.CSSProperties,
-
-    heroText: {
-      fontSize: 15,
-      lineHeight: 1.7,
-      color: "#64748b",
-      maxWidth: 620,
-    } as React.CSSProperties,
-
-    featureList: {
-      display: "grid",
-      gap: 12,
-      maxWidth: 560,
-    } as React.CSSProperties,
-
-    featureItem: {
-      padding: "14px 16px",
-      borderRadius: 16,
-      background: "rgba(255,255,255,0.72)",
-      border: "1px solid rgba(15,23,42,0.08)",
-      color: "#334155",
-      fontWeight: 700,
-      boxShadow: "0 12px 28px rgba(15,23,42,0.06)",
-    } as React.CSSProperties,
-
-    authWrap: {
-      padding: 24,
-      display: "grid",
-      placeItems: "center",
-      position: "relative" as const,
-      zIndex: 1,
-    } as React.CSSProperties,
-
-    card: {
-      width: "100%",
-      maxWidth: 460,
-      background: "rgba(255,255,255,0.82)",
-      border: "1px solid rgba(15,23,42,0.08)",
-      borderRadius: 24,
-      padding: 24,
-      boxShadow: "0 18px 44px rgba(15,23,42,0.10)",
-      backdropFilter: "blur(12px)",
-    } as React.CSSProperties,
-
-    cardTitle: {
-      fontSize: 28,
-      fontWeight: 900,
-      margin: 0,
-      color: "#0f172a",
-    } as React.CSSProperties,
-
-    sub: {
-      marginTop: 8,
-      color: "#64748b",
-      fontSize: 14,
-      lineHeight: 1.6,
-    } as React.CSSProperties,
-
-    tabs: {
-      display: "flex",
-      gap: 10,
-      marginTop: 20,
-      marginBottom: 18,
-    } as React.CSSProperties,
-
-    tab: (active: boolean) =>
-      ({
-        flex: 1,
-        padding: "12px 14px",
-        borderRadius: 14,
-        border: active
-          ? "1px solid transparent"
-          : "1px solid rgba(15,23,42,0.08)",
-        background: active
-          ? "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)"
-          : "#ffffff",
-        color: active ? "#fff" : "#334155",
-        cursor: "pointer",
-        fontWeight: 800,
-        boxShadow: active ? "0 12px 24px rgba(77,182,255,0.16)" : "none",
-      }) as React.CSSProperties,
-
-    field: {
-      display: "grid",
-      gap: 8,
-      marginBottom: 14,
-    } as React.CSSProperties,
-
-    label: {
-      fontSize: 12,
-      fontWeight: 800,
-      color: "#475569",
-      textTransform: "uppercase" as const,
-    } as React.CSSProperties,
-
-    input: {
-      width: "100%",
-      padding: "12px 14px",
-      borderRadius: 14,
-      border: "1px solid rgba(15,23,42,0.08)",
-      background: "#ffffff",
-      color: "#0f172a",
-      outline: "none",
-      boxShadow: "inset 0 1px 2px rgba(15,23,42,0.02)",
-    } as React.CSSProperties,
-
-    button: {
-      width: "100%",
-      padding: "12px 16px",
-      borderRadius: 14,
-      border: "1px solid transparent",
-      background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
-      color: "#fff",
-      cursor: "pointer",
-      fontWeight: 900,
-      marginTop: 8,
-      boxShadow: "0 14px 28px rgba(77,182,255,0.18)",
-    } as React.CSSProperties,
-
-    msg: {
-      marginTop: 12,
-      fontSize: 13,
-      color: "#dc2626",
-      lineHeight: 1.5,
-      background: "rgba(254,226,226,0.9)",
-      border: "1px solid rgba(239,68,68,0.16)",
-      borderRadius: 12,
-      padding: "10px 12px",
-    } as React.CSSProperties,
-
-    mobileNote: {
-      fontSize: 12,
-      color: "#64748b",
-      marginTop: 10,
-    } as React.CSSProperties,
-  };
-
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="login-page-grid">
       <div style={styles.backgroundGlowA} />
       <div style={styles.backgroundGlowB} />
 
@@ -309,12 +117,8 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: "#0f172a" }}>
-              Duble-S Motion AI
-            </div>
-            <div style={{ color: "#64748b", marginTop: 4 }}>
-              {t.header.workspace}
-            </div>
+            <div style={styles.brandTitle}>Duble-S Motion AI</div>
+            <div style={styles.brandSub}>{t.header.workspace}</div>
           </div>
         </div>
 
@@ -339,7 +143,7 @@ export default function LoginPage() {
           <div style={styles.tabs}>
             <button
               type="button"
-              style={styles.tab(mode === "login")}
+              style={getTabStyle(mode === "login")}
               onClick={() => setMode("login")}
             >
               {t.common.login}
@@ -347,7 +151,7 @@ export default function LoginPage() {
 
             <button
               type="button"
-              style={styles.tab(mode === "signup")}
+              style={getTabStyle(mode === "signup")}
               onClick={() => setMode("signup")}
             >
               {t.common.signup}
@@ -413,3 +217,205 @@ export default function LoginPage() {
     </div>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    background:
+      "linear-gradient(135deg, #f8fbff 0%, #eef4ff 38%, #f7f2ff 100%)",
+    color: "#0f172a",
+    fontFamily:
+      "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
+    position: "relative",
+    overflow: "hidden",
+  },
+
+  backgroundGlowA: {
+    position: "absolute",
+    top: -120,
+    left: -80,
+    width: 420,
+    height: 420,
+    borderRadius: "50%",
+    background: "rgba(109,93,252,0.12)",
+    filter: "blur(60px)",
+    pointerEvents: "none",
+  },
+
+  backgroundGlowB: {
+    position: "absolute",
+    top: 40,
+    right: -80,
+    width: 360,
+    height: 360,
+    borderRadius: "50%",
+    background: "rgba(77,182,255,0.14)",
+    filter: "blur(56px)",
+    pointerEvents: "none",
+  },
+
+  hero: {
+    padding: "48px 42px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    gap: 24,
+    borderRight: "1px solid rgba(15,23,42,0.08)",
+    position: "relative",
+    zIndex: 1,
+  },
+
+  heroLogo: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+  },
+
+  logo: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    overflow: "hidden",
+    border: "1px solid rgba(15,23,42,0.08)",
+    boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
+    background: "#fff",
+  },
+
+  brandTitle: {
+    fontSize: 24,
+    fontWeight: 900,
+    color: "#0f172a",
+  },
+
+  brandSub: {
+    color: "#64748b",
+    marginTop: 4,
+  },
+
+  heroTitle: {
+    fontSize: 46,
+    fontWeight: 950,
+    lineHeight: 1.06,
+    letterSpacing: -1.2,
+    margin: 0,
+    maxWidth: 620,
+    color: "#0f172a",
+  },
+
+  heroText: {
+    fontSize: 15,
+    lineHeight: 1.7,
+    color: "#64748b",
+    maxWidth: 620,
+  },
+
+  featureList: {
+    display: "grid",
+    gap: 12,
+    maxWidth: 560,
+  },
+
+  featureItem: {
+    padding: "14px 16px",
+    borderRadius: 16,
+    background: "rgba(255,255,255,0.72)",
+    border: "1px solid rgba(15,23,42,0.08)",
+    color: "#334155",
+    fontWeight: 700,
+    boxShadow: "0 12px 28px rgba(15,23,42,0.06)",
+  },
+
+  authWrap: {
+    padding: 24,
+    display: "grid",
+    placeItems: "center",
+    position: "relative",
+    zIndex: 1,
+  },
+
+  card: {
+    width: "100%",
+    maxWidth: 460,
+    background: "rgba(255,255,255,0.82)",
+    border: "1px solid rgba(15,23,42,0.08)",
+    borderRadius: 24,
+    padding: 24,
+    boxShadow: "0 18px 44px rgba(15,23,42,0.10)",
+    backdropFilter: "blur(12px)",
+  },
+
+  cardTitle: {
+    fontSize: 28,
+    fontWeight: 900,
+    margin: 0,
+    color: "#0f172a",
+  },
+
+  sub: {
+    marginTop: 8,
+    color: "#64748b",
+    fontSize: 14,
+    lineHeight: 1.6,
+  },
+
+  tabs: {
+    display: "flex",
+    gap: 10,
+    marginTop: 20,
+    marginBottom: 18,
+  },
+
+  field: {
+    display: "grid",
+    gap: 8,
+    marginBottom: 14,
+  },
+
+  label: {
+    fontSize: 12,
+    fontWeight: 800,
+    color: "#475569",
+    textTransform: "uppercase",
+  },
+
+  input: {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 14,
+    border: "1px solid rgba(15,23,42,0.08)",
+    background: "#ffffff",
+    color: "#0f172a",
+    outline: "none",
+    boxShadow: "inset 0 1px 2px rgba(15,23,42,0.02)",
+  },
+
+  button: {
+    width: "100%",
+    padding: "12px 16px",
+    borderRadius: 14,
+    border: "1px solid transparent",
+    background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: 900,
+    marginTop: 8,
+    boxShadow: "0 14px 28px rgba(77,182,255,0.18)",
+  },
+
+  msg: {
+    marginTop: 12,
+    fontSize: 13,
+    color: "#dc2626",
+    lineHeight: 1.5,
+    background: "rgba(254,226,226,0.9)",
+    border: "1px solid rgba(239,68,68,0.16)",
+    borderRadius: 12,
+    padding: "10px 12px",
+  },
+
+  mobileNote: {
+    fontSize: 12,
+    color: "#64748b",
+    marginTop: 10,
+  },
+};

@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr">
-      <body>
+      <body className="page-shell">
         <SessionProvider>
           <LanguageProvider>{children}</LanguageProvider>
         </SessionProvider>
