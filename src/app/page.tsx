@@ -137,32 +137,7 @@ function PageContent() {
     };
   }, [voiceUri]);
 
-  const fallbackScenes = useMemo<SceneCard[]>(() => {
-    const clean = prompt.trim() || "Cinematic AI video";
-
-    return [
-      {
-        id: "scene-1",
-        title: "Scene 1",
-        description: `${clean} — hero shot`,
-        durationSec: 4,
-      },
-      {
-        id: "scene-2",
-        title: "Scene 2",
-        description: `${clean} — motion shot`,
-        durationSec: 4,
-      },
-      {
-        id: "scene-3",
-        title: "Scene 3",
-        description: `${clean} — closing shot`,
-        durationSec: 4,
-      },
-    ];
-  }, [prompt]);
-
-  const displayScenes = scenes.length > 0 ? scenes : fallbackScenes;
+  const displayScenes = scenes;
 
   const totalDuration = useMemo(() => {
     if (scenes.length > 0) {
@@ -173,8 +148,8 @@ function PageContent() {
       return generation.durationSec;
     }
 
-    return fallbackScenes.reduce((acc, scene) => acc + scene.durationSec, 0);
-  }, [fallbackScenes, generation, scenes]);
+    return null;
+  }, [generation, scenes]);
 
   const statusText =
     generation.status === "idle"
@@ -1084,12 +1059,18 @@ function PageContent() {
 
                 <div style={styles.infoRow}>
                   <span style={styles.infoLabel}>{t.home.scenes}</span>
-                  <strong style={styles.infoValue}>{displayScenes.length}</strong>
+                  <strong style={styles.infoValue}>
+                    {generation.status === "done" ? displayScenes.length : "-"}
+                  </strong>
                 </div>
 
                 <div style={styles.infoRow}>
                   <span style={styles.infoLabel}>{t.home.duration}</span>
-                  <strong style={styles.infoValue}>{totalDuration}s</strong>
+                  <strong style={styles.infoValue}>
+                    {generation.status === "done" && totalDuration
+                      ? `${totalDuration}s`
+                      : "-"}
+                  </strong>
                 </div>
 
                 <div style={styles.infoRow}>
@@ -1112,74 +1093,74 @@ function PageContent() {
                 <div style={styles.cardTitle}>{t.home.sceneRailTitle}</div>
 
                 {displayScenes.length === 0 ? (
-                  <div style={styles.smallNote}>{t.home.sceneEmpty}</div>
+                  <div style={styles.smallNote}>
+                    Video oluşturulduktan sonra sahneler burada görünecek.
+                  </div>
                 ) : (
-                  <div className="mobile-scene-scroll">
-                    <div className="scenes-grid-responsive">
-                      {displayScenes.map((scene) => {
-                        const isSelected = scene.id === selectedSceneId;
+                  <div style={styles.scenesStack}>
+                    {displayScenes.map((scene) => {
+                      const isSelected = scene.id === selectedSceneId;
 
-                        return (
-                          <div
-                            key={scene.id}
-                            style={{
-                              ...styles.sceneCard,
-                              ...(isSelected ? styles.sceneCardActive : {}),
-                            }}
-                          >
-                            {scene.videoUrl ? (
-                              <div style={styles.sceneThumbWrap}>
-                                <video
-                                  src={scene.videoUrl}
-                                  muted
-                                  playsInline
-                                  controls
-                                  style={styles.sceneVideo}
-                                />
-                              </div>
-                            ) : scene.imageUrl ? (
-                              <div style={styles.sceneThumbWrap}>
-                                <img
-                                  src={scene.imageUrl}
-                                  alt={scene.title}
-                                  style={styles.sceneThumb}
-                                />
-                              </div>
-                            ) : (
-                              <div style={styles.sceneThumbPlaceholder}>
-                                {scene.title}
-                              </div>
-                            )}
-
-                            <div style={styles.sceneTitleRow}>
-                              <strong>{scene.title}</strong>
-                              <span>{scene.durationSec}s</span>
+                      return (
+                        <div
+                          key={scene.id}
+                          style={{
+                            ...styles.sceneCard,
+                            ...(isSelected ? styles.sceneCardActive : {}),
+                          }}
+                        >
+                          {scene.videoUrl ? (
+                            <div style={styles.sceneThumbWrap}>
+                              <video
+                                src={scene.videoUrl}
+                                muted
+                                playsInline
+                                controls
+                                style={styles.sceneVideo}
+                              />
                             </div>
-
-                            <div style={styles.sceneDescription}>
-                              {scene.description}
+                          ) : scene.imageUrl ? (
+                            <div style={styles.sceneThumbWrap}>
+                              <img
+                                src={scene.imageUrl}
+                                alt={scene.title}
+                                style={styles.sceneThumb}
+                              />
                             </div>
-
-                            <div style={styles.sceneActions}>
-                              <button
-                                type="button"
-                                style={styles.sceneActionButton}
-                                onClick={() => handleSelectScene(scene.id)}
-                              >
-                                {t.common.select}
-                              </button>
-                              <button
-                                type="button"
-                                style={styles.sceneActionButtonDanger}
-                                onClick={() => handleDeleteScene(scene.id)}
-                              >
-                                {t.common.delete}
-                              </button>
+                          ) : (
+                            <div style={styles.sceneThumbPlaceholder}>
+                              {scene.title}
                             </div>
+                          )}
+
+                          <div style={styles.sceneTitleRow}>
+                            <strong>{scene.title}</strong>
+                            <span>{scene.durationSec}s</span>
                           </div>
-                        );
-                      })}
-                    </div>
+
+                          <div style={styles.sceneDescription}>
+                            {scene.description}
+                          </div>
+
+                          <div style={styles.sceneActions}>
+                            <button
+                              type="button"
+                              style={styles.sceneActionButton}
+                              onClick={() => handleSelectScene(scene.id)}
+                            >
+                              {t.common.select}
+                            </button>
+                            <button
+                              type="button"
+                              style={styles.sceneActionButtonDanger}
+                              onClick={() => handleDeleteScene(scene.id)}
+                            >
+                              {t.common.delete}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1699,6 +1680,8 @@ const styles: Record<string, CSSProperties> = {
     color: "#854d0e",
     fontWeight: 700,
     fontSize: 14,
+    width: "100%",
+    maxWidth: 760,
   },
 
   outputCard: {
@@ -1762,13 +1745,20 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: 760,
   },
 
+  scenesStack: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    width: "100%",
+  },
+
   sceneCard: {
-    padding: 10,
+    padding: 12,
     borderRadius: 14,
     background: "#fff",
     border: "1px solid rgba(15,23,42,0.06)",
-    minWidth: 210,
-    maxWidth: 240,
+    width: "100%",
+    maxWidth: 520,
   },
 
   sceneCardActive: {
@@ -1778,10 +1768,10 @@ const styles: Record<string, CSSProperties> = {
 
   sceneThumbWrap: {
     width: "100%",
-    aspectRatio: "1 / 1",
+    aspectRatio: "16 / 9",
     borderRadius: 10,
     overflow: "hidden",
-    marginBottom: 8,
+    marginBottom: 10,
     background: "#f1f5f9",
   },
 
@@ -1801,9 +1791,9 @@ const styles: Record<string, CSSProperties> = {
 
   sceneThumbPlaceholder: {
     width: "100%",
-    aspectRatio: "1 / 1",
+    aspectRatio: "16 / 9",
     borderRadius: 10,
-    marginBottom: 8,
+    marginBottom: 10,
     background: "#e2e8f0",
     display: "grid",
     placeItems: "center",
@@ -1826,12 +1816,8 @@ const styles: Record<string, CSSProperties> = {
   sceneDescription: {
     color: "#64748b",
     fontSize: 11,
-    lineHeight: 1.35,
+    lineHeight: 1.45,
     minHeight: 42,
-    display: "-webkit-box",
-    WebkitLineClamp: 3,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
   },
 
   sceneActions: {
