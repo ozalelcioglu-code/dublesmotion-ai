@@ -37,8 +37,10 @@ type GenerationState =
       imageUrl?: string | null;
       videoId?: string | null;
       durationSec?: number;
+      actualClipDurationSec?: number;
       sceneImages?: string[];
       scenePrompts?: string[];
+      sceneVideoUrls?: string[];
       saveWarning?: string | null;
     }
   | { status: "error"; message: string };
@@ -166,9 +168,11 @@ function PageContent() {
     if (scenes.length > 0) {
       return scenes.reduce((acc, scene) => acc + scene.durationSec, 0);
     }
+
     if (generation.status === "done" && generation.durationSec) {
       return generation.durationSec;
     }
+
     return fallbackScenes.reduce((acc, scene) => acc + scene.durationSec, 0);
   }, [fallbackScenes, generation, scenes]);
 
@@ -335,21 +339,30 @@ function PageContent() {
         throw new Error("No video URL returned");
       }
 
-      const nextScenes: SceneCard[] = Array.isArray(data.scenePrompts)
-        ? data.scenePrompts.map((scenePrompt: string, index: number) => ({
-            id: `generated-scene-${index + 1}`,
-            title: `Scene ${index + 1}`,
-            description: scenePrompt,
-            durationSec: Math.max(
-              1,
-              Math.round((data.durationSec ?? 10) / data.scenePrompts.length)
-            ),
-            imageUrl: Array.isArray(data.sceneImages)
-              ? data.sceneImages[index] ?? null
-              : null,
-            videoUrl: null,
-          }))
+      const scenePrompts = Array.isArray(data.scenePrompts)
+        ? data.scenePrompts
         : [];
+      const sceneImages = Array.isArray(data.sceneImages)
+        ? data.sceneImages
+        : [];
+      const sceneVideoUrls = Array.isArray(data.sceneVideoUrls)
+        ? data.sceneVideoUrls
+        : [];
+      const actualClipDurationSec =
+        typeof data.actualClipDurationSec === "number"
+          ? data.actualClipDurationSec
+          : 7;
+
+      const nextScenes: SceneCard[] = scenePrompts.map(
+        (scenePrompt: string, index: number) => ({
+          id: `generated-scene-${index + 1}`,
+          title: `Scene ${index + 1}`,
+          description: scenePrompt,
+          durationSec: actualClipDurationSec,
+          imageUrl: sceneImages[index] ?? null,
+          videoUrl: sceneVideoUrls[index] ?? null,
+        })
+      );
 
       setScenes(nextScenes);
       setSelectedSceneId(nextScenes[0]?.id ?? null);
@@ -361,8 +374,10 @@ function PageContent() {
         imageUrl: data.imageUrl ?? null,
         videoId: data.videoId ?? null,
         durationSec: data.durationSec ?? 10,
-        sceneImages: Array.isArray(data.sceneImages) ? data.sceneImages : [],
-        scenePrompts: Array.isArray(data.scenePrompts) ? data.scenePrompts : [],
+        actualClipDurationSec,
+        sceneImages,
+        scenePrompts,
+        sceneVideoUrls,
         saveWarning: data.saveWarning ?? null,
       });
 
@@ -427,7 +442,8 @@ function PageContent() {
       utterance.voice = selected;
       utterance.lang = selected.lang;
     } else {
-      utterance.lang = language === "tr" ? "tr-TR" : language === "de" ? "de-DE" : "en-US";
+      utterance.lang =
+        language === "tr" ? "tr-TR" : language === "de" ? "de-DE" : "en-US";
     }
 
     utterance.onstart = () => setIsSpeaking(true);
@@ -536,7 +552,11 @@ function PageContent() {
             <button type="button" style={styles.generate} onClick={handleSpeak}>
               {t.voice.preview}
             </button>
-            <button type="button" style={styles.reset} onClick={handleStopSpeaking}>
+            <button
+              type="button"
+              style={styles.reset}
+              onClick={handleStopSpeaking}
+            >
               {t.voice.stop}
             </button>
           </div>
@@ -1761,5 +1781,12 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: "uppercase",
     letterSpacing: 0.4,
     color: "#334155",
+  },
+
+  accountMeta: {
+    fontSize: 13,
+    color: "#64748b",
+    fontWeight: 700,
+    lineHeight: 1.5,
   },
 };

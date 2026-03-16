@@ -26,6 +26,8 @@ export type GenerateContentResult =
       durationSec: number;
       sceneImages: string[];
       scenePrompts: string[];
+      sceneVideoUrls: string[];
+      actualClipDurationSec: number;
     }
   | {
       mode: "text_to_image";
@@ -35,6 +37,8 @@ export type GenerateContentResult =
       durationSec: number;
       sceneImages: string[];
       scenePrompts: string[];
+      sceneVideoUrls: string[];
+      actualClipDurationSec: number;
     }
   | {
       mode: "text_to_video";
@@ -45,6 +49,8 @@ export type GenerateContentResult =
       durationSec: number;
       sceneImages: string[];
       scenePrompts: string[];
+      sceneVideoUrls: string[];
+      actualClipDurationSec: number;
     };
 
 function requirePrompt(prompt?: string) {
@@ -111,6 +117,10 @@ async function generateSceneImages(
   return { scenePrompts, sceneImages };
 }
 
+function getRequestedSceneDuration(totalDurationSec: number, sceneCount: number) {
+  return Math.max(7, Math.round(totalDurationSec / Math.max(sceneCount, 1)));
+}
+
 export async function generateContent(
   input: GenerateContentInput
 ): Promise<GenerateContentResult> {
@@ -120,18 +130,30 @@ export async function generateContent(
     case "image_to_video": {
       const prompt = requirePrompt(input.prompt);
       const image = resolveImageSource(input);
+
       const { scenePrompts, sceneImages } = await generateSceneImages(
         prompt,
         input.negativePrompt,
         durationSec
       );
 
-      const videoUrl = await generateImageToVideo({
-        image,
-        prompt,
-        negativePrompt: input.negativePrompt,
+      const requestedSceneDuration = getRequestedSceneDuration(
         durationSec,
-      });
+        scenePrompts.length
+      );
+
+      const sceneVideoUrls = await Promise.all(
+        scenePrompts.map((scenePrompt, index) =>
+          generateImageToVideo({
+            image: sceneImages[index] ?? image,
+            prompt: scenePrompt,
+            negativePrompt: input.negativePrompt,
+            durationSec: requestedSceneDuration,
+          })
+        )
+      );
+
+      const videoUrl = sceneVideoUrls[0];
 
       return {
         mode: "image_to_video",
@@ -142,24 +164,38 @@ export async function generateContent(
         durationSec,
         sceneImages,
         scenePrompts,
+        sceneVideoUrls,
+        actualClipDurationSec: 7,
       };
     }
 
     case "url_to_video": {
       const prompt = requirePrompt(input.prompt);
       const image = resolveImageSource(input);
+
       const { scenePrompts, sceneImages } = await generateSceneImages(
         prompt,
         input.negativePrompt,
         durationSec
       );
 
-      const videoUrl = await generateImageToVideo({
-        image,
-        prompt,
-        negativePrompt: input.negativePrompt,
+      const requestedSceneDuration = getRequestedSceneDuration(
         durationSec,
-      });
+        scenePrompts.length
+      );
+
+      const sceneVideoUrls = await Promise.all(
+        scenePrompts.map((scenePrompt, index) =>
+          generateImageToVideo({
+            image: sceneImages[index] ?? image,
+            prompt: scenePrompt,
+            negativePrompt: input.negativePrompt,
+            durationSec: requestedSceneDuration,
+          })
+        )
+      );
+
+      const videoUrl = sceneVideoUrls[0];
 
       return {
         mode: "url_to_video",
@@ -170,11 +206,14 @@ export async function generateContent(
         durationSec,
         sceneImages,
         scenePrompts,
+        sceneVideoUrls,
+        actualClipDurationSec: 7,
       };
     }
 
     case "text_to_image": {
       const prompt = requirePrompt(input.prompt);
+
       const { scenePrompts, sceneImages } = await generateSceneImages(
         prompt,
         input.negativePrompt,
@@ -194,25 +233,38 @@ export async function generateContent(
         durationSec,
         sceneImages,
         scenePrompts,
+        sceneVideoUrls: [],
+        actualClipDurationSec: 0,
       };
     }
 
     case "text_to_video": {
       const prompt = requirePrompt(input.prompt);
+
       const { scenePrompts, sceneImages } = await generateSceneImages(
         prompt,
         input.negativePrompt,
         durationSec
       );
 
-      const imageUrl = sceneImages[0];
-
-      const videoUrl = await generateImageToVideo({
-        image: imageUrl,
-        prompt,
-        negativePrompt: input.negativePrompt,
+      const requestedSceneDuration = getRequestedSceneDuration(
         durationSec,
-      });
+        scenePrompts.length
+      );
+
+      const sceneVideoUrls = await Promise.all(
+        scenePrompts.map((scenePrompt, index) =>
+          generateImageToVideo({
+            image: sceneImages[index],
+            prompt: scenePrompt,
+            negativePrompt: input.negativePrompt,
+            durationSec: requestedSceneDuration,
+          })
+        )
+      );
+
+      const imageUrl = sceneImages[0];
+      const videoUrl = sceneVideoUrls[0];
 
       return {
         mode: "text_to_video",
@@ -223,6 +275,8 @@ export async function generateContent(
         durationSec,
         sceneImages,
         scenePrompts,
+        sceneVideoUrls,
+        actualClipDurationSec: 7,
       };
     }
 
