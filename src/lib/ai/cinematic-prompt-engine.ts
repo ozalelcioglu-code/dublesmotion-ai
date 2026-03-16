@@ -39,24 +39,24 @@ export type CinematicPlan = {
 const DEFAULT_NEGATIVE_PROMPT = [
   "low quality",
   "blurry",
-  "noise",
-  "grainy artifacts",
+  "noisy",
   "flicker",
   "jitter",
   "frame inconsistency",
   "warped objects",
-  "distorted anatomy",
-  "deformed hands",
+  "deformed anatomy",
   "extra limbs",
   "bad proportions",
-  "oversaturated colors",
+  "oversaturated",
   "flat lighting",
-  "cheap CGI look",
-  "cartoonish render",
+  "cheap CGI",
+  "cartoonish",
   "muddy details",
   "ghosting",
   "duplicate objects",
   "unstable motion",
+  "distorted face",
+  "distorted hands",
 ].join(", ");
 
 function clampSceneCount(count: number) {
@@ -84,26 +84,17 @@ function detectSceneCountByPlan(plan: string) {
   }
 }
 
-function getStylePreset(mode?: string) {
-  switch ((mode || "").toLowerCase()) {
-    case "product":
-      return "premium commercial product advertisement, ultra realistic, luxury branding, cinematic studio quality";
-    case "portrait":
-      return "cinematic portrait film look, ultra realistic skin detail, dramatic lighting, premium editorial quality";
-    case "realestate":
-      return "high-end architectural cinematic showcase, clean composition, luxury property film aesthetic";
-    default:
-      return "cinematic premium commercial, ultra realistic, filmic contrast, high production value, detailed textures";
-  }
+function getStylePreset() {
+  return "ultra realistic, cinematic lighting, high detail, premium commercial quality, filmic contrast";
 }
 
 function buildVisualAnchor(userPrompt: string) {
   return [
-    "Maintain the same core subject identity across all scenes",
-    `Primary subject and concept: ${userPrompt}`,
-    "Keep environment, mood, color tone, and subject design visually consistent",
-    "Preserve realism, premium cinematic look, and continuity between shots",
-  ].join(". ");
+    `main subject: ${userPrompt}`,
+    "keep the same subject identity across scenes",
+    "keep the same environment and mood across scenes",
+    "preserve visual continuity and realism",
+  ].join(", ");
 }
 
 function buildSceneBlueprints(sceneCount: number) {
@@ -116,31 +107,31 @@ function buildSceneBlueprints(sceneCount: number) {
     {
       shotType: "establishing",
       title: "Establishing Shot",
-      purpose: "Introduce the environment, mood, and visual world",
+      purpose: "Show the environment and overall cinematic setting",
       cameraMotion: "gentle pan right",
     },
     {
       shotType: "hero",
       title: "Hero Shot",
-      purpose: "Reveal the main subject in a premium cinematic way",
+      purpose: "Reveal the main subject clearly and beautifully",
       cameraMotion: "subtle push in",
     },
     {
       shotType: "action",
       title: "Action Shot",
-      purpose: "Show movement, energy, and dynamic storytelling",
+      purpose: "Show the main action or movement of the subject",
       cameraMotion: "smooth tracking shot",
     },
     {
       shotType: "detail",
       title: "Detail Shot",
-      purpose: "Highlight fine details, texture, and craftsmanship",
+      purpose: "Show close details, texture, materials, or expression",
       cameraMotion: "slow dolly in",
     },
     {
       shotType: "closing",
       title: "Closing Shot",
-      purpose: "End with a memorable cinematic final image",
+      purpose: "Create a strong final cinematic image",
       cameraMotion: "slow dolly out",
     },
   ];
@@ -148,41 +139,58 @@ function buildSceneBlueprints(sceneCount: number) {
   return presets.slice(0, sceneCount);
 }
 
-function shotTypePromptAddon(shotType: ShotType) {
+function shotTypeImageAddon(shotType: ShotType) {
   switch (shotType) {
     case "establishing":
-      return "wide cinematic establishing shot, immersive environment, balanced composition";
+      return "wide establishing shot, cinematic environment, balanced composition";
     case "hero":
-      return "hero shot, premium subject reveal, dramatic composition, striking focal emphasis";
+      return "hero shot, clear subject reveal, strong composition, visually striking";
     case "action":
-      return "dynamic action framing, cinematic motion energy, controlled movement, visually powerful";
+      return "dynamic action framing, energetic composition, realistic movement implied";
     case "detail":
-      return "close-up detail shot, texture emphasis, premium material detail, shallow depth of field";
+      return "close-up detail shot, texture focus, shallow depth of field";
     case "closing":
-      return "cinematic ending frame, emotionally strong final composition, memorable visual finish";
+      return "cinematic closing shot, memorable composition, elegant final frame";
     default:
       return "cinematic composition";
+  }
+}
+
+function shotTypeVideoAction(shotType: ShotType, prompt: string) {
+  switch (shotType) {
+    case "establishing":
+      return `${prompt}, show the environment clearly in a wide cinematic shot`;
+    case "hero":
+      return `${prompt}, reveal the main subject clearly with a premium cinematic look`;
+    case "action":
+      return `${prompt}, show the main action clearly with realistic motion`;
+    case "detail":
+      return `${prompt}, focus on close details of the subject`;
+    case "closing":
+      return `${prompt}, end with a strong cinematic final image`;
+    default:
+      return prompt;
   }
 }
 
 function motionPromptAddon(cameraMotion: CameraMotion) {
   switch (cameraMotion) {
     case "slow dolly in":
-      return "slow forward camera movement, smooth cinematic dolly in";
+      return "slow dolly in";
     case "slow dolly out":
-      return "slow backward camera movement, elegant cinematic dolly out";
+      return "slow dolly out";
     case "gentle pan left":
-      return "gentle cinematic pan to the left, smooth stable motion";
+      return "gentle pan left";
     case "gentle pan right":
-      return "gentle cinematic pan to the right, smooth stable motion";
+      return "gentle pan right";
     case "smooth tracking shot":
-      return "smooth cinematic tracking shot, stable motion, premium action feel";
+      return "smooth tracking shot";
     case "subtle push in":
-      return "subtle push-in movement, elegant cinematic emphasis";
+      return "subtle push in";
     case "cinematic orbit":
-      return "slow cinematic orbit movement around the subject, smooth controlled motion";
+      return "slow cinematic orbit";
     case "static cinematic frame":
-      return "mostly static cinematic frame with subtle natural motion";
+      return "mostly static cinematic frame";
     default:
       return "smooth cinematic movement";
   }
@@ -199,6 +207,49 @@ function getDurationPerScene(plan: string, sceneCount: number) {
   return 5;
 }
 
+function cleanPromptForModel(prompt: string) {
+  return prompt
+    .replace(/\s+/g, " ")
+    .replace(/[.]{2,}/g, ".")
+    .trim();
+}
+
+function buildImagePrompt(params: {
+  masterPrompt: string;
+  shotType: ShotType;
+  stylePreset: string;
+  visualAnchor: string;
+}) {
+  const parts = [
+    params.masterPrompt,
+    shotTypeImageAddon(params.shotType),
+    params.stylePreset,
+    "natural realistic textures",
+    "realistic lighting",
+    "clean composition",
+    "high subject clarity",
+    params.visualAnchor,
+  ];
+
+  return cleanPromptForModel(parts.join(", "));
+}
+
+function buildVideoPrompt(params: {
+  masterPrompt: string;
+  shotType: ShotType;
+  cameraMotion: CameraMotion;
+}) {
+  const parts = [
+    shotTypeVideoAction(params.shotType, params.masterPrompt),
+    motionPromptAddon(params.cameraMotion),
+    "realistic motion",
+    "stable camera",
+    "clear subject",
+  ];
+
+  return cleanPromptForModel(parts.join(", "));
+}
+
 export function buildCinematicPlan(input: {
   prompt: string;
   plan?: string;
@@ -209,39 +260,24 @@ export function buildCinematicPlan(input: {
   const plan = input.plan || "free";
   const detectedSceneCount = detectSceneCountByPlan(plan);
   const sceneCount = clampSceneCount(input.sceneCount ?? detectedSceneCount);
-  const stylePreset = getStylePreset(input.mode);
+  const stylePreset = getStylePreset();
   const visualAnchor = buildVisualAnchor(masterPrompt);
   const blueprints = buildSceneBlueprints(sceneCount);
   const durationSec = getDurationPerScene(plan, sceneCount);
 
   const scenes: CinematicScene[] = blueprints.map((bp, i) => {
-    const shotAddon = shotTypePromptAddon(bp.shotType);
-    const motionAddon = motionPromptAddon(bp.cameraMotion);
-
-    const imagePrompt = [
+    const imagePrompt = buildImagePrompt({
       masterPrompt,
-      shotAddon,
+      shotType: bp.shotType,
       stylePreset,
-      "ultra realistic",
-      "filmic lighting",
-      "high detail",
-      "natural depth of field",
-      "premium color grading",
-      "high-end commercial aesthetic",
       visualAnchor,
-    ].join(", ");
+    });
 
-    const videoPrompt = [
+    const videoPrompt = buildVideoPrompt({
       masterPrompt,
-      shotAddon,
-      motionAddon,
-      stylePreset,
-      "cinematic motion",
-      "stable composition",
-      "realistic movement",
-      "high-end advertisement quality",
-      visualAnchor,
-    ].join(", ");
+      shotType: bp.shotType,
+      cameraMotion: bp.cameraMotion,
+    });
 
     return {
       index: i + 1,
