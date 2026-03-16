@@ -4,14 +4,12 @@ import fs from "node:fs/promises";
 import { createWriteStream } from "node:fs";
 import { pipeline } from "node:stream/promises";
 import ffmpeg from "fluent-ffmpeg";
-import ffmpegPath from "ffmpeg-static";
+import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
 
-ffmpeg.setFfmpegPath(ffmpegPath as string);
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 
-if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(ffmpegPath);
-} 
+
 
 async function downloadFile(url: string, targetPath: string) {
   const res = await fetch(url);
