@@ -49,7 +49,7 @@ const BILLING_PLANS: BillingPlan[] = [
   {
     code: "agency",
     title: "Agency",
-    price: "$99",
+    price: "$249",
     subtitle: "Ajans ve yüksek hacimli kullanım için.",
     credits: "Sınırsıza yakın kullanım",
     duration: "30s",

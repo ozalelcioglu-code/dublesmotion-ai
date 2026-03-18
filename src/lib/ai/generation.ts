@@ -481,19 +481,16 @@ function buildVideoInput(params: {
 }) {
   const clipDuration = getClipDuration(params.durationSec);
 
-  // minimax/video-01-live gibi modeller "first_frame_image" bekliyor
   if (params.mode === "image_to_video" || params.mode === "logo_to_video") {
     return {
       prompt: params.prompt,
       negative_prompt: params.negativePrompt,
       first_frame_image: params.imageUrl,
-      // bazı I2V modeller aspect ratio'yu ilk kareden alır; göndermek sorun çıkarırsa kaldır
       aspect_ratio: ratioValue(params.ratio),
       duration: clipDuration,
     };
   }
 
-  // text/url tarafı
   return {
     prompt: params.prompt,
     negative_prompt: params.negativePrompt,
@@ -501,6 +498,7 @@ function buildVideoInput(params: {
     duration: clipDuration,
   };
 }
+
 function buildImageInput(params: {
   prompt: string;
   negativePrompt: string;
@@ -533,7 +531,9 @@ async function generateVideoWithReplicate(
 
   const finalPrompt =
     scenePrompts.length > 1
-      ? scenePrompts.join(" Then transition smoothly to the next scene. ")
+      ? scenePrompts.join(
+          " Then transition smoothly to the next scene while preserving subject continuity. "
+        )
       : masterPrompt;
 
   const model =
@@ -541,8 +541,6 @@ async function generateVideoWithReplicate(
       ? LOGO_VIDEO_MODEL
       : input.mode === "image_to_video"
       ? IMAGE_VIDEO_MODEL
-      : input.mode === "url_to_video"
-      ? TEXT_VIDEO_MODEL
       : TEXT_VIDEO_MODEL;
 
   const prediction = await createPrediction(
