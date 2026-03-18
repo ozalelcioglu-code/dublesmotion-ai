@@ -1,351 +1,492 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import AppPageShell from "../../components/AppPageShell";
+"use client";
 
-type Plan = {
-  code: string;
-  label: string;
-  monthlyVideoLimit: number | null;
-  usedThisMonth: number;
-  remainingCredits: number | null;
-  maxDurationSec: number;
-};
+import type { CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import AppSidebar from "../../components/AppSidebar";
+import { useSession } from "../../provider/SessionProvider";
+import { useLanguage } from "../../provider/LanguageProvider";
+type BillingPlanCode = "free" | "starter" | "pro" | "agency";
 
-type PaidPlanCode = "starter" | "pro" | "agency";
-
-export default function BillingPage() {
-  const [plan, setPlan] = useState<Plan | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const loadPlan = async () => {
-      try {
-        setError("");
-
-        const res = await fetch("/api/me", {
-          cache: "no-store",
-        });
-
-        const data = await res.json().catch(() => null);
-
-        if (!res.ok || !data?.ok || !data?.user) {
-          throw new Error(data?.error || "Failed to load billing info.");
-        }
-
-        setPlan({
-          code: data.user.plan,
-          label: data.user.planLabel,
-          monthlyVideoLimit: data.user.monthlyVideoLimit,
-          usedThisMonth: data.user.usedThisMonth,
-          remainingCredits: data.user.remainingCredits,
-          maxDurationSec: data.user.maxDurationSec,
-        });
-      } catch (err: any) {
-        setError(err?.message || "Billing information could not be loaded.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPlan();
-  }, []);
-
-  const upgrade = async (planCode: PaidPlanCode) => {
-    try {
-      setError("");
-      setCheckoutLoading(planCode);
-
-      const res = await fetch("/api/stripe/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ plan: planCode }),
-      });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok || !data?.ok || !data?.url) {
-        throw new Error(data?.error || "Could not start Stripe checkout.");
-      }
-
-      window.location.href = data.url;
-    } catch (err: any) {
-      setError(err?.message || "Checkout could not be started.");
-    } finally {
-      setCheckoutLoading(null);
-    }
-  };
-
-  return (
-    <AppPageShell
-      title="Faturalandırma"
-      subtitle="Abonelik planınızı, kullanım limitlerinizi ve yükseltme seçeneklerinizi yönetin."
-      showSidebar={true}
-    >
-      <div style={styles.page}>
-        {loading ? (
-          <div style={styles.infoBox}>Billing bilgileri yükleniyor...</div>
-        ) : null}
-
-        {error ? <div style={styles.errorBox}>{error}</div> : null}
-
-        {!loading && plan ? (
-          <>
-            <div className="billing-stats-grid">
-              <div style={styles.statCard}>
-                <div style={styles.statLabel}>Current Plan</div>
-                <div style={styles.statValue}>{plan.label}</div>
-              </div>
-
-              <div style={styles.statCard}>
-                <div style={styles.statLabel}>Used This Month</div>
-                <div style={styles.statValue}>{plan.usedThisMonth}</div>
-              </div>
-
-              <div style={styles.statCard}>
-                <div style={styles.statLabel}>Remaining Credits</div>
-                <div style={styles.statValue}>
-                  {plan.remainingCredits === null ? "∞" : plan.remainingCredits}
-                </div>
-              </div>
-
-              <div style={styles.statCard}>
-                <div style={styles.statLabel}>Max Duration</div>
-                <div style={styles.statValue}>{plan.maxDurationSec}s</div>
-              </div>
-            </div>
-
-            <div className="billing-plan-grid">
-              <PlanCard
-                title="Free"
-                price="$0"
-                desc="Platformu test etmek için."
-                videos="1 video / month"
-                duration="Up to 10 seconds"
-                active={plan.code === "free"}
-                disabled
-              />
-
-              <PlanCard
-                title="Starter"
-                price="$19"
-                desc="Solo creators and small teams."
-                videos="20 videos / month"
-                duration="Up to 20 seconds"
-                active={plan.code === "starter"}
-                loading={checkoutLoading === "starter"}
-                disabled={checkoutLoading !== null}
-                onClick={() => upgrade("starter")}
-              />
-
-              <PlanCard
-                title="Pro"
-                price="$49"
-                desc="Frequent campaign production."
-                videos="50 videos / month"
-                duration="Up to 30 seconds"
-                active={plan.code === "pro"}
-                loading={checkoutLoading === "pro"}
-                disabled={checkoutLoading !== null}
-                onClick={() => upgrade("pro")}
-              />
-
-              <PlanCard
-                title="Agency"
-                price="$149"
-                desc="Unlimited production for agencies."
-                videos="Unlimited videos"
-                duration="Up to 30 seconds"
-                active={plan.code === "agency"}
-                loading={checkoutLoading === "agency"}
-                disabled={checkoutLoading !== null}
-                onClick={() => upgrade("agency")}
-              />
-            </div>
-          </>
-        ) : null}
-      </div>
-    </AppPageShell>
-  );
-}
-
-function PlanCard({
-  title,
-  price,
-  desc,
-  videos,
-  duration,
-  active,
-  onClick,
-  loading,
-  disabled,
-}: {
+type BillingPlan = {
+  code: BillingPlanCode;
   title: string;
   price: string;
-  desc: string;
-  videos: string;
+  subtitle: string;
+  credits: string;
   duration: string;
-  active?: boolean;
-  onClick?: () => void;
-  loading?: boolean;
-  disabled?: boolean;
-}) {
-  return (
-    <div style={styles.card}>
-      <div style={styles.cardTitle}>{title}</div>
-      <div style={styles.cardPrice}>{price}</div>
-      <div style={styles.cardText}>{desc}</div>
-      <div style={styles.featureList}>
-        <div style={styles.featureItem}>{videos}</div>
-        <div style={styles.featureItem}>{duration}</div>
-      </div>
+  popular?: boolean;
+};
 
-      {active ? (
-        <button style={styles.currentButton} disabled>
-          Current Plan
-        </button>
-      ) : (
-        <button
+const BILLING_PLANS: BillingPlan[] = [
+  {
+    code: "free",
+    title: "Free",
+    price: "$0",
+    subtitle: "Platformu test etmek için.",
+    credits: "Sınırlı",
+    duration: "10s",
+  },
+  {
+    code: "starter",
+    title: "Starter",
+    price: "$19",
+    subtitle: "Başlangıç düzeyi içerik üretimi için.",
+    credits: "Aylık limitli",
+    duration: "20s",
+  },
+  {
+    code: "pro",
+    title: "Pro",
+    price: "$49",
+    subtitle: "Düzenli üretim yapan profesyoneller için.",
+    credits: "Daha yüksek limit",
+    duration: "30s",
+    popular: true,
+  },
+  {
+    code: "agency",
+    title: "Agency",
+    price: "$99",
+    subtitle: "Ajans ve yüksek hacimli kullanım için.",
+    credits: "Sınırsıza yakın kullanım",
+    duration: "30s",
+  },
+];
+
+export default function BillingPage() {
+  const router = useRouter();
+  const { user, isAuthenticated } = useSession();
+  const { t } = useLanguage();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 980);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const currentPlanCode = (user?.planCode || "free") as BillingPlanCode;
+
+  const currentPlan = useMemo(() => {
+    return (
+      BILLING_PLANS.find((plan) => plan.code === currentPlanCode) ||
+      BILLING_PLANS[0]
+    );
+  }, [currentPlanCode]);
+
+  const remainingCreditsText =
+    user?.remainingCredits === null
+      ? "∞"
+      : String(user?.remainingCredits ?? 0);
+
+  const usedThisMonth =
+    typeof user?.usedThisMonth === "number" ? user.usedThisMonth : 0;
+
+  const maxDuration = `${user?.maxDurationSec ?? 10}s`;
+
+  return (
+    <div
+      style={{
+        ...styles.root,
+        flexDirection: isMobile ? "column" : "row",
+      }}
+    >
+      <AppSidebar activeKey="tool" onSelect={() => router.push("/")} />
+
+      <main
+        style={{
+          ...styles.main,
+          padding: isMobile ? 14 : 24,
+        }}
+      >
+        <section
           style={{
-            ...styles.primaryButton,
-            ...(disabled ? styles.disabledButton : {}),
+            ...styles.hero,
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: isMobile ? "flex-start" : "center",
+            gap: isMobile ? 12 : 18,
           }}
-          onClick={onClick}
-          disabled={disabled}
         >
-          {loading ? "Redirecting..." : `Choose ${title}`}
-        </button>
-      )}
+          <div style={styles.heroBadge}>
+            <img
+              src="/logo.png"
+              alt="Duble-S Motion"
+              style={styles.heroLogo}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
+
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={styles.kicker}>DUBLE-S MOTION</div>
+            <h1
+              style={{
+                ...styles.title,
+                fontSize: isMobile ? 32 : 46,
+                lineHeight: isMobile ? 1.05 : 1.02,
+              }}
+            >
+              Faturalandırma
+            </h1>
+            <p
+              style={{
+                ...styles.subtitle,
+                maxWidth: 760,
+              }}
+            >
+              Abonelik planınızı, kullanım limitlerinizi ve yükseltme
+              seçeneklerinizi yönetin.
+            </p>
+          </div>
+        </section>
+
+        <section
+          style={{
+            ...styles.summaryGrid,
+            gridTemplateColumns: isMobile
+              ? "1fr"
+              : "repeat(4, minmax(0, 1fr))",
+          }}
+        >
+          <div style={styles.summaryCard}>
+            <div style={styles.summaryLabel}>CURRENT PLAN</div>
+            <div style={styles.summaryValue}>{currentPlan.title}</div>
+          </div>
+
+          <div style={styles.summaryCard}>
+            <div style={styles.summaryLabel}>USED THIS MONTH</div>
+            <div style={styles.summaryValue}>{usedThisMonth}</div>
+          </div>
+
+          <div style={styles.summaryCard}>
+            <div style={styles.summaryLabel}>REMAINING CREDITS</div>
+            <div style={styles.summaryValue}>{remainingCreditsText}</div>
+          </div>
+
+          <div style={styles.summaryCard}>
+            <div style={styles.summaryLabel}>MAX DURATION</div>
+            <div style={styles.summaryValue}>{maxDuration}</div>
+          </div>
+        </section>
+
+        <section
+          style={{
+            ...styles.planGrid,
+            gridTemplateColumns: isMobile
+              ? "1fr"
+              : "repeat(auto-fit, minmax(250px, 1fr))",
+          }}
+        >
+          {BILLING_PLANS.map((plan) => {
+            const isCurrent = currentPlan.code === plan.code;
+
+            return (
+              <article
+                key={plan.code}
+                style={{
+                  ...styles.planCard,
+                  ...(plan.popular ? styles.planCardPopular : {}),
+                  ...(isCurrent ? styles.planCardCurrent : {}),
+                }}
+              >
+                <div style={styles.planTopRow}>
+                  <div>
+                    <div style={styles.planName}>{plan.title}</div>
+                    <div style={styles.planPrice}>{plan.price}</div>
+                  </div>
+
+                  {plan.popular ? (
+                    <div style={styles.popularBadge}>Popular</div>
+                  ) : null}
+                </div>
+
+                <div style={styles.planSubtitle}>{plan.subtitle}</div>
+
+                <div style={styles.planMeta}>
+                  <div style={styles.planMetaRow}>
+                    <span>Kredi</span>
+                    <strong>{plan.credits}</strong>
+                  </div>
+                  <div style={styles.planMetaRow}>
+                    <span>Maks. süre</span>
+                    <strong>{plan.duration}</strong>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isCurrent}
+                  style={{
+                    ...styles.planButton,
+                    ...(isCurrent ? styles.planButtonDisabled : {}),
+                  }}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      router.push("/login");
+                      return;
+                    }
+                    router.push(`/checkout?plan=${plan.code}`);
+                  }}
+                >
+                  {isCurrent ? "Aktif Plan" : `${plan.title} Planını Seç`}
+                </button>
+              </article>
+            );
+          })}
+        </section>
+
+        <section
+          style={{
+            ...styles.bottomInfoGrid,
+            gridTemplateColumns: isMobile ? "1fr" : "1.25fr 0.75fr",
+          }}
+        >
+          <div style={styles.infoCard}>
+            <div style={styles.infoTitle}>Plan Bilgileri</div>
+            <div style={styles.infoText}>
+              Starter, Pro ve Agency planlarıyla daha uzun video süreleri,
+              yüksek aylık üretim limiti ve daha güçlü çalışma akışı
+              kullanabilirsiniz.
+            </div>
+          </div>
+
+          <div style={styles.infoCard}>
+            <div style={styles.infoTitle}>Destek</div>
+            <div style={styles.infoText}>
+              Ödeme veya abonelik sorunu yaşarsanız support bölümünden ya da
+              iletişim adresinizden bize ulaşabilirsiniz.
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  page: {
+const styles: Record<string, CSSProperties> = {
+  root: {
     display: "flex",
-    flexDirection: "column",
-    gap: 24,
-  },
-
-  infoBox: {
-    padding: 16,
-    borderRadius: 16,
-    background: "rgba(255,255,255,0.82)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    color: "#334155",
-    fontWeight: 700,
-  },
-
-  errorBox: {
-    padding: 16,
-    borderRadius: 16,
-    background: "rgba(254,226,226,0.9)",
-    border: "1px solid rgba(239,68,68,0.16)",
-    color: "#b91c1c",
-    fontWeight: 700,
-  },
-
-  statCard: {
-    padding: 18,
-    borderRadius: 20,
-    background: "rgba(255,255,255,0.80)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 16px 40px rgba(15,23,42,0.06)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-
-  statLabel: {
-    fontSize: 12,
-    fontWeight: 800,
-    color: "#64748b",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-
-  statValue: {
-    fontSize: 30,
-    fontWeight: 900,
+    minHeight: "100vh",
+    background:
+      "linear-gradient(135deg, #f7f9ff 0%, #eef3ff 42%, #f5f3ff 100%)",
     color: "#0f172a",
   },
 
-  card: {
-    padding: 22,
-    borderRadius: 24,
-    background: "rgba(255,255,255,0.82)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 20px 44px rgba(15,23,42,0.08)",
+  main: {
+    flex: 1,
     display: "flex",
     flexDirection: "column",
-    gap: 14,
+    gap: 20,
+    minWidth: 0,
   },
 
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 900,
-    color: "#0f172a",
+  hero: {
+    display: "flex",
+    padding: 0,
+    minWidth: 0,
   },
 
-  cardPrice: {
-    fontSize: 42,
-    fontWeight: 950,
-    color: "#0f172a",
-  },
-
-  cardText: {
-    color: "#64748b",
-    fontSize: 14,
-    lineHeight: 1.6,
-    minHeight: 42,
-  },
-
-  featureList: {
+  heroBadge: {
+    width: 84,
+    height: 84,
+    borderRadius: 22,
+    background: "rgba(255,255,255,0.96)",
+    border: "1px solid rgba(15,23,42,0.06)",
+    boxShadow: "0 12px 28px rgba(15,23,42,0.06)",
     display: "grid",
-    gap: 10,
-    marginTop: 4,
+    placeItems: "center",
+    flexShrink: 0,
+  },
+
+  heroLogo: {
+    width: 56,
+    height: 56,
+    objectFit: "contain",
+    borderRadius: 12,
+  },
+
+  kicker: {
+    fontSize: 12,
+    fontWeight: 900,
+    color: "#64748b",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+
+  title: {
+    margin: 0,
+    fontWeight: 900,
+    color: "#0f172a",
+    letterSpacing: -1.2,
+  },
+
+  subtitle: {
+    margin: "10px 0 0 0",
+    fontSize: 15,
+    lineHeight: 1.6,
+    color: "#64748b",
+  },
+
+  summaryGrid: {
+    display: "grid",
+    gap: 16,
+  },
+
+  summaryCard: {
+    padding: 28,
+    borderRadius: 28,
+    background: "rgba(255,255,255,0.94)",
+    border: "1px solid rgba(15,23,42,0.06)",
+    boxShadow: "0 12px 28px rgba(15,23,42,0.05)",
+    minWidth: 0,
+  },
+
+  summaryLabel: {
+    fontSize: 13,
+    fontWeight: 900,
+    color: "#64748b",
+    letterSpacing: 1,
+    marginBottom: 18,
+  },
+
+  summaryValue: {
+    fontSize: 34,
+    lineHeight: 1,
+    fontWeight: 900,
+    color: "#0f172a",
+    wordBreak: "break-word",
+  },
+
+  planGrid: {
+    display: "grid",
+    gap: 18,
+  },
+
+  planCard: {
+    position: "relative",
+    padding: 28,
+    borderRadius: 28,
+    background: "rgba(255,255,255,0.96)",
+    border: "1px solid rgba(15,23,42,0.06)",
+    boxShadow: "0 12px 28px rgba(15,23,42,0.05)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 18,
+    minWidth: 0,
+  },
+
+  planCardPopular: {
+    border: "1px solid rgba(109,93,252,0.22)",
+    boxShadow: "0 16px 36px rgba(109,93,252,0.10)",
+  },
+
+  planCardCurrent: {
+    outline: "3px solid rgba(15,23,42,0.06)",
+  },
+
+  planTopRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+
+  planName: {
+    fontSize: 20,
+    fontWeight: 900,
+    color: "#0f172a",
     marginBottom: 8,
   },
 
-  featureItem: {
-    padding: "12px 14px",
-    borderRadius: 14,
-    background: "#f8fafc",
-    border: "1px solid rgba(15,23,42,0.06)",
-    color: "#334155",
-    fontWeight: 700,
-    fontSize: 14,
+  planPrice: {
+    fontSize: 56,
+    fontWeight: 900,
+    lineHeight: 1,
+    color: "#0f172a",
   },
 
-  primaryButton: {
-    marginTop: "auto",
-    padding: "14px 16px",
-    borderRadius: 14,
-    border: "1px solid transparent",
+  popularBadge: {
+    padding: "8px 12px",
+    borderRadius: 999,
     background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
     color: "#fff",
+    fontSize: 12,
     fontWeight: 900,
-    cursor: "pointer",
-    boxShadow: "0 14px 28px rgba(77,182,255,0.18)",
+    whiteSpace: "nowrap",
   },
 
-  currentButton: {
+  planSubtitle: {
+    fontSize: 15,
+    lineHeight: 1.6,
+    color: "#64748b",
+  },
+
+  planMeta: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    padding: 16,
+    borderRadius: 18,
+    background: "#f8fafc",
+    border: "1px solid rgba(15,23,42,0.05)",
+  },
+
+  planMetaRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    fontSize: 14,
+    color: "#475569",
+  },
+
+  planButton: {
     marginTop: "auto",
-    padding: "14px 16px",
-    borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#e2e8f0",
-    color: "#334155",
+    minHeight: 50,
+    borderRadius: 16,
+    border: "none",
+    background: "#0f172a",
+    color: "#fff",
     fontWeight: 900,
+    fontSize: 15,
+    cursor: "pointer",
+    width: "100%",
+  },
+
+  planButtonDisabled: {
+    background: "#e2e8f0",
+    color: "#475569",
     cursor: "default",
   },
 
-  disabledButton: {
-    opacity: 0.6,
-    cursor: "not-allowed",
+  bottomInfoGrid: {
+    display: "grid",
+    gap: 16,
+  },
+
+  infoCard: {
+    padding: 24,
+    borderRadius: 24,
+    background: "rgba(255,255,255,0.92)",
+    border: "1px solid rgba(15,23,42,0.06)",
+    boxShadow: "0 10px 22px rgba(15,23,42,0.04)",
+  },
+
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: 900,
+    color: "#0f172a",
+    marginBottom: 10,
+  },
+
+  infoText: {
+    fontSize: 14,
+    lineHeight: 1.7,
+    color: "#64748b",
   },
 };

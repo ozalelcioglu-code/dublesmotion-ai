@@ -479,20 +479,28 @@ function buildVideoInput(params: {
   durationSec: number;
   ratio?: string;
 }) {
-  const baseInput: Record<string, unknown> = {
+  const clipDuration = getClipDuration(params.durationSec);
+
+  // minimax/video-01-live gibi modeller "first_frame_image" bekliyor
+  if (params.mode === "image_to_video" || params.mode === "logo_to_video") {
+    return {
+      prompt: params.prompt,
+      negative_prompt: params.negativePrompt,
+      first_frame_image: params.imageUrl,
+      // bazı I2V modeller aspect ratio'yu ilk kareden alır; göndermek sorun çıkarırsa kaldır
+      aspect_ratio: ratioValue(params.ratio),
+      duration: clipDuration,
+    };
+  }
+
+  // text/url tarafı
+  return {
     prompt: params.prompt,
     negative_prompt: params.negativePrompt,
     aspect_ratio: ratioValue(params.ratio),
-    duration: getClipDuration(params.durationSec),
+    duration: clipDuration,
   };
-
-  if (params.mode === "image_to_video" || params.mode === "logo_to_video") {
-    baseInput.image = params.imageUrl;
-  }
-
-  return baseInput;
 }
-
 function buildImageInput(params: {
   prompt: string;
   negativePrompt: string;

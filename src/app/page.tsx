@@ -131,7 +131,8 @@ function PageContent() {
 
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [mobileWorkspaceMenuOpen, setMobileWorkspaceMenuOpen] = useState(false);
+  const [mobileWorkspaceMenuOpen, setMobileWorkspaceMenuOpen] =
+    useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileWorkspaceMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -420,19 +421,17 @@ function PageContent() {
       const payload: Record<string, unknown> = {
         mode: videoMode,
         style: styleUi,
+        ratio: ratioUi,
       };
 
       if (videoMode === "text_to_video") {
         payload.prompt = prompt;
-        payload.ratio = ratioUi;
       } else if (videoMode === "url_to_video") {
         payload.prompt = prompt;
         payload.sourceUrl = sourceUrl;
-        payload.ratio = ratioUi;
       } else if (videoMode === "image_to_video") {
         payload.prompt = prompt;
         payload.imageUrl = uploadedImageUrl;
-        payload.ratio = ratioUi;
       } else if (videoMode === "logo_to_video") {
         payload.prompt =
           prompt.trim() || "clean premium technology logo reveal";
@@ -566,7 +565,8 @@ function PageContent() {
     } catch (error) {
       setMusicGeneration({
         status: "error",
-        message: error instanceof Error ? error.message : "Music generation failed",
+        message:
+          error instanceof Error ? error.message : "Music generation failed",
       });
     }
   };
@@ -967,7 +967,7 @@ function PageContent() {
           </div>
         ) : null}
 
-        {videoMode === "image_to_video" || videoMode === "logo_to_video" ? (
+        {(videoMode === "image_to_video" || videoMode === "logo_to_video") && (
           <div style={styles.inputGroup}>
             <label style={styles.label}>
               {videoMode === "logo_to_video"
@@ -1015,7 +1015,7 @@ function PageContent() {
               </div>
             ) : null}
           </div>
-        ) : null}
+        )}
 
         <div style={styles.inputGroup}>
           <label style={styles.label}>Style</label>
@@ -1033,7 +1033,7 @@ function PageContent() {
           </select>
         </div>
 
-        {videoMode !== "logo_to_video" ? (
+        {videoMode !== "logo_to_video" && (
           <div style={styles.inputGroup}>
             <label style={styles.label}>{t.home.ratioLabel}</label>
             <select
@@ -1046,7 +1046,7 @@ function PageContent() {
               <option value="9:16">9:16</option>
             </select>
           </div>
-        ) : null}
+        )}
 
         <div style={styles.controls}>
           <button type="button" style={styles.reset} onClick={handleResetVideo}>
@@ -1391,17 +1391,9 @@ function PageContent() {
   };
 
   const renderWorkspaceBody = () => {
-    if (workspaceTab === "voice") {
-      return renderVoiceWorkspace();
-    }
-
-    if (workspaceTab === "music") {
-      return renderMusicWorkspace();
-    }
-
-    if (workspaceTab === "music_video") {
-      return renderMusicVideoWorkspace();
-    }
+    if (workspaceTab === "voice") return renderVoiceWorkspace();
+    if (workspaceTab === "music") return renderMusicWorkspace();
+    if (workspaceTab === "music_video") return renderMusicVideoWorkspace();
 
     if (workspaceTab === "support") {
       return (
@@ -1653,7 +1645,7 @@ function PageContent() {
                       </strong>
                     </div>
 
-                    {workspaceTab === "video" ? (
+                    {workspaceTab === "video" && (
                       <>
                         <div style={styles.infoRow}>
                           <span style={styles.infoLabel}>{t.home.mode}</span>
@@ -1695,9 +1687,9 @@ function PageContent() {
                           </a>
                         ) : null}
                       </>
-                    ) : null}
+                    )}
 
-                    {workspaceTab === "music" ? (
+                    {workspaceTab === "music" && (
                       <>
                         <div style={styles.infoRow}>
                           <span style={styles.infoLabel}>Title</span>
@@ -1737,9 +1729,9 @@ function PageContent() {
                           </a>
                         ) : null}
                       </>
-                    ) : null}
+                    )}
 
-                    {workspaceTab === "music_video" ? (
+                    {workspaceTab === "music_video" && (
                       <>
                         <div style={styles.infoRow}>
                           <span style={styles.infoLabel}>Source audio</span>
@@ -1781,9 +1773,9 @@ function PageContent() {
                           </a>
                         ) : null}
                       </>
-                    ) : null}
+                    )}
 
-                    {workspaceTab === "voice" ? (
+                    {workspaceTab === "voice" && (
                       <>
                         <div style={styles.infoRow}>
                           <span style={styles.infoLabel}>Voices loaded</span>
@@ -1799,7 +1791,7 @@ function PageContent() {
                           </span>
                         </div>
                       </>
-                    ) : null}
+                    )}
                   </div>
                 </div>
 
@@ -1890,16 +1882,16 @@ function PageContent() {
                     </div>
                   )}
 
-                  {workspaceTab === "music" && musicGeneration.status === "done" ? (
+                  {workspaceTab === "music" && musicGeneration.status === "done" && (
                     <div style={styles.scenesRailCard}>
                       <div style={styles.cardTitle}>Lyrics Preview</div>
                       <div style={styles.lyricsBox}>
                         {musicGeneration.lyrics || "No lyrics available."}
                       </div>
                     </div>
-                  ) : null}
+                  )}
 
-                  {workspaceTab === "voice" ? (
+                  {workspaceTab === "voice" && (
                     <div style={styles.scenesRailCard}>
                       <div style={styles.cardTitle}>Voice Notes</div>
                       <div style={styles.smallNote}>
@@ -1907,7 +1899,7 @@ function PageContent() {
                         advanced voice pipeline için hazır bırakıldı.
                       </div>
                     </div>
-                  ) : null}
+                  )}
                 </div>
               </div>
             </div>
@@ -1955,9 +1947,6 @@ function PageContent() {
             style={{
               ...styles.topBarRight,
               width: isMobileViewport ? "100%" : "auto",
-              justifyContent: isMobileViewport ? "stretch" : "flex-end",
-              display: "grid",
-              gridTemplateColumns: isMobileViewport ? "1fr" : undefined,
             }}
           >
             {renderWorkspaceMenu()}
@@ -2208,6 +2197,7 @@ const styles: Record<string, CSSProperties> = {
   topBarRight: {
     display: "flex",
     alignItems: "center",
+    justifyContent: "flex-end",
     gap: 10,
     flexWrap: "wrap",
     minWidth: 0,
@@ -2217,19 +2207,23 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: 8,
-    flexWrap: "wrap",
+    flexWrap: "nowrap",
+    overflowX: "auto",
+    paddingBottom: 2,
+    maxWidth: "100%",
   },
 
   workspaceTopTab: {
-    padding: "9px 12px",
-    borderRadius: 12,
+    padding: "10px 14px",
+    borderRadius: 14,
     border: "1px solid rgba(15,23,42,0.08)",
-    background: "rgba(255,255,255,0.96)",
+    background: "#fff",
     color: "#0f172a",
     fontWeight: 800,
-    fontSize: 13,
+    fontSize: 14,
     cursor: "pointer",
-    minHeight: 40,
+    whiteSpace: "nowrap",
+    flexShrink: 0,
   },
 
   workspaceTopTabActive: {
@@ -2291,15 +2285,17 @@ const styles: Record<string, CSSProperties> = {
   },
 
   topActionButton: {
-    padding: "9px 12px",
-    borderRadius: 12,
+    padding: "10px 14px",
+    borderRadius: 14,
     border: "1px solid rgba(15,23,42,0.08)",
     background: "rgba(255,255,255,0.96)",
     color: "#0f172a",
     fontWeight: 800,
-    fontSize: 13,
+    fontSize: 14,
     cursor: "pointer",
-    minHeight: 40,
+    minHeight: 42,
+    whiteSpace: "nowrap",
+    flexShrink: 0,
   },
 
   topActionButtonActive: {
@@ -2337,6 +2333,7 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: "flex-end",
     alignItems: "flex-start",
     minWidth: 0,
+    flexShrink: 0,
   },
 
   accountMiniButton: {
@@ -2349,8 +2346,9 @@ const styles: Record<string, CSSProperties> = {
     padding: "8px 10px",
     cursor: "pointer",
     boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
-    minWidth: 180,
+    minWidth: 170,
     maxWidth: "100%",
+    flexShrink: 0,
   },
 
   accountMiniAvatar: {
