@@ -113,7 +113,7 @@ export default function BillingPage() {
         >
           <div style={styles.heroBadge}>
             <img
-              src="/logo.png"
+              src="/Dubleslogo.png"
               alt="Duble-S Motion"
               style={styles.heroLogo}
               onError={(e) => {
