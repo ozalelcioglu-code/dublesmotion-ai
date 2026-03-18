@@ -230,7 +230,7 @@ export default function BillingPage() {
                       router.push("/login");
                       return;
                     }
-                    router.push(`/checkout?plan=${plan.code}`);
+                    router.push(`/billing/checkout?plan=${plan.code}`);
                   }}
                 >
                   {isCurrent ? "Aktif Plan" : `${plan.title} Planını Seç`}
