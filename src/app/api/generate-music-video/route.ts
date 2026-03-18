@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { generateContent } from "../../../lib/ai/generation";
 import { auth } from "../../../lib/auth";
 import { getSql } from "../../../lib/db";
+import { generateMusicVideo } from "../../../lib/ai/music-video-generation";
 import {
   ensureUserProfile,
   getResolvedUserPlan,
@@ -14,18 +14,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const RequestSchema = z.object({
-  mode: z.enum([
-    "image_to_video",
-    "url_to_video",
-    "text_to_image",
-    "text_to_video",
-    "logo_to_video",
-  ]),
-  prompt: z.string().min(3).optional(),
-  negativePrompt: z.string().optional(),
-  imageUrl: z.string().url().optional(),
-  sourceUrl: z.string().url().optional(),
-  projectId: z.string().optional(),
+  audioUrl: z.string().url(),
+  prompt: z.string().min(3),
+  lyrics: z.string().optional(),
+  title: z.string().optional(),
   ratio: z.enum(["1:1", "16:9", "9:16"]).optional(),
   style: z
     .enum([
@@ -37,6 +29,7 @@ const RequestSchema = z.object({
       "cartoon",
     ])
     .optional(),
+  projectId: z.string().optional(),
 });
 
 function createSeed() {
@@ -56,33 +49,15 @@ function getPlanDurationSec(plan: string) {
   }
 }
 
-function makeVideoTitle(prompt?: string) {
-  const clean = (prompt || "AI Video").trim().replace(/\s+/g, " ");
-  if (!clean) return "AI Video";
-  return clean.length > 80 ? `${clean.slice(0, 80)}...` : clean;
-}
-
-function toDbMode(
-  mode:
-    | "image_to_video"
-    | "url_to_video"
-    | "text_to_image"
-    | "text_to_video"
-    | "logo_to_video"
-) {
-  switch (mode) {
-    case "text_to_video":
-    case "text_to_image":
-      return "text";
-    case "image_to_video":
-      return "image";
-    case "url_to_video":
-      return "url";
-    case "logo_to_video":
-      return "image";
-    default:
-      return "text";
+function makeVideoTitle(title?: string, prompt?: string) {
+  const preferred = (title || "").trim();
+  if (preferred) {
+    return preferred.length > 80 ? `${preferred.slice(0, 80)}...` : preferred;
   }
+
+  const clean = (prompt || "Music Video").trim().replace(/\s+/g, " ");
+  if (!clean) return "Music Video";
+  return clean.length > 80 ? `${clean.slice(0, 80)}...` : clean;
 }
 
 export async function POST(req: Request) {
@@ -96,7 +71,7 @@ export async function POST(req: Request) {
         {
           ok: false,
           code: "UNAUTHORIZED",
-          error: "You must be logged in to generate content.",
+          error: "You must be logged in to generate music videos.",
         },
         { status: 401 }
       );
@@ -104,33 +79,6 @@ export async function POST(req: Request) {
 
     const json = await req.json();
     const input = RequestSchema.parse(json);
-
-    if (input.mode === "logo_to_video" && !input.imageUrl && !input.sourceUrl) {
-      return NextResponse.json(
-        {
-          ok: false,
-          code: "LOGO_IMAGE_REQUIRED",
-          error: "Logo Animation Mode requires an uploaded logo image.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (
-      input.mode !== "logo_to_video" &&
-      input.mode !== "image_to_video" &&
-      input.mode !== "url_to_video" &&
-      !input.prompt?.trim()
-    ) {
-      return NextResponse.json(
-        {
-          ok: false,
-          code: "PROMPT_REQUIRED",
-          error: "Prompt is required for this generation mode.",
-        },
-        { status: 400 }
-      );
-    }
 
     await ensureUserProfile({
       userId: session.user.id,
@@ -160,19 +108,13 @@ export async function POST(req: Request) {
     const activePlan = planInfo.plan;
     const targetDurationSec = getPlanDurationSec(activePlan);
 
-    const result = await generateContent({
-      mode: input.mode,
-      prompt:
-        input.prompt ||
-        (input.mode === "logo_to_video"
-          ? "clean premium technology logo reveal"
-          : undefined),
-      negativePrompt: input.negativePrompt,
-      imageUrl: input.imageUrl,
-      sourceUrl: input.sourceUrl,
-      durationSec: targetDurationSec,
+    const result = await generateMusicVideo({
+      audioUrl: input.audioUrl,
+      prompt: input.prompt,
+      lyrics: input.lyrics,
+      title: input.title,
       ratio: input.ratio ?? "16:9",
-      plan: activePlan,
+      durationSec: targetDurationSec,
       style: input.style,
     });
 
@@ -180,18 +122,11 @@ export async function POST(req: Request) {
 
     const videoId = crypto.randomUUID();
     const seed = createSeed();
-    const title = makeVideoTitle(
-      input.prompt ||
-        (input.mode === "logo_to_video" ? "Logo Animation" : "AI Video")
-    );
-    const dbMode = toDbMode(input.mode);
-
-    const finalVideoUrl = "videoUrl" in result ? result.videoUrl : null;
-    const finalImageUrl = "imageUrl" in result ? result.imageUrl ?? null : null;
+    const title = makeVideoTitle(input.title, input.prompt);
 
     let saveWarning: string | null = null;
 
-    if (finalVideoUrl) {
+    if (result.videoUrl) {
       try {
         await sql`
           insert into videos (
@@ -216,18 +151,13 @@ export async function POST(req: Request) {
             ${session.user.id},
             ${input.projectId ?? null},
             ${title},
-            ${dbMode},
-            ${
-              input.prompt ||
-              (input.mode === "logo_to_video"
-                ? "clean premium technology logo reveal"
-                : "AI Video")
-            },
+            ${"music"},
+            ${input.prompt},
             ${result.model},
             ${seed},
             ${"ready"},
-            ${finalVideoUrl},
-            ${finalImageUrl},
+            ${result.videoUrl},
+            ${null},
             ${0},
             ${result.durationSec},
             now() + interval '30 days',
@@ -235,9 +165,9 @@ export async function POST(req: Request) {
           )
         `;
       } catch (saveErr: any) {
-        console.error("Video generated but DB save failed:", saveErr);
+        console.error("Music video generated but DB save failed:", saveErr);
         saveWarning =
-          saveErr?.message || "Video was generated but could not be saved.";
+          saveErr?.message || "Music video was generated but could not be saved.";
       }
     }
 
@@ -253,9 +183,9 @@ export async function POST(req: Request) {
         mode: result.mode,
         provider: result.provider,
         model: result.model,
-        imageUrl: "imageUrl" in result ? result.imageUrl ?? null : null,
-        videoUrl: "videoUrl" in result ? result.videoUrl : null,
-        videoId: finalVideoUrl ? videoId : null,
+        imageUrl: result.imageUrl ?? null,
+        videoUrl: result.videoUrl,
+        videoId: result.videoUrl ? videoId : null,
         durationSec: result.durationSec,
         sceneImages: result.sceneImages,
         scenePrompts: result.scenePrompts,
@@ -274,14 +204,14 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (err: any) {
-    console.error("Unified generation failed:", err);
+    console.error("Music video generation failed:", err);
 
     if (err?.name === "ZodError") {
       return NextResponse.json(
         {
           ok: false,
           code: "INVALID_REQUEST",
-          error: "Invalid generation request payload.",
+          error: "Invalid music video generation request payload.",
         },
         { status: 400 }
       );
@@ -291,7 +221,7 @@ export async function POST(req: Request) {
       {
         ok: false,
         code: "GENERATION_FAILED",
-        error: err?.message ?? "Generation failed",
+        error: err?.message ?? "Music video generation failed",
       },
       { status: 500 }
     );

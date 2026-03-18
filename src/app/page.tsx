@@ -16,14 +16,14 @@ import { useLanguage } from "../provider/LanguageProvider";
 import { LANGUAGE_LABELS, type AppLanguage } from "../lib/i18n";
 import AppSidebar from "../components/AppSidebar";
 
-type Mode =
+type VideoMode =
   | "text_to_video"
   | "url_to_video"
   | "image_to_video"
   | "logo_to_video";
 
 type NavKey = "tool" | "apps" | "chat" | "flow" | "live";
-type WorkspaceTab = "video" | "voice" | "support";
+type WorkspaceTab = "video" | "voice" | "music" | "music_video" | "support";
 
 type VideoStyle =
   | "realistic"
@@ -42,7 +42,7 @@ type SceneCard = {
   videoUrl?: string | null;
 };
 
-type GenerationState =
+type VideoGenerationState =
   | { status: "idle" }
   | { status: "loading"; phase: string }
   | {
@@ -55,6 +55,19 @@ type GenerationState =
       sceneImages?: string[];
       scenePrompts?: string[];
       sceneVideoUrls?: string[];
+      saveWarning?: string | null;
+    }
+  | { status: "error"; message: string };
+
+type MusicGenerationState =
+  | { status: "idle" }
+  | { status: "loading"; phase: string }
+  | {
+      status: "done";
+      audioUrl: string;
+      title?: string | null;
+      durationSec?: number | null;
+      lyrics?: string | null;
       saveWarning?: string | null;
     }
   | { status: "error"; message: string };
@@ -77,7 +90,7 @@ function PageContent() {
   const [activeNav, setActiveNav] = useState<NavKey>("tool");
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>("video");
 
-  const [mode, setMode] = useState<Mode>("text_to_video");
+  const [videoMode, setVideoMode] = useState<VideoMode>("text_to_video");
   const [prompt, setPrompt] = useState(getDefaultPrompt(language));
   const [sourceUrl, setSourceUrl] = useState("");
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
@@ -85,7 +98,7 @@ function PageContent() {
   const [ratioUi, setRatioUi] = useState("1:1");
   const [styleUi, setStyleUi] = useState<VideoStyle>("cinematic");
 
-  const [generation, setGeneration] = useState<GenerationState>({
+  const [videoGeneration, setVideoGeneration] = useState<VideoGenerationState>({
     status: "idle",
   });
 
@@ -103,9 +116,24 @@ function PageContent() {
   >([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
+  const [musicTitle, setMusicTitle] = useState("");
+  const [musicPrompt, setMusicPrompt] = useState("");
+  const [musicLyrics, setMusicLyrics] = useState("");
+  const [musicDurationSec, setMusicDurationSec] = useState("30");
+  const [uploadedAudioUrl, setUploadedAudioUrl] = useState("");
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [musicVideoPrompt, setMusicVideoPrompt] = useState(
+    "Cinematic neon performance, emotional lighting, smooth camera movement, premium music video aesthetic"
+  );
+  const [musicGeneration, setMusicGeneration] = useState<MusicGenerationState>({
+    status: "idle",
+  });
+
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [mobileWorkspaceMenuOpen, setMobileWorkspaceMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileWorkspaceMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -132,9 +160,18 @@ function PageContent() {
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent) => {
-      if (!accountMenuRef.current) return;
-      if (!accountMenuRef.current.contains(event.target as Node)) {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target as Node)
+      ) {
         setAccountMenuOpen(false);
+      }
+
+      if (
+        mobileWorkspaceMenuRef.current &&
+        !mobileWorkspaceMenuRef.current.contains(event.target as Node)
+      ) {
+        setMobileWorkspaceMenuOpen(false);
       }
     };
 
@@ -162,28 +199,86 @@ function PageContent() {
     };
   }, [voiceUri]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const styleId = "dubles-motion-spin-keyframes";
+    if (document.getElementById(styleId)) return;
+
+    const styleEl = document.createElement("style");
+    styleEl.id = styleId;
+    styleEl.innerHTML = `
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    return () => {
+      styleEl.remove();
+    };
+  }, []);
+
   const displayScenes = scenes;
 
   const totalDuration = useMemo(() => {
-    if (scenes.length > 0) {
-      return scenes.reduce((acc, scene) => acc + scene.durationSec, 0);
+    if (displayScenes.length > 0) {
+      return displayScenes.reduce((acc, scene) => acc + scene.durationSec, 0);
     }
 
-    if (generation.status === "done" && generation.durationSec) {
-      return generation.durationSec;
+    if (videoGeneration.status === "done" && videoGeneration.durationSec) {
+      return videoGeneration.durationSec;
+    }
+
+    if (musicGeneration.status === "done" && musicGeneration.durationSec) {
+      return musicGeneration.durationSec;
     }
 
     return null;
-  }, [generation, scenes]);
+  }, [displayScenes, videoGeneration, musicGeneration]);
 
-  const statusText =
-    generation.status === "idle"
+  const selectedScene =
+    previewTarget !== "final"
+      ? displayScenes.find((scene) => scene.id === previewTarget) ?? null
+      : null;
+
+  const previewAspectRatio = useMemo(() => {
+    if (workspaceTab === "music") return "16 / 9";
+    if (workspaceTab === "voice") return "16 / 9";
+    if (workspaceTab === "support") return "16 / 9";
+
+    if (previewTarget !== "final" && selectedScene) {
+      if (selectedScene.videoUrl) return "16 / 9";
+      if (selectedScene.imageUrl) return "16 / 9";
+    }
+
+    if (videoMode === "logo_to_video") return "16 / 9";
+    return ratioToAspect(ratioUi);
+  }, [workspaceTab, previewTarget, selectedScene, videoMode, ratioUi]);
+
+  const activeAudioUrl =
+    musicGeneration.status === "done"
+      ? musicGeneration.audioUrl
+      : uploadedAudioUrl || "";
+
+  const videoStatusText =
+    videoGeneration.status === "idle"
       ? t.home.statusReady
-      : generation.status === "loading"
+      : videoGeneration.status === "loading"
       ? t.home.statusGenerating
-      : generation.status === "done"
+      : videoGeneration.status === "done"
       ? t.home.statusDone
       : t.home.statusError;
+
+  const musicStatusText =
+    musicGeneration.status === "idle"
+      ? "Ready"
+      : musicGeneration.status === "loading"
+      ? "Generating"
+      : musicGeneration.status === "done"
+      ? "Done"
+      : "Error";
 
   const remainingCreditsText =
     user?.remainingCredits === null
@@ -201,24 +296,32 @@ function PageContent() {
       ? t.home.lifetimeLimitReached
       : t.home.monthlyLimitReached;
 
-  const canGenerateBase =
-    generation.status !== "loading" &&
+  const canGenerateVideoBase =
+    videoGeneration.status !== "loading" &&
     !uploadingImage &&
-    ((mode === "text_to_video" && prompt.trim().length >= 3) ||
-      (mode === "url_to_video" &&
+    ((videoMode === "text_to_video" && prompt.trim().length >= 3) ||
+      (videoMode === "url_to_video" &&
         prompt.trim().length >= 3 &&
         sourceUrl.trim().length > 0) ||
-      (mode === "image_to_video" &&
+      (videoMode === "image_to_video" &&
         prompt.trim().length >= 3 &&
         uploadedImageUrl.trim().length > 0) ||
-      (mode === "logo_to_video" && uploadedImageUrl.trim().length > 0));
+      (videoMode === "logo_to_video" && uploadedImageUrl.trim().length > 0));
 
-  const canGenerate = canGenerateBase && isAuthenticated && !isPlanBlocked;
+  const canGenerateMusicBase =
+    musicGeneration.status !== "loading" &&
+    (musicPrompt.trim().length >= 3 || musicLyrics.trim().length >= 8);
 
-  const selectedScene =
-    previewTarget !== "final"
-      ? displayScenes.find((scene) => scene.id === previewTarget) ?? null
-      : null;
+  const canGenerateMusicVideoBase =
+    videoGeneration.status !== "loading" &&
+    activeAudioUrl.trim().length > 0 &&
+    musicVideoPrompt.trim().length >= 3;
+
+  const canGenerateVideo = canGenerateVideoBase && isAuthenticated && !isPlanBlocked;
+  const canGenerateMusic =
+    canGenerateMusicBase && isAuthenticated && !isPlanBlocked;
+  const canGenerateMusicVideo =
+    canGenerateMusicVideoBase && isAuthenticated && !isPlanBlocked;
 
   const handleLogout = async () => {
     try {
@@ -255,7 +358,7 @@ function PageContent() {
 
       setUploadedImageUrl(data.imageUrl);
     } catch (error) {
-      setGeneration({
+      setVideoGeneration({
         status: "error",
         message: error instanceof Error ? error.message : "Image upload failed",
       });
@@ -264,7 +367,40 @@ function PageContent() {
     }
   };
 
-  const handleGenerate = async () => {
+  const handleAudioPick = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingAudio(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload-audio", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok || !data?.audioUrl) {
+        throw new Error(data?.error || "Audio upload failed");
+      }
+
+      setUploadedAudioUrl(data.audioUrl);
+      setWorkspaceTab("music_video");
+    } catch (error) {
+      setMusicGeneration({
+        status: "error",
+        message: error instanceof Error ? error.message : "Audio upload failed",
+      });
+    } finally {
+      setUploadingAudio(false);
+    }
+  };
+
+  const handleGenerateVideo = async () => {
     if (!isAuthenticated) {
       router.push("/login");
       return;
@@ -276,28 +412,28 @@ function PageContent() {
     }
 
     try {
-      setGeneration({
+      setVideoGeneration({
         status: "loading",
         phase: "Submitting generation request...",
       });
 
       const payload: Record<string, unknown> = {
-        mode,
+        mode: videoMode,
         style: styleUi,
       };
 
-      if (mode === "text_to_video") {
+      if (videoMode === "text_to_video") {
         payload.prompt = prompt;
         payload.ratio = ratioUi;
-      } else if (mode === "url_to_video") {
+      } else if (videoMode === "url_to_video") {
         payload.prompt = prompt;
         payload.sourceUrl = sourceUrl;
         payload.ratio = ratioUi;
-      } else if (mode === "image_to_video") {
+      } else if (videoMode === "image_to_video") {
         payload.prompt = prompt;
         payload.imageUrl = uploadedImageUrl;
         payload.ratio = ratioUi;
-      } else if (mode === "logo_to_video") {
+      } else if (videoMode === "logo_to_video") {
         payload.prompt =
           prompt.trim() || "clean premium technology logo reveal";
         payload.imageUrl = uploadedImageUrl;
@@ -347,10 +483,10 @@ function PageContent() {
       );
 
       setScenes(nextScenes);
-      setSelectedSceneId(nextScenes[0]?.id ?? null);
+      setSelectedSceneId(null);
       setPreviewTarget("final");
 
-      setGeneration({
+      setVideoGeneration({
         status: "done",
         videoUrl: data.videoUrl,
         imageUrl: data.imageUrl ?? null,
@@ -365,18 +501,205 @@ function PageContent() {
 
       await refreshSession();
     } catch (error) {
-      setGeneration({
+      setVideoGeneration({
         status: "error",
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   };
 
-  const handleReset = () => {
-    setGeneration({ status: "idle" });
+  const handleGenerateMusic = async () => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    if (isPlanBlocked) {
+      router.push("/billing");
+      return;
+    }
+
+    try {
+      setMusicGeneration({
+        status: "loading",
+        phase: "Generating music track...",
+      });
+
+      const res = await fetch("/api/generate-music", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          title: musicTitle,
+          prompt: musicPrompt,
+          lyrics: musicLyrics,
+          durationSec: Number(musicDurationSec || 30),
+          language,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Music generation failed");
+      }
+
+      if (!data.audioUrl) {
+        throw new Error("No audio URL returned");
+      }
+
+      setUploadedAudioUrl("");
+      setMusicGeneration({
+        status: "done",
+        audioUrl: data.audioUrl,
+        title: data.title ?? musicTitle ?? null,
+        durationSec:
+          typeof data.durationSec === "number"
+            ? data.durationSec
+            : Number(musicDurationSec || 30),
+        lyrics: data.lyrics ?? musicLyrics ?? null,
+        saveWarning: data.saveWarning ?? null,
+      });
+
+      await refreshSession();
+    } catch (error) {
+      setMusicGeneration({
+        status: "error",
+        message: error instanceof Error ? error.message : "Music generation failed",
+      });
+    }
+  };
+
+  const handleGenerateMusicVideo = async () => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    if (isPlanBlocked) {
+      router.push("/billing");
+      return;
+    }
+
+    if (!activeAudioUrl) {
+      setVideoGeneration({
+        status: "error",
+        message: "Please generate or upload an audio track first.",
+      });
+      return;
+    }
+
+    try {
+      setVideoGeneration({
+        status: "loading",
+        phase: "Creating music video from your track...",
+      });
+
+      const res = await fetch("/api/generate-music-video", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          audioUrl: activeAudioUrl,
+          prompt: musicVideoPrompt,
+          style: styleUi,
+          ratio: ratioUi,
+          title:
+            musicTitle ||
+            (musicGeneration.status === "done" ? musicGeneration.title : "") ||
+            "Music Video",
+          lyrics:
+            musicGeneration.status === "done"
+              ? musicGeneration.lyrics
+              : musicLyrics,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Music video generation failed");
+      }
+
+      if (!data.videoUrl) {
+        throw new Error("No video URL returned");
+      }
+
+      const scenePrompts = Array.isArray(data.scenePrompts)
+        ? data.scenePrompts
+        : [];
+      const sceneImages = Array.isArray(data.sceneImages)
+        ? data.sceneImages
+        : [];
+      const sceneVideoUrls = Array.isArray(data.sceneVideoUrls)
+        ? data.sceneVideoUrls
+        : [];
+      const actualClipDurationSec =
+        typeof data.actualClipDurationSec === "number"
+          ? data.actualClipDurationSec
+          : 7;
+
+      const nextScenes: SceneCard[] = scenePrompts.map(
+        (scenePrompt: string, index: number) => ({
+          id: `music-video-scene-${index + 1}`,
+          title: `Scene ${index + 1}`,
+          description: scenePrompt,
+          durationSec: actualClipDurationSec,
+          imageUrl: sceneImages[index] ?? null,
+          videoUrl: sceneVideoUrls[index] ?? null,
+        })
+      );
+
+      setScenes(nextScenes);
+      setSelectedSceneId(null);
+      setPreviewTarget("final");
+
+      setVideoGeneration({
+        status: "done",
+        videoUrl: data.videoUrl,
+        imageUrl: data.imageUrl ?? null,
+        videoId: data.videoId ?? null,
+        durationSec:
+          data.durationSec ??
+          (musicGeneration.status === "done"
+            ? musicGeneration.durationSec ?? 30
+            : 30),
+        actualClipDurationSec,
+        sceneImages,
+        scenePrompts,
+        sceneVideoUrls,
+        saveWarning: data.saveWarning ?? null,
+      });
+
+      setWorkspaceTab("music_video");
+      await refreshSession();
+    } catch (error) {
+      setVideoGeneration({
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Music video generation failed",
+      });
+    }
+  };
+
+  const handleResetVideo = () => {
+    setVideoGeneration({ status: "idle" });
     setScenes([]);
     setSelectedSceneId(null);
     setPreviewTarget("final");
+  };
+
+  const handleResetMusic = () => {
+    setMusicGeneration({ status: "idle" });
+    setUploadedAudioUrl("");
+    setMusicTitle("");
+    setMusicPrompt("");
+    setMusicLyrics("");
+    setMusicDurationSec("30");
   };
 
   const handleSelectScene = (sceneId: string) => {
@@ -393,7 +716,7 @@ function PageContent() {
       }
 
       if (selectedSceneId === sceneId) {
-        setSelectedSceneId(next[0]?.id ?? null);
+        setSelectedSceneId(null);
       }
 
       return next;
@@ -443,6 +766,54 @@ function PageContent() {
   };
 
   const renderPreviewContent = () => {
+    if (workspaceTab === "music") {
+      if (musicGeneration.status === "loading") {
+        return (
+          <div style={styles.centerBox}>
+            <div style={styles.spinner} />
+            <div style={styles.previewText}>Generating music...</div>
+            <div style={styles.previewSubtext}>{musicGeneration.phase}</div>
+          </div>
+        );
+      }
+
+      if (musicGeneration.status === "error") {
+        return (
+          <div style={styles.centerBox}>
+            <div style={styles.previewText}>Music error</div>
+            <div style={styles.previewSubtext}>{musicGeneration.message}</div>
+          </div>
+        );
+      }
+
+      if (activeAudioUrl) {
+        return (
+          <div style={styles.audioPreviewCard}>
+            <div style={styles.audioPreviewTitle}>
+              {musicGeneration.status === "done"
+                ? musicGeneration.title || "Generated Song"
+                : "Uploaded Audio"}
+            </div>
+            <div style={styles.audioPreviewSub}>
+              {musicGeneration.status === "done"
+                ? "Your track is ready. You can continue with music video creation."
+                : "Audio uploaded successfully. You can use it to create a music video."}
+            </div>
+            <audio controls src={activeAudioUrl} style={styles.audioPlayer} />
+          </div>
+        );
+      }
+
+      return (
+        <div style={styles.centerBox}>
+          <div style={styles.previewText}>No music yet</div>
+          <div style={styles.previewSubtext}>
+            Generate a new song or upload audio to continue.
+          </div>
+        </div>
+      );
+    }
+
     if (
       previewTarget !== "final" &&
       selectedScene &&
@@ -468,10 +839,10 @@ function PageContent() {
       );
     }
 
-    if (generation.status === "done") {
+    if (videoGeneration.status === "done") {
       return (
         <video
-          src={generation.videoUrl}
+          src={videoGeneration.videoUrl}
           controls
           playsInline
           style={styles.video}
@@ -479,21 +850,43 @@ function PageContent() {
       );
     }
 
-    if (generation.status === "loading") {
+    if (videoGeneration.status === "loading") {
       return (
         <div style={styles.centerBox}>
           <div style={styles.spinner} />
           <div style={styles.previewText}>{t.home.generatingVideo}</div>
-          <div style={styles.previewSubtext}>{generation.phase}</div>
+          <div style={styles.previewSubtext}>{videoGeneration.phase}</div>
         </div>
       );
     }
 
-    if (generation.status === "error") {
+    if (videoGeneration.status === "error") {
       return (
         <div style={styles.centerBox}>
           <div style={styles.previewText}>{t.home.statusError}</div>
-          <div style={styles.previewSubtext}>{generation.message}</div>
+          <div style={styles.previewSubtext}>{videoGeneration.message}</div>
+        </div>
+      );
+    }
+
+    if (workspaceTab === "voice") {
+      return (
+        <div style={styles.centerBox}>
+          <div style={styles.previewText}>Voice Preview</div>
+          <div style={styles.previewSubtext}>
+            Type your text and preview it with the selected voice.
+          </div>
+        </div>
+      );
+    }
+
+    if (workspaceTab === "support") {
+      return (
+        <div style={styles.centerBox}>
+          <div style={styles.previewText}>Support Center</div>
+          <div style={styles.previewSubtext}>
+            Send your support request directly from the form.
+          </div>
         </div>
       );
     }
@@ -501,59 +894,513 @@ function PageContent() {
     return (
       <div style={styles.centerBox}>
         <div style={styles.previewText}>{t.home.noVideoYet}</div>
-        <div style={styles.previewSubtext}>{t.home.generateHint}</div>
+        <div style={styles.previewSubtext}>
+          {workspaceTab === "music_video"
+            ? "Generate or upload a song, then create your music video."
+            : t.home.generateHint}
+        </div>
+      </div>
+    );
+  };
+
+  const renderVideoWorkspace = () => {
+    return (
+      <div style={styles.toolCard}>
+        <div style={styles.sectionTitle}>{t.createVideo.title}</div>
+        <div style={styles.sectionSub}>{t.createVideo.subtitle}</div>
+
+        <div style={styles.modeTabs}>
+          {(
+            [
+              "text_to_video",
+              "url_to_video",
+              "image_to_video",
+              "logo_to_video",
+            ] as const
+          ).map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setVideoMode(item)}
+              style={{
+                ...styles.modeTab,
+                ...(videoMode === item ? styles.modeTabActive : {}),
+              }}
+            >
+              {getVideoModeLabel(item)}
+            </button>
+          ))}
+        </div>
+
+        <label style={styles.label}>
+          {videoMode === "logo_to_video"
+            ? "Logo prompt (optional)"
+            : t.home.promptLabel}
+        </label>
+        <textarea
+          style={styles.prompt}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder={
+            videoMode === "logo_to_video"
+              ? "clean premium technology logo reveal with subtle glow"
+              : t.home.promptPlaceholder
+          }
+        />
+
+        {videoMode === "logo_to_video" ? (
+          <div style={styles.logoInfoBox}>
+            Upload your logo for a clean cinematic brand reveal. PNG logos with
+            transparent background work best.
+          </div>
+        ) : null}
+
+        {videoMode === "url_to_video" ? (
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>{t.home.sourceUrlLabel}</label>
+            <input
+              style={styles.input}
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
+        ) : null}
+
+        {videoMode === "image_to_video" || videoMode === "logo_to_video" ? (
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>
+              {videoMode === "logo_to_video"
+                ? "Upload logo"
+                : t.home.uploadImageLabel}
+            </label>
+
+            <div style={styles.uploadRow}>
+              <label style={styles.uploadButton}>
+                {videoMode === "logo_to_video"
+                  ? "Choose logo"
+                  : t.home.chooseImage}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImagePick}
+                  style={{ display: "none" }}
+                />
+              </label>
+
+              {uploadingImage ? (
+                <span style={styles.uploadHint}>{t.home.uploadInProgress}</span>
+              ) : uploadedImageUrl ? (
+                <span style={styles.uploadReady}>
+                  {videoMode === "logo_to_video"
+                    ? "Logo uploaded"
+                    : t.home.imageUploaded}
+                </span>
+              ) : (
+                <span style={styles.uploadHint}>
+                  {videoMode === "logo_to_video"
+                    ? "No logo selected"
+                    : t.home.noImageSelected}
+                </span>
+              )}
+            </div>
+
+            {uploadedImageUrl ? (
+              <div style={styles.imagePreviewWrap}>
+                <img
+                  src={uploadedImageUrl}
+                  alt="Uploaded preview"
+                  style={styles.imagePreview}
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Style</label>
+          <select
+            value={styleUi}
+            onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
+            style={styles.selectWide}
+          >
+            <option value="realistic">Realistic</option>
+            <option value="cinematic">Cinematic</option>
+            <option value="3d_animation">3D Animation</option>
+            <option value="anime">Anime</option>
+            <option value="pixar">Pixar Style</option>
+            <option value="cartoon">Cartoon</option>
+          </select>
+        </div>
+
+        {videoMode !== "logo_to_video" ? (
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>{t.home.ratioLabel}</label>
+            <select
+              value={ratioUi}
+              onChange={(e) => setRatioUi(e.target.value)}
+              style={styles.selectWide}
+            >
+              <option value="1:1">1:1</option>
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+            </select>
+          </div>
+        ) : null}
+
+        <div style={styles.controls}>
+          <button type="button" style={styles.reset} onClick={handleResetVideo}>
+            {t.common.reset}
+          </button>
+
+          {!isAuthenticated ? (
+            <button
+              type="button"
+              style={styles.generate}
+              onClick={() => router.push("/login")}
+            >
+              {t.home.loginToCreate}
+            </button>
+          ) : isPlanBlocked ? (
+            <button
+              type="button"
+              style={styles.generate}
+              onClick={() => router.push("/billing")}
+            >
+              {t.home.upgradeCta}
+            </button>
+          ) : (
+            <button
+              type="button"
+              style={{
+                ...styles.generate,
+                ...(!canGenerateVideo ? styles.generateDisabled : {}),
+              }}
+              onClick={canGenerateVideo ? handleGenerateVideo : undefined}
+            >
+              {uploadingImage
+                ? t.home.uploadInProgress
+                : videoGeneration.status === "loading"
+                ? t.home.statusGenerating
+                : videoMode === "logo_to_video"
+                ? "Generate logo animation"
+                : t.common.generate}
+            </button>
+          )}
+        </div>
+
+        {isPlanBlocked ? (
+          <div style={styles.limitBox}>{planLimitMessage}</div>
+        ) : (
+          <div style={styles.smallNote}>
+            {videoMode === "logo_to_video"
+              ? "Use a clean logo image for the best result."
+              : t.home.generateHint}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderVoiceWorkspace = () => {
+    return (
+      <div style={styles.toolCard}>
+        <div style={styles.sectionTitle}>{t.voice.title}</div>
+        <div style={styles.sectionSub}>{t.voice.subtitle}</div>
+
+        <label style={styles.label}>{t.voice.textLabel}</label>
+        <textarea
+          style={styles.prompt}
+          value={voiceText}
+          onChange={(e) => setVoiceText(e.target.value)}
+          placeholder={t.voice.textPlaceholder}
+        />
+
+        <label style={styles.label}>{t.voice.voiceLabel}</label>
+        <select
+          value={voiceUri}
+          onChange={(e) => setVoiceUri(e.target.value)}
+          style={styles.selectWide}
+        >
+          {availableVoices.length === 0 ? (
+            <option value="">{t.voice.noVoices}</option>
+          ) : (
+            availableVoices.map((voice) => (
+              <option key={voice.voiceURI} value={voice.voiceURI}>
+                {voice.name} — {voice.lang}
+              </option>
+            ))
+          )}
+        </select>
+
+        <div style={styles.controls}>
+          <button type="button" style={styles.generate} onClick={handleSpeak}>
+            {t.voice.preview}
+          </button>
+          <button
+            type="button"
+            style={styles.reset}
+            onClick={handleStopSpeaking}
+          >
+            {t.voice.stop}
+          </button>
+        </div>
+
+        <div style={styles.smallNote}>
+          Use this area for speech preview, narration tests, and future voiceover
+          workflows.
+        </div>
+      </div>
+    );
+  };
+
+  const renderMusicWorkspace = () => {
+    return (
+      <div style={styles.toolCard}>
+        <div style={styles.sectionTitle}>Music Generator</div>
+        <div style={styles.sectionSub}>
+          Create original songs, background music, or lyric-based tracks for your
+          future video projects.
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Song title</label>
+          <input
+            style={styles.input}
+            value={musicTitle}
+            onChange={(e) => setMusicTitle(e.target.value)}
+            placeholder="Midnight Neon"
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Music prompt</label>
+          <textarea
+            style={styles.promptSmall}
+            value={musicPrompt}
+            onChange={(e) => setMusicPrompt(e.target.value)}
+            placeholder="Emotional synthwave pop, cinematic atmosphere, strong chorus, modern premium sound"
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Lyrics / vocal idea</label>
+          <textarea
+            style={styles.prompt}
+            value={musicLyrics}
+            onChange={(e) => setMusicLyrics(e.target.value)}
+            placeholder="Write the lyrics, chorus, verses, or the vocal mood here..."
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Duration</label>
+          <select
+            value={musicDurationSec}
+            onChange={(e) => setMusicDurationSec(e.target.value)}
+            style={styles.selectWide}
+          >
+            <option value="15">15 sec</option>
+            <option value="30">30 sec</option>
+            <option value="45">45 sec</option>
+            <option value="60">60 sec</option>
+          </select>
+        </div>
+
+        <div style={styles.controls}>
+          <button type="button" style={styles.reset} onClick={handleResetMusic}>
+            {t.common.reset}
+          </button>
+
+          {!isAuthenticated ? (
+            <button
+              type="button"
+              style={styles.generate}
+              onClick={() => router.push("/login")}
+            >
+              {t.home.loginToCreate}
+            </button>
+          ) : isPlanBlocked ? (
+            <button
+              type="button"
+              style={styles.generate}
+              onClick={() => router.push("/billing")}
+            >
+              {t.home.upgradeCta}
+            </button>
+          ) : (
+            <button
+              type="button"
+              style={{
+                ...styles.generate,
+                ...(!canGenerateMusic ? styles.generateDisabled : {}),
+              }}
+              onClick={canGenerateMusic ? handleGenerateMusic : undefined}
+            >
+              {musicGeneration.status === "loading"
+                ? "Generating music..."
+                : "Generate music"}
+            </button>
+          )}
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Or upload existing audio</label>
+          <div style={styles.uploadRow}>
+            <label style={styles.uploadButton}>
+              Choose audio
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={handleAudioPick}
+                style={{ display: "none" }}
+              />
+            </label>
+
+            {uploadingAudio ? (
+              <span style={styles.uploadHint}>Uploading audio...</span>
+            ) : uploadedAudioUrl ? (
+              <span style={styles.uploadReady}>Audio uploaded</span>
+            ) : (
+              <span style={styles.uploadHint}>No audio selected</span>
+            )}
+          </div>
+        </div>
+
+        {musicGeneration.status === "done" && musicGeneration.saveWarning ? (
+          <div style={styles.warningBox}>{musicGeneration.saveWarning}</div>
+        ) : null}
+
+        <div style={styles.smallNote}>
+          After the track is ready, switch to <strong>Music Video</strong> and
+          generate a full clip from the song.
+        </div>
+      </div>
+    );
+  };
+
+  const renderMusicVideoWorkspace = () => {
+    return (
+      <div style={styles.toolCard}>
+        <div style={styles.sectionTitle}>Music Video Generator</div>
+        <div style={styles.sectionSub}>
+          Turn your song into a cinematic music video with AI scenes, visuals,
+          and final merged output.
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Connected song</label>
+          {activeAudioUrl ? (
+            <div style={styles.audioInlineCard}>
+              <div style={styles.audioInlineTitle}>
+                {musicGeneration.status === "done"
+                  ? musicGeneration.title || "Generated Song"
+                  : "Uploaded Audio"}
+              </div>
+              <audio controls src={activeAudioUrl} style={styles.audioPlayer} />
+            </div>
+          ) : (
+            <div style={styles.smallNote}>
+              First generate music in the Music tab or upload an audio file.
+            </div>
+          )}
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Music video concept</label>
+          <textarea
+            style={styles.prompt}
+            value={musicVideoPrompt}
+            onChange={(e) => setMusicVideoPrompt(e.target.value)}
+            placeholder="Futuristic city lights, emotional singer performance, fast cuts on chorus, luxury cinematic visuals"
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Style</label>
+          <select
+            value={styleUi}
+            onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
+            style={styles.selectWide}
+          >
+            <option value="realistic">Realistic</option>
+            <option value="cinematic">Cinematic</option>
+            <option value="3d_animation">3D Animation</option>
+            <option value="anime">Anime</option>
+            <option value="pixar">Pixar Style</option>
+            <option value="cartoon">Cartoon</option>
+          </select>
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Ratio</label>
+          <select
+            value={ratioUi}
+            onChange={(e) => setRatioUi(e.target.value)}
+            style={styles.selectWide}
+          >
+            <option value="1:1">1:1</option>
+            <option value="16:9">16:9</option>
+            <option value="9:16">9:16</option>
+          </select>
+        </div>
+
+        <div style={styles.controls}>
+          <button type="button" style={styles.reset} onClick={handleResetVideo}>
+            {t.common.reset}
+          </button>
+
+          {!isAuthenticated ? (
+            <button
+              type="button"
+              style={styles.generate}
+              onClick={() => router.push("/login")}
+            >
+              {t.home.loginToCreate}
+            </button>
+          ) : isPlanBlocked ? (
+            <button
+              type="button"
+              style={styles.generate}
+              onClick={() => router.push("/billing")}
+            >
+              {t.home.upgradeCta}
+            </button>
+          ) : (
+            <button
+              type="button"
+              style={{
+                ...styles.generate,
+                ...(!canGenerateMusicVideo ? styles.generateDisabled : {}),
+              }}
+              onClick={canGenerateMusicVideo ? handleGenerateMusicVideo : undefined}
+            >
+              {videoGeneration.status === "loading"
+                ? "Generating music video..."
+                : "Generate music video"}
+            </button>
+          )}
+        </div>
+
+        <div style={styles.smallNote}>
+          This area is prepared for future scene editing, lyric sync, clip timing,
+          and final merged export workflows.
+        </div>
       </div>
     );
   };
 
   const renderWorkspaceBody = () => {
     if (workspaceTab === "voice") {
-      return (
-        <div style={styles.toolCard}>
-          <div style={styles.sectionTitle}>{t.voice.title}</div>
-          <div style={styles.sectionSub}>{t.voice.subtitle}</div>
+      return renderVoiceWorkspace();
+    }
 
-          <label style={styles.label}>{t.voice.textLabel}</label>
-          <textarea
-            style={styles.prompt}
-            value={voiceText}
-            onChange={(e) => setVoiceText(e.target.value)}
-            placeholder={t.voice.textPlaceholder}
-          />
+    if (workspaceTab === "music") {
+      return renderMusicWorkspace();
+    }
 
-          <label style={styles.label}>{t.voice.voiceLabel}</label>
-          <select
-            value={voiceUri}
-            onChange={(e) => setVoiceUri(e.target.value)}
-            style={styles.selectWide}
-          >
-            {availableVoices.length === 0 ? (
-              <option value="">{t.voice.noVoices}</option>
-            ) : (
-              availableVoices.map((voice) => (
-                <option key={voice.voiceURI} value={voice.voiceURI}>
-                  {voice.name} — {voice.lang}
-                </option>
-              ))
-            )}
-          </select>
-
-          <div style={styles.controls}>
-            <button type="button" style={styles.generate} onClick={handleSpeak}>
-              {t.voice.preview}
-            </button>
-            <button
-              type="button"
-              style={styles.reset}
-              onClick={handleStopSpeaking}
-            >
-              {t.voice.stop}
-            </button>
-          </div>
-
-          <div style={styles.smallNote}>{t.voice.note}</div>
-        </div>
-      );
+    if (workspaceTab === "music_video") {
+      return renderMusicVideoWorkspace();
     }
 
     if (workspaceTab === "support") {
@@ -593,200 +1440,69 @@ function PageContent() {
       );
     }
 
-    return (
-      <div style={styles.toolCard}>
-        <div style={styles.sectionTitle}>{t.createVideo.title}</div>
-        <div style={styles.sectionSub}>{t.createVideo.subtitle}</div>
+    return renderVideoWorkspace();
+  };
 
-        <div style={styles.modeTabs}>
-          {(
-            [
-              "text_to_video",
-              "url_to_video",
-              "image_to_video",
-              "logo_to_video",
-            ] as const
-          ).map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setMode(item)}
-              style={{
-                ...styles.modeTab,
-                ...(mode === item ? styles.modeTabActive : {}),
-              }}
-            >
-              {item.replaceAll("_", " ")}
-            </button>
-          ))}
-        </div>
+  const renderWorkspaceMenu = () => {
+    const items: Array<{ key: WorkspaceTab; label: string }> = [
+      { key: "video", label: "Video" },
+      { key: "voice", label: "Voice" },
+      { key: "music", label: "Music" },
+      { key: "music_video", label: "Music Video" },
+    ];
 
-        <label style={styles.label}>
-          {mode === "logo_to_video"
-            ? "Logo prompt (optional)"
-            : t.home.promptLabel}
-        </label>
-        <textarea
-          style={styles.prompt}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={
-            mode === "logo_to_video"
-              ? "clean premium technology logo reveal with subtle glow"
-              : t.home.promptPlaceholder
-          }
-        />
-
-        {mode === "logo_to_video" ? (
-          <div style={styles.logoInfoBox}>
-            Upload your logo for a clean cinematic brand reveal. PNG logos with
-            transparent background work best.
-          </div>
-        ) : null}
-
-        {mode === "url_to_video" ? (
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>{t.home.sourceUrlLabel}</label>
-            <input
-              style={styles.input}
-              value={sourceUrl}
-              onChange={(e) => setSourceUrl(e.target.value)}
-              placeholder="https://..."
-            />
-          </div>
-        ) : null}
-
-        {mode === "image_to_video" || mode === "logo_to_video" ? (
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>
-              {mode === "logo_to_video"
-                ? "Upload logo"
-                : t.home.uploadImageLabel}
-            </label>
-
-            <div style={styles.uploadRow}>
-              <label style={styles.uploadButton}>
-                {mode === "logo_to_video"
-                  ? "Choose logo"
-                  : t.home.chooseImage}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImagePick}
-                  style={{ display: "none" }}
-                />
-              </label>
-
-              {uploadingImage ? (
-                <span style={styles.uploadHint}>{t.home.uploadInProgress}</span>
-              ) : uploadedImageUrl ? (
-                <span style={styles.uploadReady}>
-                  {mode === "logo_to_video"
-                    ? "Logo uploaded"
-                    : t.home.imageUploaded}
-                </span>
-              ) : (
-                <span style={styles.uploadHint}>
-                  {mode === "logo_to_video"
-                    ? "No logo selected"
-                    : t.home.noImageSelected}
-                </span>
-              )}
-            </div>
-
-            {uploadedImageUrl ? (
-              <div style={styles.imagePreviewWrap}>
-                <img
-                  src={uploadedImageUrl}
-                  alt="Uploaded preview"
-                  style={styles.imagePreview}
-                />
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Style</label>
-          <select
-            value={styleUi}
-            onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
-            style={styles.selectWide}
+    if (isMobileViewport) {
+      return (
+        <div style={styles.mobileWorkspaceMenuWrap} ref={mobileWorkspaceMenuRef}>
+          <button
+            type="button"
+            style={styles.mobileMenuButton}
+            onClick={() => setMobileWorkspaceMenuOpen((prev) => !prev)}
           >
-            <option value="realistic">Realistic</option>
-            <option value="cinematic">Cinematic</option>
-            <option value="3d_animation">3D Animation</option>
-            <option value="anime">Anime</option>
-            <option value="pixar">Pixar Style</option>
-            <option value="cartoon">Cartoon</option>
-          </select>
-        </div>
-
-        {mode !== "logo_to_video" ? (
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>{t.home.ratioLabel}</label>
-            <select
-              value={ratioUi}
-              onChange={(e) => setRatioUi(e.target.value)}
-              style={styles.selectWide}
-            >
-              <option value="1:1">1:1</option>
-              <option value="16:9">16:9</option>
-              <option value="9:16">9:16</option>
-            </select>
-          </div>
-        ) : null}
-
-        <div style={styles.controls}>
-          <button type="button" style={styles.reset} onClick={handleReset}>
-            {t.common.reset}
+            ☰ {items.find((item) => item.key === workspaceTab)?.label ?? "Menu"}
           </button>
 
-          {!isAuthenticated ? (
-            <button
-              type="button"
-              style={styles.generate}
-              onClick={() => router.push("/login")}
-            >
-              {t.home.loginToCreate}
-            </button>
-          ) : isPlanBlocked ? (
-            <button
-              type="button"
-              style={styles.generate}
-              onClick={() => router.push("/billing")}
-            >
-              {t.home.upgradeCta}
-            </button>
-          ) : (
-            <button
-              type="button"
-              style={{
-                ...styles.generate,
-                ...(!canGenerate ? styles.generateDisabled : {}),
-              }}
-              onClick={canGenerate ? handleGenerate : undefined}
-            >
-              {uploadingImage
-                ? t.home.uploadInProgress
-                : generation.status === "loading"
-                ? t.home.statusGenerating
-                : mode === "logo_to_video"
-                ? "Generate logo animation"
-                : t.common.generate}
-            </button>
-          )}
+          {mobileWorkspaceMenuOpen ? (
+            <div style={styles.mobileWorkspaceDropdown}>
+              {items.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  style={{
+                    ...styles.mobileWorkspaceItem,
+                    ...(workspaceTab === item.key
+                      ? styles.mobileWorkspaceItemActive
+                      : {}),
+                  }}
+                  onClick={() => {
+                    setWorkspaceTab(item.key);
+                    setMobileWorkspaceMenuOpen(false);
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
+      );
+    }
 
-        {isPlanBlocked ? (
-          <div style={styles.limitBox}>{planLimitMessage}</div>
-        ) : (
-          <div style={styles.smallNote}>
-            {mode === "logo_to_video"
-              ? "Use a clean logo image for the best result."
-              : t.home.generateHint}
-          </div>
-        )}
+    return (
+      <div style={styles.workspaceTopTabs}>
+        {items.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            style={{
+              ...styles.workspaceTopTab,
+              ...(workspaceTab === item.key ? styles.workspaceTopTabActive : {}),
+            }}
+            onClick={() => setWorkspaceTab(item.key)}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
     );
   };
@@ -811,9 +1527,9 @@ function PageContent() {
                 </div>
               </div>
               <div style={styles.appCard}>
-                <div style={styles.appCardTitle}>Voice Studio</div>
+                <div style={styles.appCardTitle}>AI Music Studio</div>
                 <div style={styles.appCardText}>
-                  Metni ses ön izlemeye dönüştür.
+                  Şarkı oluştur, sonra videoya dönüştür.
                 </div>
               </div>
             </div>
@@ -833,11 +1549,11 @@ function PageContent() {
           <section style={styles.secondaryPanel}>
             <div style={styles.secondaryTitle}>Workflow</div>
             <div style={styles.flowList}>
-              <div style={styles.flowItem}>1. Prompt / source seç</div>
-              <div style={styles.flowItem}>2. AI image veya source hazırla</div>
-              <div style={styles.flowItem}>3. Video üret</div>
-              <div style={styles.flowItem}>4. Sahne seç / sil</div>
-              <div style={styles.flowItem}>5. Final çıktı indir</div>
+              <div style={styles.flowItem}>1. Video / Voice / Music modunu seç</div>
+              <div style={styles.flowItem}>2. Prompt, görsel veya audio hazırla</div>
+              <div style={styles.flowItem}>3. İçerik üret</div>
+              <div style={styles.flowItem}>4. Sahneleri incele / sil</div>
+              <div style={styles.flowItem}>5. Final çıktıyı indir</div>
             </div>
           </section>
         );
@@ -857,12 +1573,13 @@ function PageContent() {
             className="studio-responsive"
             style={{
               display: "grid",
-              gridTemplateColumns: isMobileViewport ? "1fr" : "360px 1fr",
+              gridTemplateColumns: isMobileViewport ? "1fr" : "380px minmax(0, 1fr)",
               justifyContent: "space-between",
               gap: isMobileViewport ? 16 : 24,
               alignItems: "start",
               width: "100%",
-              maxWidth: 1320,
+              maxWidth: 1380,
+              minWidth: 0,
             }}
           >
             <div style={styles.studioRail}>{renderWorkspaceBody()}</div>
@@ -873,20 +1590,26 @@ function PageContent() {
                   ...styles.previewMainRow,
                   gridTemplateColumns: isMobileViewport
                     ? "1fr"
-                    : "minmax(0, 560px) minmax(260px, 340px)",
+                    : "minmax(0, 620px) minmax(260px, 340px)",
                 }}
               >
                 <div style={styles.previewMainLeft}>
                   <div style={styles.previewHeader}>
                     <div>
                       <div style={styles.cardTitle}>
-                        {previewTarget === "final"
+                        {workspaceTab === "music"
+                          ? "Audio Preview"
+                          : previewTarget === "final"
                           ? t.home.finalPreviewTitle
                           : t.home.scenePreviewTitle}
                       </div>
                       <div style={styles.previewHeaderSub}>
-                        {previewTarget === "final"
-                          ? t.home.finalVideoButton
+                        {workspaceTab === "music"
+                          ? "Song / track preview"
+                          : previewTarget === "final"
+                          ? workspaceTab === "music_video"
+                            ? "Final music video"
+                            : t.home.finalVideoButton
                           : selectedScene?.title ?? t.home.selectedScene}
                       </div>
                     </div>
@@ -895,147 +1618,296 @@ function PageContent() {
                   <div
                     style={{
                       ...styles.previewBoxLarge,
-                      maxWidth: isMobileViewport ? "100%" : 560,
+                      aspectRatio: previewAspectRatio,
+                      maxWidth: isMobileViewport ? "100%" : 620,
                     }}
                   >
                     {renderPreviewContent()}
                   </div>
 
-                  {generation.status === "done" && generation.saveWarning ? (
+                  {videoGeneration.status === "done" && videoGeneration.saveWarning ? (
                     <div
                       style={{
                         ...styles.warningBox,
-                        maxWidth: isMobileViewport ? "100%" : 560,
+                        maxWidth: isMobileViewport ? "100%" : 620,
                       }}
                     >
-                      {generation.saveWarning}
+                      {videoGeneration.saveWarning}
                     </div>
                   ) : null}
 
                   <div
                     style={{
                       ...styles.outputCard,
-                      maxWidth: isMobileViewport ? "100%" : 560,
+                      maxWidth: isMobileViewport ? "100%" : 620,
                     }}
                   >
-                    <div style={styles.cardTitle}>{t.home.outputTitle}</div>
+                    <div style={styles.cardTitle}>
+                      {workspaceTab === "music" ? "Audio Output" : t.home.outputTitle}
+                    </div>
 
                     <div style={styles.infoRow}>
-                      <span style={styles.infoLabel}>{t.home.mode}</span>
+                      <span style={styles.infoLabel}>Workspace</span>
                       <strong style={styles.infoValue}>
-                        {mode.replaceAll("_", " ")}
+                        {getWorkspaceLabel(workspaceTab)}
                       </strong>
                     </div>
 
-                    <div style={styles.infoRow}>
-                      <span style={styles.infoLabel}>{t.home.scenes}</span>
-                      <strong style={styles.infoValue}>
-                        {generation.status === "done" ? displayScenes.length : "-"}
-                      </strong>
-                    </div>
+                    {workspaceTab === "video" ? (
+                      <>
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>{t.home.mode}</span>
+                          <strong style={styles.infoValue}>
+                            {getVideoModeLabel(videoMode)}
+                          </strong>
+                        </div>
 
-                    <div style={styles.infoRow}>
-                      <span style={styles.infoLabel}>{t.home.duration}</span>
-                      <strong style={styles.infoValue}>
-                        {generation.status === "done" && totalDuration
-                          ? `${totalDuration}s`
-                          : "-"}
-                      </strong>
-                    </div>
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>{t.home.scenes}</span>
+                          <strong style={styles.infoValue}>
+                            {videoGeneration.status === "done"
+                              ? displayScenes.length
+                              : "-"}
+                          </strong>
+                        </div>
 
-                    <div style={styles.infoRow}>
-                      <span style={styles.infoLabel}>{t.home.status}</span>
-                      <span style={styles.status}>{statusText}</span>
-                    </div>
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>{t.home.duration}</span>
+                          <strong style={styles.infoValue}>
+                            {videoGeneration.status === "done" && totalDuration
+                              ? `${totalDuration}s`
+                              : "-"}
+                          </strong>
+                        </div>
 
-                    {generation.status === "done" ? (
-                      <a
-                        href={generation.videoUrl}
-                        download
-                        style={styles.downloadLink}
-                      >
-                        {t.home.downloadVideo}
-                      </a>
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>{t.home.status}</span>
+                          <span style={styles.status}>{videoStatusText}</span>
+                        </div>
+
+                        {videoGeneration.status === "done" ? (
+                          <a
+                            href={videoGeneration.videoUrl}
+                            download
+                            style={styles.downloadLink}
+                          >
+                            {t.home.downloadVideo}
+                          </a>
+                        ) : null}
+                      </>
+                    ) : null}
+
+                    {workspaceTab === "music" ? (
+                      <>
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>Title</span>
+                          <strong style={styles.infoValue}>
+                            {musicGeneration.status === "done"
+                              ? musicGeneration.title || "-"
+                              : uploadedAudioUrl
+                              ? "Uploaded Audio"
+                              : "-"}
+                          </strong>
+                        </div>
+
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>Duration</span>
+                          <strong style={styles.infoValue}>
+                            {musicGeneration.status === "done" &&
+                            musicGeneration.durationSec
+                              ? `${musicGeneration.durationSec}s`
+                              : uploadedAudioUrl
+                              ? "—"
+                              : "-"}
+                          </strong>
+                        </div>
+
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>Status</span>
+                          <span style={styles.status}>{musicStatusText}</span>
+                        </div>
+
+                        {activeAudioUrl ? (
+                          <a
+                            href={activeAudioUrl}
+                            download
+                            style={styles.downloadLink}
+                          >
+                            Download audio
+                          </a>
+                        ) : null}
+                      </>
+                    ) : null}
+
+                    {workspaceTab === "music_video" ? (
+                      <>
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>Source audio</span>
+                          <strong style={styles.infoValue}>
+                            {activeAudioUrl ? "Connected" : "Not connected"}
+                          </strong>
+                        </div>
+
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>{t.home.scenes}</span>
+                          <strong style={styles.infoValue}>
+                            {videoGeneration.status === "done"
+                              ? displayScenes.length
+                              : "-"}
+                          </strong>
+                        </div>
+
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>{t.home.duration}</span>
+                          <strong style={styles.infoValue}>
+                            {videoGeneration.status === "done" && totalDuration
+                              ? `${totalDuration}s`
+                              : "-"}
+                          </strong>
+                        </div>
+
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>Status</span>
+                          <span style={styles.status}>{videoStatusText}</span>
+                        </div>
+
+                        {videoGeneration.status === "done" ? (
+                          <a
+                            href={videoGeneration.videoUrl}
+                            download
+                            style={styles.downloadLink}
+                          >
+                            Download music video
+                          </a>
+                        ) : null}
+                      </>
+                    ) : null}
+
+                    {workspaceTab === "voice" ? (
+                      <>
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>Voices loaded</span>
+                          <strong style={styles.infoValue}>
+                            {availableVoices.length}
+                          </strong>
+                        </div>
+
+                        <div style={styles.infoRow}>
+                          <span style={styles.infoLabel}>Status</span>
+                          <span style={styles.status}>
+                            {isSpeaking ? "Speaking" : "Ready"}
+                          </span>
+                        </div>
+                      </>
                     ) : null}
                   </div>
                 </div>
 
                 <div style={styles.previewMainRight}>
-                  <div style={styles.scenesRailCard}>
-                    <div style={styles.cardTitle}>{t.home.sceneRailTitle}</div>
+                  {(workspaceTab === "video" || workspaceTab === "music_video") && (
+                    <div style={styles.scenesRailCard}>
+                      <div style={styles.cardTitle}>
+                        {workspaceTab === "music_video"
+                          ? "Music Video Scenes"
+                          : t.home.sceneRailTitle}
+                      </div>
 
-                    {displayScenes.length === 0 ? (
+                      {displayScenes.length === 0 ? (
+                        <div style={styles.smallNote}>
+                          {workspaceTab === "music_video"
+                            ? "Music video oluşturulduktan sonra sahneler burada görünecek."
+                            : "Video oluşturulduktan sonra sahneler burada görünecek."}
+                        </div>
+                      ) : (
+                        <div style={styles.scenesStack}>
+                          {displayScenes.map((scene) => {
+                            const isSelected =
+                              previewTarget !== "final" &&
+                              scene.id === selectedSceneId;
+
+                            return (
+                              <div
+                                key={scene.id}
+                                style={{
+                                  ...styles.sceneCard,
+                                  ...(isSelected ? styles.sceneCardActive : {}),
+                                }}
+                              >
+                                {scene.videoUrl ? (
+                                  <div style={styles.sceneThumbWrap}>
+                                    <video
+                                      src={scene.videoUrl}
+                                      muted
+                                      playsInline
+                                      controls
+                                      style={styles.sceneVideo}
+                                    />
+                                  </div>
+                                ) : scene.imageUrl ? (
+                                  <div style={styles.sceneThumbWrap}>
+                                    <img
+                                      src={scene.imageUrl}
+                                      alt={scene.title}
+                                      style={styles.sceneThumb}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div style={styles.sceneThumbPlaceholder}>
+                                    {scene.title}
+                                  </div>
+                                )}
+
+                                <div style={styles.sceneTitleRow}>
+                                  <strong>{scene.title}</strong>
+                                  <span>{scene.durationSec}s</span>
+                                </div>
+
+                                <div style={styles.sceneDescription}>
+                                  {scene.description}
+                                </div>
+
+                                <div style={styles.sceneActions}>
+                                  <button
+                                    type="button"
+                                    style={styles.sceneActionButton}
+                                    onClick={() => handleSelectScene(scene.id)}
+                                  >
+                                    {t.common.select}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    style={styles.sceneActionButtonDanger}
+                                    onClick={() => handleDeleteScene(scene.id)}
+                                  >
+                                    {t.common.delete}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {workspaceTab === "music" && musicGeneration.status === "done" ? (
+                    <div style={styles.scenesRailCard}>
+                      <div style={styles.cardTitle}>Lyrics Preview</div>
+                      <div style={styles.lyricsBox}>
+                        {musicGeneration.lyrics || "No lyrics available."}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {workspaceTab === "voice" ? (
+                    <div style={styles.scenesRailCard}>
+                      <div style={styles.cardTitle}>Voice Notes</div>
                       <div style={styles.smallNote}>
-                        Video oluşturulduktan sonra sahneler burada görünecek.
+                        Bu alan future voice cloning, dubbing, narration export ve
+                        advanced voice pipeline için hazır bırakıldı.
                       </div>
-                    ) : (
-                      <div style={styles.scenesStack}>
-                        {displayScenes.map((scene) => {
-                          const isSelected = scene.id === selectedSceneId;
-
-                          return (
-                            <div
-                              key={scene.id}
-                              style={{
-                                ...styles.sceneCard,
-                                ...(isSelected ? styles.sceneCardActive : {}),
-                              }}
-                            >
-                              {scene.videoUrl ? (
-                                <div style={styles.sceneThumbWrap}>
-                                  <video
-                                    src={scene.videoUrl}
-                                    muted
-                                    playsInline
-                                    controls
-                                    style={styles.sceneVideo}
-                                  />
-                                </div>
-                              ) : scene.imageUrl ? (
-                                <div style={styles.sceneThumbWrap}>
-                                  <img
-                                    src={scene.imageUrl}
-                                    alt={scene.title}
-                                    style={styles.sceneThumb}
-                                  />
-                                </div>
-                              ) : (
-                                <div style={styles.sceneThumbPlaceholder}>
-                                  {scene.title}
-                                </div>
-                              )}
-
-                              <div style={styles.sceneTitleRow}>
-                                <strong>{scene.title}</strong>
-                                <span>{scene.durationSec}s</span>
-                              </div>
-
-                              <div style={styles.sceneDescription}>
-                                {scene.description}
-                              </div>
-
-                              <div style={styles.sceneActions}>
-                                <button
-                                  type="button"
-                                  style={styles.sceneActionButton}
-                                  onClick={() => handleSelectScene(scene.id)}
-                                >
-                                  {t.common.select}
-                                </button>
-                                <button
-                                  type="button"
-                                  style={styles.sceneActionButtonDanger}
-                                  onClick={() => handleDeleteScene(scene.id)}
-                                >
-                                  {t.common.delete}
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -1088,17 +1960,28 @@ function PageContent() {
               gridTemplateColumns: isMobileViewport ? "1fr" : undefined,
             }}
           >
-            <button
-              type="button"
-              style={{
-                ...styles.topActionButton,
-                width: isMobileViewport ? "100%" : "auto",
-                ...(previewTarget === "final" ? styles.topActionButtonActive : {}),
-              }}
-              onClick={() => setPreviewTarget("final")}
-            >
-              {t.home.finalVideoButton}
-            </button>
+            {renderWorkspaceMenu()}
+
+            {(workspaceTab === "video" || workspaceTab === "music_video") && (
+              <button
+                type="button"
+                style={{
+                  ...styles.topActionButton,
+                  width: isMobileViewport ? "100%" : "auto",
+                  ...(previewTarget === "final"
+                    ? styles.topActionButtonActive
+                    : {}),
+                }}
+                onClick={() => {
+                  setPreviewTarget("final");
+                  setSelectedSceneId(null);
+                }}
+              >
+                {workspaceTab === "music_video"
+                  ? "Final Music Video"
+                  : t.home.finalVideoButton}
+              </button>
+            )}
 
             <button
               type="button"
@@ -1249,6 +2132,50 @@ function getDefaultPrompt(language: AppLanguage) {
   return "A cinematic traveler walking through Berlin streets, soft light, premium ad mood";
 }
 
+function getVideoModeLabel(mode: VideoMode) {
+  switch (mode) {
+    case "text_to_video":
+      return "Text to Video";
+    case "url_to_video":
+      return "URL to Video";
+    case "image_to_video":
+      return "Image to Video";
+    case "logo_to_video":
+      return "Logo to Video";
+    default:
+      return mode;
+  }
+}
+
+function getWorkspaceLabel(tab: WorkspaceTab) {
+  switch (tab) {
+    case "video":
+      return "Video";
+    case "voice":
+      return "Voice";
+    case "music":
+      return "Music";
+    case "music_video":
+      return "Music Video";
+    case "support":
+      return "Support";
+    default:
+      return tab;
+  }
+}
+
+function ratioToAspect(ratio: string) {
+  switch (ratio) {
+    case "16:9":
+      return "16 / 9";
+    case "9:16":
+      return "9 / 16";
+    case "1:1":
+    default:
+      return "1 / 1";
+  }
+}
+
 const styles: Record<string, CSSProperties> = {
   root: {
     display: "flex",
@@ -1284,6 +2211,83 @@ const styles: Record<string, CSSProperties> = {
     gap: 10,
     flexWrap: "wrap",
     minWidth: 0,
+  },
+
+  workspaceTopTabs: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+
+  workspaceTopTab: {
+    padding: "9px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.08)",
+    background: "rgba(255,255,255,0.96)",
+    color: "#0f172a",
+    fontWeight: 800,
+    fontSize: 13,
+    cursor: "pointer",
+    minHeight: 40,
+  },
+
+  workspaceTopTabActive: {
+    background: "#0f172a",
+    color: "#fff",
+    border: "1px solid #0f172a",
+  },
+
+  mobileWorkspaceMenuWrap: {
+    position: "relative",
+    width: "100%",
+  },
+
+  mobileMenuButton: {
+    width: "100%",
+    minHeight: 42,
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.08)",
+    background: "rgba(255,255,255,0.96)",
+    color: "#0f172a",
+    fontWeight: 800,
+    cursor: "pointer",
+    textAlign: "left",
+  },
+
+  mobileWorkspaceDropdown: {
+    position: "absolute",
+    top: "calc(100% + 8px)",
+    left: 0,
+    right: 0,
+    background: "rgba(255,255,255,0.98)",
+    border: "1px solid rgba(15,23,42,0.08)",
+    borderRadius: 16,
+    boxShadow: "0 18px 40px rgba(15,23,42,0.12)",
+    padding: 8,
+    zIndex: 60,
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+
+  mobileWorkspaceItem: {
+    width: "100%",
+    padding: "12px 12px",
+    borderRadius: 12,
+    border: "1px solid transparent",
+    background: "#fff",
+    color: "#0f172a",
+    fontWeight: 800,
+    cursor: "pointer",
+    textAlign: "left",
+  },
+
+  mobileWorkspaceItemActive: {
+    background: "#0f172a",
+    color: "#fff",
+    border: "1px solid #0f172a",
   },
 
   topActionButton: {
@@ -1550,7 +2554,6 @@ const styles: Record<string, CSSProperties> = {
     color: "#334155",
     cursor: "pointer",
     fontWeight: 700,
-    textTransform: "capitalize",
     width: "100%",
   },
 
@@ -1576,6 +2579,18 @@ const styles: Record<string, CSSProperties> = {
   prompt: {
     width: "100%",
     minHeight: 130,
+    borderRadius: 16,
+    border: "1px solid rgba(15,23,42,0.08)",
+    padding: 14,
+    background: "#fff",
+    color: "#111827",
+    resize: "vertical",
+    minWidth: 0,
+  },
+
+  promptSmall: {
+    width: "100%",
+    minHeight: 88,
     borderRadius: 16,
     border: "1px solid rgba(15,23,42,0.08)",
     padding: 14,
@@ -1759,7 +2774,6 @@ const styles: Record<string, CSSProperties> = {
 
   previewBoxLarge: {
     width: "100%",
-    aspectRatio: "1 / 1",
     margin: "0",
     borderRadius: 22,
     background: "#05070b",
@@ -1790,7 +2804,7 @@ const styles: Record<string, CSSProperties> = {
   centerBox: {
     textAlign: "center",
     width: "100%",
-    maxWidth: 320,
+    maxWidth: 360,
     padding: 24,
     color: "#fff",
   },
@@ -1855,6 +2869,7 @@ const styles: Record<string, CSSProperties> = {
   infoValue: {
     fontSize: 13,
     color: "#0f172a",
+    textAlign: "right",
   },
 
   status: {
@@ -1897,6 +2912,9 @@ const styles: Record<string, CSSProperties> = {
     gap: 12,
     width: "100%",
     minWidth: 0,
+    maxHeight: 880,
+    overflowY: "auto",
+    paddingRight: 4,
   },
 
   sceneCard: {
@@ -2071,5 +3089,53 @@ const styles: Record<string, CSSProperties> = {
     textTransform: "uppercase",
     letterSpacing: 0.5,
     color: "#475569",
+  },
+
+  audioPreviewCard: {
+    width: "100%",
+    maxWidth: 480,
+    background: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 18,
+    padding: 18,
+    color: "#fff",
+  },
+
+  audioPreviewTitle: {
+    fontSize: 20,
+    fontWeight: 900,
+    marginBottom: 8,
+  },
+
+  audioPreviewSub: {
+    fontSize: 13,
+    lineHeight: 1.5,
+    opacity: 0.82,
+    marginBottom: 16,
+  },
+
+  audioPlayer: {
+    width: "100%",
+  },
+
+  audioInlineCard: {
+    padding: 14,
+    borderRadius: 14,
+    background: "rgba(255,255,255,0.96)",
+    border: "1px solid rgba(15,23,42,0.08)",
+  },
+
+  audioInlineTitle: {
+    fontSize: 13,
+    fontWeight: 800,
+    color: "#0f172a",
+    marginBottom: 10,
+  },
+
+  lyricsBox: {
+    whiteSpace: "pre-wrap",
+    fontSize: 13,
+    lineHeight: 1.65,
+    color: "#334155",
   },
 };
