@@ -31,7 +31,7 @@ const PLAN_MAP: Record<
   },
   agency: {
     title: "Agency",
-    price: "$99",
+    price: "$249",
     description: "Ajans ve yüksek hacimli kullanım için.",
   },
 };
