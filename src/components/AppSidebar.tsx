@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "../lib/auth-client";
 import { useSession } from "../provider/SessionProvider";
 import { useLanguage } from "../provider/LanguageProvider";
@@ -51,13 +51,16 @@ export default function AppSidebar({
   }, [pathname, activeKey]);
 
   const userInitial = useMemo(() => {
-    return (user?.name?.[0] || user?.email?.[0] || "D").toUpperCase();
+    return (user?.name?.[0] || user?.email?.[0] || "A").toUpperCase();
   }, [user?.name, user?.email]);
 
   const remainingCreditsText =
     user?.remainingCredits === null
       ? "Unlimited"
-      : `${user?.remainingCredits ?? 0}`;
+      : `${user?.remainingCredits ?? 0} left`;
+
+  const languageLabel =
+    language === "tr" ? "Türkçe" : language === "de" ? "Deutsch" : "English";
 
   const handleLogout = async () => {
     try {
@@ -88,102 +91,99 @@ export default function AppSidebar({
   };
 
   const navContent = (
-    <div style={styles.navSection}>
-      <div style={styles.sectionLabel}>Workspace</div>
+    <div style={styles.navList}>
+      {navItems.map((item) => {
+        const isActive = item.key === activeKey;
 
-      <div style={styles.navGroup}>
-        {navItems.map((item) => {
-          const isActive = item.key === activeKey;
-
-          return (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => handleNavClick(item.key)}
-              style={{
-                ...styles.navButton,
-                ...(isActive ? styles.navButtonActive : {}),
-              }}
-            >
-              <span style={styles.navIcon}>{item.icon}</span>
-              <span style={styles.navText}>{item.label}</span>
-              {item.badge ? <span style={styles.badgeDot} /> : null}
-            </button>
-          );
-        })}
-      </div>
+        return (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => handleNavClick(item.key)}
+            style={{
+              ...styles.navButton,
+              ...(isActive ? styles.navButtonActive : {}),
+            }}
+          >
+            <span style={styles.navButtonIcon}>{item.icon}</span>
+            <span style={styles.navButtonLabel}>{item.label}</span>
+            {item.badge ? <span style={styles.badgeDot} /> : null}
+          </button>
+        );
+      })}
     </div>
   );
 
   const userPanel = (
-    <div style={styles.userPanel}>
-      <div style={styles.userPanelTitle}>User Panel</div>
+    <div style={styles.userPanelWrap}>
+      <div style={styles.userPanelHeader}>USER PANEL</div>
 
-      <div style={styles.userCard}>
-        <div style={styles.userAvatar}>{userInitial}</div>
+      <div style={styles.profileCard}>
+        <div style={styles.profileAvatar}>{userInitial}</div>
 
-        <div style={styles.userMeta}>
-          <div style={styles.userName}>
-            {isAuthenticated ? user?.name || "User" : "Guest"}
+        <div style={styles.profileMeta}>
+          <div style={styles.profileName}>
+            {isAuthenticated ? user?.name || "Alex Johnson" : "Guest User"}
           </div>
-          <div style={styles.userPlan}>
-            {user?.planLabel || "Free Plan"}
-          </div>
-          <div style={styles.userEmail}>
-            {isAuthenticated ? user?.email || "-" : "Not signed in"}
+          <div style={styles.profilePlan}>
+            {user?.planLabel || "Pro Member"}
           </div>
         </div>
       </div>
 
-      <div style={styles.statsCard}>
-        <div style={styles.statRow}>
-          <span style={styles.statLabel}>Plan</span>
-          <strong style={styles.statValue}>{user?.planLabel || "Free"}</strong>
-        </div>
-
-        <div style={styles.statRow}>
-          <span style={styles.statLabel}>Credits</span>
-          <strong style={styles.statValue}>{remainingCreditsText}</strong>
-        </div>
-
-        <div style={styles.statRow}>
-          <span style={styles.statLabel}>Max Duration</span>
-          <strong style={styles.statValue}>{user?.maxDurationSec ?? 10}s</strong>
-        </div>
-
-        <div style={styles.statRow}>
-          <span style={styles.statLabel}>Language</span>
-          <strong style={styles.statValue}>{language.toUpperCase()}</strong>
-        </div>
+      <div style={styles.infoLine}>
+        <span style={styles.infoArrow}>▸</span>
+        <span style={styles.infoText}>
+          Plan: <strong>{user?.planLabel || "Pro"}</strong>
+        </span>
       </div>
 
-      <div style={styles.actionGroup}>
-        <button
-          type="button"
-          style={styles.primaryAction}
-          onClick={() => router.push("/billing")}
-        >
-          Manage Billing
-        </button>
-
-        {isAuthenticated ? (
-          <button
-            type="button"
-            style={styles.secondaryAction}
-            onClick={handleLogout}
-          >
-            Log Out
-          </button>
-        ) : (
-          <button
-            type="button"
-            style={styles.secondaryAction}
-            onClick={() => router.push("/login")}
-          >
-            Log In
-          </button>
-        )}
+      <div style={styles.infoLine}>
+        <span style={styles.infoArrow}>▸</span>
+        <span style={styles.infoText}>
+          Credits: <strong>{remainingCreditsText}</strong>
+        </span>
       </div>
+
+      <button
+        type="button"
+        style={styles.sidebarActionButton}
+        onClick={() => router.push("/billing")}
+      >
+        <span>Manage Billing</span>
+        <span style={styles.buttonChevron}>›</span>
+      </button>
+
+      <button
+        type="button"
+        style={styles.sidebarActionButton}
+        onClick={() => router.push("/profile")}
+      >
+        <span>Edit Profile</span>
+        <span style={styles.buttonChevron}>›</span>
+      </button>
+
+      <div style={styles.languageRow}>
+        <div style={styles.languageLabelWrap}>
+          <span style={styles.languageIcon}>🌐</span>
+          <span style={styles.languageLabel}>Language</span>
+        </div>
+        <div style={styles.languagePower}>⏻</div>
+      </div>
+
+      <button type="button" style={styles.languageSelect}>
+        <span style={styles.flag}>🇺🇸</span>
+        <span style={styles.languageSelectText}>{languageLabel}</span>
+        <span style={styles.languageCaret}>⌄</span>
+      </button>
+
+      <button
+        type="button"
+        style={styles.signOutButton}
+        onClick={isAuthenticated ? handleLogout : () => router.push("/login")}
+      >
+        {isAuthenticated ? "Sign Out" : "Log In"}
+      </button>
     </div>
   );
 
@@ -206,12 +206,12 @@ export default function AppSidebar({
             style={styles.mobileLogoButton}
             title="Home"
           >
-            <div style={styles.mobileLogoImageWrap}>
+            <div style={styles.mobileLogoWrap}>
               <Image
                 src="/Dubleslogo.png"
                 alt="Duble-S Technology"
                 fill
-                sizes="140px"
+                sizes="160px"
                 style={{ objectFit: "contain" }}
               />
             </div>
@@ -234,29 +234,13 @@ export default function AppSidebar({
             />
 
             <aside style={styles.mobileDrawer}>
-              <div style={styles.mobileDrawerHeader}>
-                <button
-                  type="button"
-                  onClick={() => router.push("/")}
-                  style={styles.mobileDrawerLogoButton}
-                  title="Home"
-                >
-                  <div style={styles.mobileDrawerLogoWrap}>
-                    <Image
-                      src="/Dubleslogo.png"
-                      alt="Duble-S Technology"
-                      fill
-                      sizes="150px"
-                      style={{ objectFit: "contain" }}
-                    />
-                  </div>
-                </button>
+              <div style={styles.mobileDrawerTop}>
+                <div style={styles.mobileDrawerBrand}>DUBLE-S MOTION</div>
 
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
                   style={styles.mobileCloseButton}
-                  aria-label="Close menu"
                 >
                   ✕
                 </button>
@@ -273,28 +257,15 @@ export default function AppSidebar({
 
   return (
     <aside style={styles.sidebar}>
-      <div style={styles.topBlock}>
+      <div style={styles.topBrandArea}>
         <button
           type="button"
           onClick={() => router.push("/")}
-          style={styles.logoButton}
+          style={styles.brandButton}
           title="Home"
         >
-          <div style={styles.logoImageWrap}>
-            <Image
-              src="/Dubleslogo.png"
-              alt="Duble-S Technology"
-              fill
-              sizes="170px"
-              style={{ objectFit: "contain" }}
-            />
-          </div>
+          <div style={styles.brandTitle}>DUBLE-S MOTION</div>
         </button>
-
-        <div style={styles.brandTextWrap}>
-          <div style={styles.companyName}>Duble-S Technology</div>
-          <div style={styles.platformName}>Dublesmotion AI</div>
-        </div>
       </div>
 
       {navContent}
@@ -305,269 +276,290 @@ export default function AppSidebar({
 
 const styles: Record<string, React.CSSProperties> = {
   sidebar: {
-    width: 296,
-    minWidth: 296,
+    width: 280,
+    minWidth: 280,
     height: "100vh",
     position: "sticky",
     top: 0,
     display: "flex",
     flexDirection: "column",
-    gap: 16,
-    padding: "18px 16px",
     background:
-      "linear-gradient(180deg, rgba(244,246,248,0.96) 0%, rgba(227,231,236,0.98) 100%)",
-    borderRight: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "inset -1px 0 0 rgba(255,255,255,0.55)",
-    backdropFilter: "blur(14px)",
+      "linear-gradient(180deg, #dfe3e8 0%, #cfd5dc 42%, #bcc4cd 100%)",
+    borderRight: "1px solid rgba(15,23,42,0.12)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.7), 4px 0 18px rgba(15,23,42,0.06)",
     zIndex: 40,
+    overflow: "hidden",
   },
 
-  topBlock: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 14,
-    paddingBottom: 14,
-    borderBottom: "1px solid rgba(15,23,42,0.08)",
+  topBrandArea: {
+    padding: "18px 18px 16px",
+    borderBottom: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(240,243,247,0.96) 0%, rgba(214,220,227,0.96) 100%)",
   },
 
-  logoButton: {
+  brandButton: {
+    width: "100%",
     border: "none",
     background: "transparent",
     padding: 0,
     cursor: "pointer",
-    display: "flex",
-    justifyContent: "flex-start",
+    textAlign: "left",
   },
 
-  logoImageWrap: {
-    position: "relative",
-    width: 176,
-    height: 52,
-  },
-
-  brandTextWrap: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-  },
-
-  companyName: {
-    fontSize: 12,
-    fontWeight: 900,
-    letterSpacing: 0.6,
-    color: "#64748b",
-    textTransform: "uppercase",
-  },
-
-  platformName: {
+  brandTitle: {
     fontSize: 20,
-    fontWeight: 900,
-    color: "#0f172a",
-    letterSpacing: -0.3,
+    fontWeight: 800,
+    letterSpacing: 0.5,
+    color: "#4b5563",
   },
 
-  navSection: {
+  navList: {
+    padding: "14px 0 0",
     display: "flex",
     flexDirection: "column",
-    gap: 12,
-  },
-
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: 900,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-    color: "#64748b",
-    padding: "0 4px",
-  },
-
-  navGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
   },
 
   navButton: {
+    position: "relative",
     width: "100%",
-    minHeight: 54,
-    borderRadius: 16,
-    border: "1px solid transparent",
-    background: "transparent",
-    color: "#475569",
+    minHeight: 66,
+    border: "none",
+    borderTop: "1px solid rgba(255,255,255,0.5)",
+    borderBottom: "1px solid rgba(15,23,42,0.08)",
+    background:
+      "linear-gradient(180deg, rgba(236,239,243,0.94) 0%, rgba(212,218,226,0.94) 100%)",
+    color: "#4b5563",
     display: "flex",
     alignItems: "center",
-    justifyContent: "flex-start",
-    gap: 12,
-    padding: "0 14px",
+    gap: 16,
+    padding: "0 24px",
     cursor: "pointer",
-    position: "relative",
-    transition: "all 0.2s ease",
     textAlign: "left",
   },
 
   navButtonActive: {
-    background: "linear-gradient(180deg, #ffffff 0%, #edf1f5 100%)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    color: "#0f172a",
-    boxShadow: "0 10px 22px rgba(15,23,42,0.06)",
+    background:
+      "linear-gradient(180deg, rgba(245,247,250,0.98) 0%, rgba(218,224,232,0.98) 100%)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.75), 0 2px 10px rgba(104,130,175,0.10)",
+    color: "#374151",
   },
 
-  navIcon: {
+  navButtonIcon: {
     width: 28,
-    height: 28,
-    borderRadius: 10,
-    display: "grid",
-    placeItems: "center",
-    background: "rgba(255,255,255,0.8)",
-    border: "1px solid rgba(15,23,42,0.06)",
-    fontSize: 14,
+    display: "inline-flex",
+    justifyContent: "center",
+    alignItems: "center",
+    fontSize: 22,
+    color: "#6b7280",
     flexShrink: 0,
   },
 
-  navText: {
-    fontSize: 14,
-    fontWeight: 800,
-    lineHeight: 1.2,
+  navButtonLabel: {
+    fontSize: 18,
+    fontWeight: 700,
   },
 
   badgeDot: {
     position: "absolute",
-    top: 12,
-    right: 14,
-    width: 8,
-    height: 8,
+    right: 22,
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: 10,
+    height: 10,
     borderRadius: 999,
-    background: "#7c5cff",
-    boxShadow: "0 0 0 4px rgba(124,92,255,0.14)",
+    background: "#8aa7d3",
+    boxShadow: "0 0 0 4px rgba(138,167,211,0.16)",
   },
 
-  userPanel: {
+  userPanelWrap: {
     marginTop: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    paddingTop: 14,
+    paddingTop: 12,
+    borderTop: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(214,220,227,0.98) 0%, rgba(191,199,208,0.98) 100%)",
+  },
+
+  userPanelHeader: {
+    padding: "10px 18px",
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#6b7280",
+    letterSpacing: 0.4,
+    borderBottom: "1px solid rgba(255,255,255,0.45)",
     borderTop: "1px solid rgba(15,23,42,0.08)",
   },
 
-  userPanelTitle: {
-    fontSize: 12,
-    fontWeight: 900,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-    color: "#64748b",
-    padding: "0 4px",
-  },
-
-  userCard: {
+  profileCard: {
     display: "flex",
     alignItems: "center",
     gap: 12,
-    padding: 14,
-    borderRadius: 18,
-    background: "linear-gradient(180deg, #ffffff 0%, #edf1f5 100%)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 8px 20px rgba(15,23,42,0.05)",
+    padding: "16px 18px",
+    borderBottom: "1px solid rgba(15,23,42,0.08)",
   },
 
-  userAvatar: {
-    width: 52,
-    height: 52,
+  profileAvatar: {
+    width: 54,
+    height: 54,
     borderRadius: 999,
     display: "grid",
     placeItems: "center",
-    background: "linear-gradient(135deg, #8d96a3 0%, #bcc5cf 100%)",
+    background:
+      "linear-gradient(180deg, #7a8088 0%, #626973 100%)",
     color: "#fff",
-    fontWeight: 900,
-    fontSize: 18,
+    fontWeight: 800,
+    fontSize: 28,
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 10px rgba(15,23,42,0.12)",
     flexShrink: 0,
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35)",
   },
 
-  userMeta: {
+  profileMeta: {
     display: "flex",
     flexDirection: "column",
-    minWidth: 0,
     gap: 3,
+    minWidth: 0,
   },
 
-  userName: {
+  profileName: {
+    fontSize: 17,
+    fontWeight: 800,
+    color: "#374151",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+
+  profilePlan: {
     fontSize: 14,
-    fontWeight: 900,
-    color: "#0f172a",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+    color: "#6b7280",
+    fontWeight: 600,
   },
 
-  userPlan: {
-    fontSize: 12,
-    color: "#475569",
-    fontWeight: 700,
-  },
-
-  userEmail: {
-    fontSize: 11,
-    color: "#64748b",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  },
-
-  statsCard: {
+  infoLine: {
     display: "flex",
-    flexDirection: "column",
-    gap: 10,
-    padding: 14,
-    borderRadius: 18,
-    background: "rgba(255,255,255,0.72)",
-    border: "1px solid rgba(15,23,42,0.08)",
+    alignItems: "center",
+    gap: 8,
+    padding: "12px 18px",
+    borderTop: "1px solid rgba(255,255,255,0.35)",
+    borderBottom: "1px solid rgba(15,23,42,0.06)",
+    color: "#4b5563",
   },
 
-  statRow: {
+  infoArrow: {
+    fontSize: 14,
+    color: "#6b7280",
+    flexShrink: 0,
+  },
+
+  infoText: {
+    fontSize: 16,
+    lineHeight: 1.2,
+  },
+
+  sidebarActionButton: {
+    margin: "12px 18px 0",
+    minHeight: 48,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
+    fontWeight: 700,
+    fontSize: 15,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "0 16px",
+    cursor: "pointer",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
+  },
+
+  buttonChevron: {
+    fontSize: 24,
+    lineHeight: 1,
+    color: "#6b7280",
+  },
+
+  languageRow: {
+    marginTop: 14,
+    padding: "12px 18px",
+    borderTop: "1px solid rgba(255,255,255,0.35)",
+    borderBottom: "1px solid rgba(15,23,42,0.06)",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
   },
 
-  statLabel: {
-    fontSize: 12,
-    color: "#64748b",
-    fontWeight: 700,
-  },
-
-  statValue: {
-    fontSize: 12,
-    color: "#0f172a",
-    fontWeight: 900,
-  },
-
-  actionGroup: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
+  languageLabelWrap: {
+    display: "flex",
+    alignItems: "center",
     gap: 10,
   },
 
-  primaryAction: {
-    minHeight: 46,
-    borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "linear-gradient(180deg, #ffffff 0%, #e7ebf0 100%)",
-    color: "#0f172a",
-    fontWeight: 900,
-    cursor: "pointer",
-    boxShadow: "0 8px 18px rgba(15,23,42,0.05)",
+  languageIcon: {
+    fontSize: 22,
   },
 
-  secondaryAction: {
-    minHeight: 44,
-    borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#ffffff",
-    color: "#334155",
-    fontWeight: 800,
+  languageLabel: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#4b5563",
+  },
+
+  languagePower: {
+    fontSize: 24,
+    color: "#8b949e",
+  },
+
+  languageSelect: {
+    margin: "14px 18px 0",
+    minHeight: 48,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
+    fontWeight: 700,
+    fontSize: 15,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "0 14px",
     cursor: "pointer",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
+  },
+
+  flag: {
+    fontSize: 22,
+    flexShrink: 0,
+  },
+
+  languageSelectText: {
+    flex: 1,
+    textAlign: "left",
+  },
+
+  languageCaret: {
+    fontSize: 20,
+    color: "#6b7280",
+  },
+
+  signOutButton: {
+    margin: "18px 18px 18px",
+    minHeight: 50,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, #6f7781 0%, #555d67 100%)",
+    color: "#ffffff",
+    fontWeight: 700,
+    fontSize: 17,
+    cursor: "pointer",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.15), 0 4px 10px rgba(15,23,42,0.10)",
   },
 
   mobileTopBar: {
@@ -575,27 +567,28 @@ const styles: Record<string, React.CSSProperties> = {
     top: 0,
     zIndex: 60,
     width: "100%",
-    height: 70,
-    padding: "10px 14px",
-    background: "rgba(244,246,248,0.94)",
-    backdropFilter: "blur(14px)",
-    borderBottom: "1px solid rgba(15,23,42,0.08)",
+    height: 68,
+    padding: "10px 12px",
+    background:
+      "linear-gradient(180deg, rgba(240,243,247,0.98) 0%, rgba(214,220,227,0.98) 100%)",
+    borderBottom: "1px solid rgba(15,23,42,0.12)",
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
     gap: 10,
   },
 
   mobileMenuButton: {
     width: 42,
     height: 42,
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-    color: "#0f172a",
+    borderRadius: 10,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
     fontSize: 18,
     fontWeight: 800,
     cursor: "pointer",
+    flexShrink: 0,
   },
 
   mobileLogoButton: {
@@ -608,28 +601,30 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
 
-  mobileLogoImageWrap: {
+  mobileLogoWrap: {
     position: "relative",
-    width: 140,
-    height: 42,
+    width: 170,
+    height: 40,
   },
 
   mobileBillingButton: {
+    minWidth: 76,
     height: 42,
     padding: "0 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-    color: "#0f172a",
-    fontWeight: 800,
+    borderRadius: 10,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
+    fontWeight: 700,
     cursor: "pointer",
-    whiteSpace: "nowrap",
+    flexShrink: 0,
   },
 
   mobileOverlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(15,23,42,0.36)",
+    background: "rgba(15,23,42,0.35)",
     zIndex: 69,
   },
 
@@ -638,49 +633,45 @@ const styles: Record<string, React.CSSProperties> = {
     top: 0,
     left: 0,
     bottom: 0,
-    width: 320,
+    width: 310,
     maxWidth: "88vw",
     background:
-      "linear-gradient(180deg, rgba(244,246,248,0.98) 0%, rgba(227,231,236,1) 100%)",
-    borderRight: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 24px 60px rgba(15,23,42,0.18)",
+      "linear-gradient(180deg, #dfe3e8 0%, #cfd5dc 42%, #bcc4cd 100%)",
+    borderRight: "1px solid rgba(15,23,42,0.12)",
+    boxShadow: "8px 0 30px rgba(15,23,42,0.18)",
     zIndex: 70,
-    padding: 16,
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
     overflowY: "auto",
   },
 
-  mobileDrawerHeader: {
+  mobileDrawerTop: {
+    minHeight: 72,
+    padding: "18px 18px 16px",
+    borderBottom: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(240,243,247,0.96) 0%, rgba(214,220,227,0.96) 100%)",
     display: "flex",
-    alignItems: "center",
     justifyContent: "space-between",
-    gap: 10,
+    alignItems: "center",
+    gap: 12,
   },
 
-  mobileDrawerLogoButton: {
-    border: "none",
-    background: "transparent",
-    padding: 0,
-    cursor: "pointer",
-  },
-
-  mobileDrawerLogoWrap: {
-    position: "relative",
-    width: 156,
-    height: 44,
+  mobileDrawerBrand: {
+    fontSize: 20,
+    fontWeight: 800,
+    letterSpacing: 0.5,
+    color: "#4b5563",
   },
 
   mobileCloseButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-    color: "#0f172a",
-    fontSize: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
     fontWeight: 800,
     cursor: "pointer",
+    flexShrink: 0,
   },
 };

@@ -96,7 +96,7 @@ function PageContent() {
   const [sourceUrl, setSourceUrl] = useState("");
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [ratioUi, setRatioUi] = useState("1:1");
+  const [ratioUi, setRatioUi] = useState("16:9");
   const [styleUi, setStyleUi] = useState<VideoStyle>("cinematic");
 
   const [videoGeneration, setVideoGeneration] = useState<VideoGenerationState>({
@@ -482,7 +482,12 @@ function PageContent() {
       const nextScenes: SceneCard[] = scenePrompts.map(
         (scenePrompt: string, index: number) => ({
           id: `generated-scene-${index + 1}`,
-          title: `Scene ${index + 1}`,
+          title:
+            index === 0
+              ? "Scene 1: NYC Skyline"
+              : index === 1
+              ? "Scene 2: Street Walk"
+              : `Scene ${index + 1}: Times Square`,
           description: scenePrompt,
           durationSec: actualClipDurationSec,
           imageUrl: sceneImages[index] ?? null,
@@ -653,7 +658,12 @@ function PageContent() {
       const nextScenes: SceneCard[] = scenePrompts.map(
         (scenePrompt: string, index: number) => ({
           id: `music-video-scene-${index + 1}`,
-          title: `Scene ${index + 1}`,
+          title:
+            index === 0
+              ? "Scene 1: NYC Skyline"
+              : index === 1
+              ? "Scene 2: Street Walk"
+              : `Scene ${index + 1}: Times Square`,
           description: scenePrompt,
           durationSec: actualClipDurationSec,
           imageUrl: sceneImages[index] ?? null,
@@ -914,250 +924,235 @@ function PageContent() {
 
   const renderVideoWorkspace = () => {
     return (
-      <div style={styles.toolCard}>
-        <div style={styles.sectionTitle}>{t.createVideo.title}</div>
-        <div style={styles.sectionSub}>{t.createVideo.subtitle}</div>
-
-        <div style={styles.modeTabs}>
-          {(
-            [
-              "text_to_video",
-              "url_to_video",
-              "image_to_video",
-              "logo_to_video",
-            ] as const
-          ).map((item) => (
+      <div style={styles.workspaceCard}>
+        <div style={styles.workspaceTabsHeader}>
+          {(["video", "voice", "music", "support"] as const).map((tab) => (
             <button
-              key={item}
+              key={tab}
               type="button"
-              onClick={() => setVideoMode(item)}
+              onClick={() =>
+                setWorkspaceTab(
+                  tab === "support" ? "support" : (tab as WorkspaceTab)
+                )
+              }
               style={{
-                ...styles.modeTab,
-                ...(videoMode === item ? styles.modeTabActive : {}),
+                ...styles.workspaceHeaderTab,
+                ...(workspaceTab === tab
+                  ? styles.workspaceHeaderTabActive
+                  : {}),
               }}
             >
-              {getVideoModeLabel(item)}
+              {tab === "video"
+                ? "Video"
+                : tab === "voice"
+                ? "Voice"
+                : tab === "music"
+                ? "Music"
+                : "Support"}
             </button>
           ))}
         </div>
 
-        <label style={styles.label}>
-          {videoMode === "logo_to_video"
-            ? "Logo prompt (optional)"
-            : t.home.promptLabel}
-        </label>
-        <textarea
-          style={styles.prompt}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={
-            videoMode === "logo_to_video"
-              ? "clean premium technology logo reveal with subtle glow"
-              : t.home.promptPlaceholder
-          }
-        />
+        <div style={styles.formCardInner}>
+          <label style={styles.label}>Text Prompt</label>
+          <textarea
+            style={styles.heroInput}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="A cinematic traveller walking in New York City"
+          />
 
-        {videoMode === "logo_to_video" ? (
-          <div style={styles.logoInfoBox}>
-            Upload your logo for a clean cinematic brand reveal. PNG logos with
-            transparent background work best.
-          </div>
-        ) : null}
-
-        {videoMode === "url_to_video" ? (
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>{t.home.sourceUrlLabel}</label>
-            <input
-              style={styles.input}
-              value={sourceUrl}
-              onChange={(e) => setSourceUrl(e.target.value)}
-              placeholder="https://..."
-            />
-          </div>
-        ) : null}
-
-        {(videoMode === "image_to_video" || videoMode === "logo_to_video") && (
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>
-              {videoMode === "logo_to_video"
-                ? "Upload logo"
-                : t.home.uploadImageLabel}
-            </label>
-
-            <div style={styles.uploadRow}>
-              <label style={styles.uploadButton}>
-                {videoMode === "logo_to_video"
-                  ? "Choose logo"
-                  : t.home.chooseImage}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImagePick}
-                  style={{ display: "none" }}
-                />
+          {(videoMode === "image_to_video" || videoMode === "logo_to_video") ? (
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>
+                {videoMode === "logo_to_video" ? "Upload Logo" : "Upload Image"}
               </label>
-
-              {uploadingImage ? (
-                <span style={styles.uploadHint}>{t.home.uploadInProgress}</span>
-              ) : uploadedImageUrl ? (
-                <span style={styles.uploadReady}>
-                  {videoMode === "logo_to_video"
-                    ? "Logo uploaded"
-                    : t.home.imageUploaded}
-                </span>
-              ) : (
-                <span style={styles.uploadHint}>
-                  {videoMode === "logo_to_video"
-                    ? "No logo selected"
-                    : t.home.noImageSelected}
-                </span>
-              )}
-            </div>
-
-            {uploadedImageUrl ? (
-              <div style={styles.imagePreviewWrap}>
-                <img
-                  src={uploadedImageUrl}
-                  alt="Uploaded preview"
-                  style={styles.imagePreview}
-                />
+              <div style={styles.uploadRow}>
+                <label style={styles.uploadFieldLike}>
+                  <span style={styles.uploadFieldText}>
+                    {uploadedImageUrl ? "Image selected" : "No image selected."}
+                  </span>
+                  <span style={styles.uploadFieldIcon}>☁</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImagePick}
+                    style={{ display: "none" }}
+                  />
+                </label>
               </div>
-            ) : null}
-          </div>
-        )}
+            </div>
+          ) : (
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Upload Image</label>
+              <div style={styles.uploadRow}>
+                <label style={styles.uploadFieldLike}>
+                  <span style={styles.uploadFieldText}>No image selected.</span>
+                  <span style={styles.uploadFieldIcon}>☁</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImagePick}
+                    style={{ display: "none" }}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Style</label>
-          <select
-            value={styleUi}
-            onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
-            style={styles.selectWide}
-          >
-            <option value="realistic">Realistic</option>
-            <option value="cinematic">Cinematic</option>
-            <option value="3d_animation">3D Animation</option>
-            <option value="anime">Anime</option>
-            <option value="pixar">Pixar Style</option>
-            <option value="cartoon">Cartoon</option>
-          </select>
-        </div>
+          {videoMode === "url_to_video" ? (
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>{t.home.sourceUrlLabel}</label>
+              <input
+                style={styles.selectMetal}
+                value={sourceUrl}
+                onChange={(e) => setSourceUrl(e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+          ) : null}
 
-        {videoMode !== "logo_to_video" && (
           <div style={styles.inputGroup}>
-            <label style={styles.label}>{t.home.ratioLabel}</label>
+            <label style={styles.label}>Style</label>
             <select
-              value={ratioUi}
-              onChange={(e) => setRatioUi(e.target.value)}
-              style={styles.selectWide}
+              value={styleUi}
+              onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
+              style={styles.selectMetal}
             >
-              <option value="1:1">1:1</option>
-              <option value="16:9">16:9</option>
-              <option value="9:16">9:16</option>
+              <option value="realistic">Realistic</option>
+              <option value="cinematic">Cinematic</option>
+              <option value="3d_animation">3D Animation</option>
+              <option value="anime">Anime</option>
+              <option value="pixar">Pixar</option>
+              <option value="cartoon">Cartoon</option>
             </select>
           </div>
-        )}
 
-        <div style={styles.controls}>
-          <button type="button" style={styles.reset} onClick={handleResetVideo}>
-            {t.common.reset}
-          </button>
+          {videoMode !== "logo_to_video" ? (
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Aspect Ratio</label>
+              <select
+                value={ratioUi}
+                onChange={(e) => setRatioUi(e.target.value)}
+                style={styles.selectMetal}
+              >
+                <option value="16:9">16:9</option>
+                <option value="1:1">1:1</option>
+                <option value="9:16">9:16</option>
+              </select>
+            </div>
+          ) : null}
 
-          {!isAuthenticated ? (
-            <button
-              type="button"
-              style={styles.generate}
-              onClick={() => router.push("/login")}
-            >
-              {t.home.loginToCreate}
+          <div style={styles.actionRow}>
+            <button type="button" style={styles.resetButton} onClick={handleResetVideo}>
+              Reset
             </button>
-          ) : isPlanBlocked ? (
-            <button
-              type="button"
-              style={styles.generate}
-              onClick={() => router.push("/billing")}
-            >
-              {t.home.upgradeCta}
-            </button>
-          ) : (
-            <button
-              type="button"
-              style={{
-                ...styles.generate,
-                ...(!canGenerateVideo ? styles.generateDisabled : {}),
-              }}
-              onClick={canGenerateVideo ? handleGenerateVideo : undefined}
-            >
-              {uploadingImage
-                ? t.home.uploadInProgress
-                : videoGeneration.status === "loading"
-                ? t.home.statusGenerating
-                : videoMode === "logo_to_video"
-                ? "Generate logo animation"
-                : t.common.generate}
-            </button>
-          )}
-        </div>
 
-        {isPlanBlocked ? (
-          <div style={styles.limitBox}>{planLimitMessage}</div>
-        ) : (
-          <div style={styles.smallNote}>
-            {videoMode === "logo_to_video"
-              ? "Use a clean logo image for the best result."
-              : t.home.generateHint}
+            {!isAuthenticated ? (
+              <button
+                type="button"
+                style={styles.primaryGenerateButton}
+                onClick={() => router.push("/login")}
+              >
+                Login
+              </button>
+            ) : isPlanBlocked ? (
+              <button
+                type="button"
+                style={styles.primaryGenerateButton}
+                onClick={() => router.push("/billing")}
+              >
+                Upgrade
+              </button>
+            ) : (
+              <button
+                type="button"
+                style={{
+                  ...styles.primaryGenerateButton,
+                  ...(!canGenerateVideo ? styles.generateDisabled : {}),
+                }}
+                onClick={canGenerateVideo ? handleGenerateVideo : undefined}
+              >
+                {uploadingImage
+                  ? "Uploading..."
+                  : videoGeneration.status === "loading"
+                  ? "Generating..."
+                  : "Generate Video"}
+              </button>
+            )}
           </div>
-        )}
+        </div>
       </div>
     );
   };
 
   const renderVoiceWorkspace = () => {
     return (
-      <div style={styles.toolCard}>
-        <div style={styles.sectionTitle}>{t.voice.title}</div>
-        <div style={styles.sectionSub}>{t.voice.subtitle}</div>
-
-        <label style={styles.label}>{t.voice.textLabel}</label>
-        <textarea
-          style={styles.prompt}
-          value={voiceText}
-          onChange={(e) => setVoiceText(e.target.value)}
-          placeholder={t.voice.textPlaceholder}
-        />
-
-        <label style={styles.label}>{t.voice.voiceLabel}</label>
-        <select
-          value={voiceUri}
-          onChange={(e) => setVoiceUri(e.target.value)}
-          style={styles.selectWide}
-        >
-          {availableVoices.length === 0 ? (
-            <option value="">{t.voice.noVoices}</option>
-          ) : (
-            availableVoices.map((voice) => (
-              <option key={voice.voiceURI} value={voice.voiceURI}>
-                {voice.name} — {voice.lang}
-              </option>
-            ))
-          )}
-        </select>
-
-        <div style={styles.controls}>
-          <button type="button" style={styles.generate} onClick={handleSpeak}>
-            {t.voice.preview}
-          </button>
-          <button
-            type="button"
-            style={styles.reset}
-            onClick={handleStopSpeaking}
-          >
-            {t.voice.stop}
-          </button>
+      <div style={styles.workspaceCard}>
+        <div style={styles.workspaceTabsHeader}>
+          {(["video", "voice", "music", "support"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() =>
+                setWorkspaceTab(
+                  tab === "support" ? "support" : (tab as WorkspaceTab)
+                )
+              }
+              style={{
+                ...styles.workspaceHeaderTab,
+                ...(workspaceTab === tab
+                  ? styles.workspaceHeaderTabActive
+                  : {}),
+              }}
+            >
+              {tab === "video"
+                ? "Video"
+                : tab === "voice"
+                ? "Voice"
+                : tab === "music"
+                ? "Music"
+                : "Support"}
+            </button>
+          ))}
         </div>
 
-        <div style={styles.smallNote}>
-          Use this area for speech preview, narration tests, and future voiceover
-          workflows.
+        <div style={styles.formCardInner}>
+          <label style={styles.label}>{t.voice.textLabel}</label>
+          <textarea
+            style={styles.heroInput}
+            value={voiceText}
+            onChange={(e) => setVoiceText(e.target.value)}
+            placeholder={t.voice.textPlaceholder}
+          />
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>{t.voice.voiceLabel}</label>
+            <select
+              value={voiceUri}
+              onChange={(e) => setVoiceUri(e.target.value)}
+              style={styles.selectMetal}
+            >
+              {availableVoices.length === 0 ? (
+                <option value="">{t.voice.noVoices}</option>
+              ) : (
+                availableVoices.map((voice) => (
+                  <option key={voice.voiceURI} value={voice.voiceURI}>
+                    {voice.name} — {voice.lang}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          <div style={styles.actionRow}>
+            <button type="button" style={styles.resetButton} onClick={handleStopSpeaking}>
+              {t.voice.stop}
+            </button>
+            <button type="button" style={styles.primaryGenerateButton} onClick={handleSpeak}>
+              {t.voice.preview}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1165,124 +1160,132 @@ function PageContent() {
 
   const renderMusicWorkspace = () => {
     return (
-      <div style={styles.toolCard}>
-        <div style={styles.sectionTitle}>Music Generator</div>
-        <div style={styles.sectionSub}>
-          Create original songs, background music, or lyric-based tracks for your
-          future video projects.
+      <div style={styles.workspaceCard}>
+        <div style={styles.workspaceTabsHeader}>
+          {(["video", "voice", "music", "support"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() =>
+                setWorkspaceTab(
+                  tab === "support" ? "support" : (tab as WorkspaceTab)
+                )
+              }
+              style={{
+                ...styles.workspaceHeaderTab,
+                ...(workspaceTab === tab
+                  ? styles.workspaceHeaderTabActive
+                  : {}),
+              }}
+            >
+              {tab === "video"
+                ? "Video"
+                : tab === "voice"
+                ? "Voice"
+                : tab === "music"
+                ? "Music"
+                : "Support"}
+            </button>
+          ))}
         </div>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Song title</label>
+        <div style={styles.formCardInner}>
+          <label style={styles.label}>Song Title</label>
           <input
-            style={styles.input}
+            style={styles.selectMetal}
             value={musicTitle}
             onChange={(e) => setMusicTitle(e.target.value)}
             placeholder="Midnight Neon"
           />
-        </div>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Music prompt</label>
-          <textarea
-            style={styles.promptSmall}
-            value={musicPrompt}
-            onChange={(e) => setMusicPrompt(e.target.value)}
-            placeholder="Emotional synthwave pop, cinematic atmosphere, strong chorus, modern premium sound"
-          />
-        </div>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Music Prompt</label>
+            <textarea
+              style={styles.promptArea}
+              value={musicPrompt}
+              onChange={(e) => setMusicPrompt(e.target.value)}
+              placeholder="Emotional synthwave pop, cinematic atmosphere, strong chorus..."
+            />
+          </div>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Lyrics / vocal idea</label>
-          <textarea
-            style={styles.prompt}
-            value={musicLyrics}
-            onChange={(e) => setMusicLyrics(e.target.value)}
-            placeholder="Write the lyrics, chorus, verses, or the vocal mood here..."
-          />
-        </div>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Lyrics / Vocal Idea</label>
+            <textarea
+              style={styles.promptArea}
+              value={musicLyrics}
+              onChange={(e) => setMusicLyrics(e.target.value)}
+              placeholder="Write the lyrics, chorus, verses, or vocal mood here..."
+            />
+          </div>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Duration</label>
-          <select
-            value={musicDurationSec}
-            onChange={(e) => setMusicDurationSec(e.target.value)}
-            style={styles.selectWide}
-          >
-            <option value="15">15 sec</option>
-            <option value="30">30 sec</option>
-            <option value="45">45 sec</option>
-            <option value="60">60 sec</option>
-          </select>
-        </div>
-
-        <div style={styles.controls}>
-          <button type="button" style={styles.reset} onClick={handleResetMusic}>
-            {t.common.reset}
-          </button>
-
-          {!isAuthenticated ? (
-            <button
-              type="button"
-              style={styles.generate}
-              onClick={() => router.push("/login")}
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Duration</label>
+            <select
+              value={musicDurationSec}
+              onChange={(e) => setMusicDurationSec(e.target.value)}
+              style={styles.selectMetal}
             >
-              {t.home.loginToCreate}
-            </button>
-          ) : isPlanBlocked ? (
-            <button
-              type="button"
-              style={styles.generate}
-              onClick={() => router.push("/billing")}
-            >
-              {t.home.upgradeCta}
-            </button>
-          ) : (
-            <button
-              type="button"
-              style={{
-                ...styles.generate,
-                ...(!canGenerateMusic ? styles.generateDisabled : {}),
-              }}
-              onClick={canGenerateMusic ? handleGenerateMusic : undefined}
-            >
-              {musicGeneration.status === "loading"
-                ? "Generating music..."
-                : "Generate music"}
-            </button>
-          )}
-        </div>
+              <option value="15">15 sec</option>
+              <option value="30">30 sec</option>
+              <option value="45">45 sec</option>
+              <option value="60">60 sec</option>
+            </select>
+          </div>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Or upload existing audio</label>
-          <div style={styles.uploadRow}>
-            <label style={styles.uploadButton}>
-              Choose audio
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={handleAudioPick}
-                style={{ display: "none" }}
-              />
-            </label>
+          <div style={styles.actionRow}>
+            <button type="button" style={styles.resetButton} onClick={handleResetMusic}>
+              Reset
+            </button>
 
-            {uploadingAudio ? (
-              <span style={styles.uploadHint}>Uploading audio...</span>
-            ) : uploadedAudioUrl ? (
-              <span style={styles.uploadReady}>Audio uploaded</span>
+            {!isAuthenticated ? (
+              <button
+                type="button"
+                style={styles.primaryGenerateButton}
+                onClick={() => router.push("/login")}
+              >
+                Login
+              </button>
+            ) : isPlanBlocked ? (
+              <button
+                type="button"
+                style={styles.primaryGenerateButton}
+                onClick={() => router.push("/billing")}
+              >
+                Upgrade
+              </button>
             ) : (
-              <span style={styles.uploadHint}>No audio selected</span>
+              <button
+                type="button"
+                style={{
+                  ...styles.primaryGenerateButton,
+                  ...(!canGenerateMusic ? styles.generateDisabled : {}),
+                }}
+                onClick={canGenerateMusic ? handleGenerateMusic : undefined}
+              >
+                {musicGeneration.status === "loading"
+                  ? "Generating Music"
+                  : "Generate Music"}
+              </button>
             )}
           </div>
-        </div>
 
-        {musicGeneration.status === "done" && musicGeneration.saveWarning ? (
-          <div style={styles.warningBox}>{musicGeneration.saveWarning}</div>
-        ) : null}
-
-        <div style={styles.smallNote}>
-          After the track is ready, switch to <strong>Music Video</strong> and
-          generate a full clip from the song.
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Upload Existing Audio</label>
+            <div style={styles.uploadRow}>
+              <label style={styles.uploadFieldLike}>
+                <span style={styles.uploadFieldText}>
+                  {uploadedAudioUrl ? "Audio uploaded" : "No audio selected."}
+                </span>
+                <span style={styles.uploadFieldIcon}>♫</span>
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleAudioPick}
+                  style={{ display: "none" }}
+                />
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1290,112 +1293,175 @@ function PageContent() {
 
   const renderMusicVideoWorkspace = () => {
     return (
-      <div style={styles.toolCard}>
-        <div style={styles.sectionTitle}>Music Video Generator</div>
-        <div style={styles.sectionSub}>
-          Turn your song into a cinematic music video with AI scenes, visuals,
-          and final merged output.
+      <div style={styles.workspaceCard}>
+        <div style={styles.workspaceTabsHeader}>
+          {(["video", "voice", "music", "support"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() =>
+                setWorkspaceTab(
+                  tab === "support" ? "support" : (tab as WorkspaceTab)
+                )
+              }
+              style={{
+                ...styles.workspaceHeaderTab,
+                ...(workspaceTab === tab
+                  ? styles.workspaceHeaderTabActive
+                  : {}),
+              }}
+            >
+              {tab === "video"
+                ? "Video"
+                : tab === "voice"
+                ? "Voice"
+                : tab === "music"
+                ? "Music"
+                : "Support"}
+            </button>
+          ))}
         </div>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Connected song</label>
-          {activeAudioUrl ? (
-            <div style={styles.audioInlineCard}>
-              <div style={styles.audioInlineTitle}>
-                {musicGeneration.status === "done"
-                  ? musicGeneration.title || "Generated Song"
-                  : "Uploaded Audio"}
-              </div>
-              <audio controls src={activeAudioUrl} style={styles.audioPlayer} />
-            </div>
-          ) : (
-            <div style={styles.smallNote}>
-              First generate music in the Music tab or upload an audio file.
-            </div>
-          )}
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Music video concept</label>
+        <div style={styles.formCardInner}>
+          <label style={styles.label}>Music Video Concept</label>
           <textarea
-            style={styles.prompt}
+            style={styles.heroInput}
             value={musicVideoPrompt}
             onChange={(e) => setMusicVideoPrompt(e.target.value)}
-            placeholder="Futuristic city lights, emotional singer performance, fast cuts on chorus, luxury cinematic visuals"
+            placeholder="Futuristic city lights, emotional singer performance..."
           />
-        </div>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Style</label>
-          <select
-            value={styleUi}
-            onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
-            style={styles.selectWide}
-          >
-            <option value="realistic">Realistic</option>
-            <option value="cinematic">Cinematic</option>
-            <option value="3d_animation">3D Animation</option>
-            <option value="anime">Anime</option>
-            <option value="pixar">Pixar Style</option>
-            <option value="cartoon">Cartoon</option>
-          </select>
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Ratio</label>
-          <select
-            value={ratioUi}
-            onChange={(e) => setRatioUi(e.target.value)}
-            style={styles.selectWide}
-          >
-            <option value="1:1">1:1</option>
-            <option value="16:9">16:9</option>
-            <option value="9:16">9:16</option>
-          </select>
-        </div>
-
-        <div style={styles.controls}>
-          <button type="button" style={styles.reset} onClick={handleResetVideo}>
-            {t.common.reset}
-          </button>
-
-          {!isAuthenticated ? (
-            <button
-              type="button"
-              style={styles.generate}
-              onClick={() => router.push("/login")}
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Style</label>
+            <select
+              value={styleUi}
+              onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
+              style={styles.selectMetal}
             >
-              {t.home.loginToCreate}
-            </button>
-          ) : isPlanBlocked ? (
-            <button
-              type="button"
-              style={styles.generate}
-              onClick={() => router.push("/billing")}
+              <option value="realistic">Realistic</option>
+              <option value="cinematic">Cinematic</option>
+              <option value="3d_animation">3D Animation</option>
+              <option value="anime">Anime</option>
+              <option value="pixar">Pixar</option>
+              <option value="cartoon">Cartoon</option>
+            </select>
+          </div>
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Aspect Ratio</label>
+            <select
+              value={ratioUi}
+              onChange={(e) => setRatioUi(e.target.value)}
+              style={styles.selectMetal}
             >
-              {t.home.upgradeCta}
+              <option value="16:9">16:9</option>
+              <option value="1:1">1:1</option>
+              <option value="9:16">9:16</option>
+            </select>
+          </div>
+
+          <div style={styles.actionRow}>
+            <button type="button" style={styles.resetButton} onClick={handleResetVideo}>
+              Reset
             </button>
-          ) : (
+
+            {!isAuthenticated ? (
+              <button
+                type="button"
+                style={styles.primaryGenerateButton}
+                onClick={() => router.push("/login")}
+              >
+                Login
+              </button>
+            ) : isPlanBlocked ? (
+              <button
+                type="button"
+                style={styles.primaryGenerateButton}
+                onClick={() => router.push("/billing")}
+              >
+                Upgrade
+              </button>
+            ) : (
+              <button
+                type="button"
+                style={{
+                  ...styles.primaryGenerateButton,
+                  ...(!canGenerateMusicVideo ? styles.generateDisabled : {}),
+                }}
+                onClick={
+                  canGenerateMusicVideo ? handleGenerateMusicVideo : undefined
+                }
+              >
+                {videoGeneration.status === "loading"
+                  ? "Generating Video"
+                  : "Generate Video"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSupportWorkspace = () => {
+    return (
+      <div style={styles.workspaceCard}>
+        <div style={styles.workspaceTabsHeader}>
+          {(["video", "voice", "music", "support"] as const).map((tab) => (
             <button
+              key={tab}
               type="button"
-              style={{
-                ...styles.generate,
-                ...(!canGenerateMusicVideo ? styles.generateDisabled : {}),
-              }}
-              onClick={
-                canGenerateMusicVideo ? handleGenerateMusicVideo : undefined
+              onClick={() =>
+                setWorkspaceTab(
+                  tab === "support" ? "support" : (tab as WorkspaceTab)
+                )
               }
+              style={{
+                ...styles.workspaceHeaderTab,
+                ...(workspaceTab === tab
+                  ? styles.workspaceHeaderTabActive
+                  : {}),
+              }}
             >
-              {videoGeneration.status === "loading"
-                ? "Generating music video..."
-                : "Generate music video"}
+              {tab === "video"
+                ? "Video"
+                : tab === "voice"
+                ? "Voice"
+                : tab === "music"
+                ? "Music"
+                : "Support"}
             </button>
-          )}
+          ))}
         </div>
 
-        <div style={styles.smallNote}>
-          This area is prepared for future scene editing, lyric sync, clip timing,
-          and final merged export workflows.
+        <div style={styles.formCardInner}>
+          <label style={styles.label}>{t.support.subjectLabel}</label>
+          <input
+            style={styles.selectMetal}
+            value={supportSubject}
+            onChange={(e) => setSupportSubject(e.target.value)}
+            placeholder={t.support.subjectPlaceholder}
+          />
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>{t.support.messageLabel}</label>
+            <textarea
+              style={styles.heroInput}
+              value={supportMessage}
+              onChange={(e) => setSupportMessage(e.target.value)}
+              placeholder={t.support.messagePlaceholder}
+            />
+          </div>
+
+          <div style={styles.actionRowSingle}>
+            <button
+              type="button"
+              style={styles.primaryGenerateButton}
+              onClick={handleSupportSend}
+            >
+              {t.support.send}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1405,53 +1471,16 @@ function PageContent() {
     if (workspaceTab === "voice") return renderVoiceWorkspace();
     if (workspaceTab === "music") return renderMusicWorkspace();
     if (workspaceTab === "music_video") return renderMusicVideoWorkspace();
-
-    if (workspaceTab === "support") {
-      return (
-        <div style={styles.toolCard}>
-          <div style={styles.sectionTitle}>{t.support.title}</div>
-          <div style={styles.sectionSub}>{t.support.subtitle}</div>
-
-          <label style={styles.label}>{t.support.subjectLabel}</label>
-          <input
-            style={styles.input}
-            value={supportSubject}
-            onChange={(e) => setSupportSubject(e.target.value)}
-            placeholder={t.support.subjectPlaceholder}
-          />
-
-          <label style={styles.label}>{t.support.messageLabel}</label>
-          <textarea
-            style={styles.prompt}
-            value={supportMessage}
-            onChange={(e) => setSupportMessage(e.target.value)}
-            placeholder={t.support.messagePlaceholder}
-          />
-
-          <div style={styles.controls}>
-            <button
-              type="button"
-              style={styles.generate}
-              onClick={handleSupportSend}
-            >
-              {t.support.send}
-            </button>
-          </div>
-
-          <div style={styles.smallNote}>{t.support.hint}</div>
-        </div>
-      );
-    }
-
+    if (workspaceTab === "support") return renderSupportWorkspace();
     return renderVideoWorkspace();
   };
 
-  const renderWorkspaceMenu = () => {
+  const renderTopMiniTabs = () => {
     const items: Array<{ key: WorkspaceTab; label: string }> = [
       { key: "video", label: "Video" },
       { key: "voice", label: "Voice" },
       { key: "music", label: "Music" },
-      { key: "music_video", label: "Music Video" },
+      { key: "support", label: "Support" },
     ];
 
     if (isMobileViewport) {
@@ -1491,23 +1520,7 @@ function PageContent() {
       );
     }
 
-    return (
-      <div style={styles.workspaceTopTabs}>
-        {items.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            style={{
-              ...styles.workspaceTopTab,
-              ...(workspaceTab === item.key ? styles.workspaceTopTabActive : {}),
-            }}
-            onClick={() => setWorkspaceTab(item.key)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-    );
+    return null;
   };
 
   const renderPanel = () => {
@@ -1574,347 +1587,186 @@ function PageContent() {
         return (
           <section
             style={{
-              ...styles.workspaceShell,
+              ...styles.mainGrid,
               gridTemplateColumns: isMobileViewport
                 ? "1fr"
-                : "minmax(320px, 420px) minmax(0, 1fr)",
+                : "minmax(360px, 1.02fr) minmax(420px, 0.82fr)",
             }}
           >
-            <div style={styles.studioRail}>{renderWorkspaceBody()}</div>
+            <div style={styles.leftColumn}>{renderWorkspaceBody()}</div>
 
-            <div style={styles.canvasColumn}>
-              <div
-                style={{
-                  ...styles.previewMainRow,
-                  gridTemplateColumns: isMobileViewport
-                    ? "1fr"
-                    : "minmax(0, 1fr) minmax(280px, 360px)",
-                }}
-              >
-                <div style={styles.previewMainLeft}>
-                  <div style={styles.previewHeaderCard}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={styles.cardTitle}>
-                        {workspaceTab === "music"
-                          ? "Audio Preview"
-                          : previewTarget === "final"
-                          ? t.home.finalPreviewTitle
-                          : t.home.scenePreviewTitle}
-                      </div>
-                      <div style={styles.previewHeaderSub}>
-                        {workspaceTab === "music"
-                          ? "Song / track preview"
-                          : previewTarget === "final"
-                          ? workspaceTab === "music_video"
-                            ? "Final music video"
-                            : t.home.finalVideoButton
-                          : selectedScene?.title ?? t.home.selectedScene}
-                      </div>
-                    </div>
-
-                    {(workspaceTab === "video" ||
-                      workspaceTab === "music_video") &&
-                    previewTarget !== "final" ? (
-                      <button
-                        type="button"
-                        style={styles.inlineGhostButton}
-                        onClick={() => {
-                          setPreviewTarget("final");
-                          setSelectedSceneId(null);
-                        }}
-                      >
-                        Back to Final
-                      </button>
-                    ) : null}
-                  </div>
-
-                  <div
-                    style={{
-                      ...styles.previewBoxLarge,
-                      aspectRatio: previewAspectRatio,
-                    }}
-                  >
-                    {renderPreviewContent()}
-                  </div>
-
-                  {videoGeneration.status === "done" &&
-                  videoGeneration.saveWarning ? (
-                    <div style={styles.warningBox}>
-                      {videoGeneration.saveWarning}
-                    </div>
-                  ) : null}
-
-                  <div style={styles.outputCard}>
-                    <div style={styles.cardTitle}>
-                      {workspaceTab === "music" ? "Audio Output" : t.home.outputTitle}
-                    </div>
-
-                    <div style={styles.infoRow}>
-                      <span style={styles.infoLabel}>Workspace</span>
-                      <strong style={styles.infoValue}>
-                        {getWorkspaceLabel(workspaceTab)}
-                      </strong>
-                    </div>
-
-                    {workspaceTab === "video" && (
-                      <>
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>{t.home.mode}</span>
-                          <strong style={styles.infoValue}>
-                            {getVideoModeLabel(videoMode)}
-                          </strong>
-                        </div>
-
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>{t.home.scenes}</span>
-                          <strong style={styles.infoValue}>
-                            {videoGeneration.status === "done"
-                              ? displayScenes.length
-                              : "-"}
-                          </strong>
-                        </div>
-
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>{t.home.duration}</span>
-                          <strong style={styles.infoValue}>
-                            {videoGeneration.status === "done" && totalDuration
-                              ? `${totalDuration}s`
-                              : "-"}
-                          </strong>
-                        </div>
-
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>{t.home.status}</span>
-                          <span style={styles.status}>{videoStatusText}</span>
-                        </div>
-
-                        {videoGeneration.status === "done" ? (
-                          <a
-                            href={videoGeneration.videoUrl}
-                            download
-                            style={styles.downloadLink}
-                          >
-                            {t.home.downloadVideo}
-                          </a>
-                        ) : null}
-                      </>
-                    )}
-
-                    {workspaceTab === "music" && (
-                      <>
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>Title</span>
-                          <strong style={styles.infoValue}>
-                            {musicGeneration.status === "done"
-                              ? musicGeneration.title || "-"
-                              : uploadedAudioUrl
-                              ? "Uploaded Audio"
-                              : "-"}
-                          </strong>
-                        </div>
-
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>Duration</span>
-                          <strong style={styles.infoValue}>
-                            {musicGeneration.status === "done" &&
-                            musicGeneration.durationSec
-                              ? `${musicGeneration.durationSec}s`
-                              : uploadedAudioUrl
-                              ? "—"
-                              : "-"}
-                          </strong>
-                        </div>
-
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>Status</span>
-                          <span style={styles.status}>{musicStatusText}</span>
-                        </div>
-
-                        {activeAudioUrl ? (
-                          <a
-                            href={activeAudioUrl}
-                            download
-                            style={styles.downloadLink}
-                          >
-                            Download audio
-                          </a>
-                        ) : null}
-                      </>
-                    )}
-
-                    {workspaceTab === "music_video" && (
-                      <>
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>Source audio</span>
-                          <strong style={styles.infoValue}>
-                            {activeAudioUrl ? "Connected" : "Not connected"}
-                          </strong>
-                        </div>
-
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>{t.home.scenes}</span>
-                          <strong style={styles.infoValue}>
-                            {videoGeneration.status === "done"
-                              ? displayScenes.length
-                              : "-"}
-                          </strong>
-                        </div>
-
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>{t.home.duration}</span>
-                          <strong style={styles.infoValue}>
-                            {videoGeneration.status === "done" && totalDuration
-                              ? `${totalDuration}s`
-                              : "-"}
-                          </strong>
-                        </div>
-
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>Status</span>
-                          <span style={styles.status}>{videoStatusText}</span>
-                        </div>
-
-                        {videoGeneration.status === "done" ? (
-                          <a
-                            href={videoGeneration.videoUrl}
-                            download
-                            style={styles.downloadLink}
-                          >
-                            Download music video
-                          </a>
-                        ) : null}
-                      </>
-                    )}
-
-                    {workspaceTab === "voice" && (
-                      <>
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>Voices loaded</span>
-                          <strong style={styles.infoValue}>
-                            {availableVoices.length}
-                          </strong>
-                        </div>
-
-                        <div style={styles.infoRow}>
-                          <span style={styles.infoLabel}>Status</span>
-                          <span style={styles.status}>
-                            {isSpeaking ? "Speaking" : "Ready"}
-                          </span>
-                        </div>
-                      </>
-                    )}
+            <div style={styles.rightColumn}>
+              <div style={styles.previewCard}>
+                <div style={styles.previewCardHeader}>
+                  <div style={styles.previewCardTitle}>Final Preview</div>
+                  <div style={styles.previewCardTools}>
+                    <span style={styles.previewTool}>▢</span>
+                    <span style={styles.previewTool}>⌃</span>
+                    <span style={styles.previewTool}>⎘</span>
                   </div>
                 </div>
 
-                <div style={styles.previewMainRight}>
-                  {(workspaceTab === "video" || workspaceTab === "music_video") && (
-                    <div style={styles.scenesRailCard}>
-                      <div style={styles.cardTitle}>
-                        {workspaceTab === "music_video"
-                          ? "Music Video Scenes"
-                          : t.home.sceneRailTitle}
-                      </div>
-
-                      {displayScenes.length === 0 ? (
-                        <div style={styles.smallNote}>
-                          {workspaceTab === "music_video"
-                            ? "Music video oluşturulduktan sonra sahneler burada görünecek."
-                            : "Video oluşturulduktan sonra sahneler burada görünecek."}
-                        </div>
-                      ) : (
-                        <div style={styles.scenesStack}>
-                          {displayScenes.map((scene) => {
-                            const isSelected =
-                              previewTarget !== "final" &&
-                              scene.id === selectedSceneId;
-
-                            return (
-                              <div
-                                key={scene.id}
-                                style={{
-                                  ...styles.sceneCard,
-                                  ...(isSelected ? styles.sceneCardActive : {}),
-                                }}
-                              >
-                                {scene.videoUrl ? (
-                                  <div style={styles.sceneThumbWrap}>
-                                    <video
-                                      src={scene.videoUrl}
-                                      muted
-                                      playsInline
-                                      controls
-                                      style={styles.sceneVideo}
-                                    />
-                                  </div>
-                                ) : scene.imageUrl ? (
-                                  <div style={styles.sceneThumbWrap}>
-                                    <img
-                                      src={scene.imageUrl}
-                                      alt={scene.title}
-                                      style={styles.sceneThumb}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div style={styles.sceneThumbPlaceholder}>
-                                    {scene.title}
-                                  </div>
-                                )}
-
-                                <div style={styles.sceneTitleRow}>
-                                  <strong>{scene.title}</strong>
-                                  <span>{scene.durationSec}s</span>
-                                </div>
-
-                                <div style={styles.sceneDescription}>
-                                  {scene.description}
-                                </div>
-
-                                <div style={styles.sceneActions}>
-                                  <button
-                                    type="button"
-                                    style={styles.sceneActionButton}
-                                    onClick={() => handleSelectScene(scene.id)}
-                                  >
-                                    {t.common.select}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    style={styles.sceneActionButtonDanger}
-                                    onClick={() => handleDeleteScene(scene.id)}
-                                  >
-                                    {t.common.delete}
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {workspaceTab === "music" &&
-                    musicGeneration.status === "done" && (
-                      <div style={styles.scenesRailCard}>
-                        <div style={styles.cardTitle}>Lyrics Preview</div>
-                        <div style={styles.lyricsBox}>
-                          {musicGeneration.lyrics || "No lyrics available."}
-                        </div>
-                      </div>
-                    )}
-
-                  {workspaceTab === "voice" && (
-                    <div style={styles.scenesRailCard}>
-                      <div style={styles.cardTitle}>Voice Notes</div>
-                      <div style={styles.smallNote}>
-                        Bu alan future voice cloning, dubbing, narration export ve
-                        advanced voice pipeline için hazır bırakıldı.
-                      </div>
-                    </div>
-                  )}
+                <div
+                  style={{
+                    ...styles.previewFrame,
+                    aspectRatio: previewAspectRatio,
+                  }}
+                >
+                  {renderPreviewContent()}
                 </div>
               </div>
+
+              <div style={styles.summaryCard}>
+                <div style={styles.summaryHeader}>Output Summary</div>
+
+                <div style={styles.summaryList}>
+                  <div style={styles.summaryLine}>
+                    <span style={styles.summaryLabel}>Mode:</span>
+                    <span style={styles.summaryValue}>
+                      {workspaceTab === "music_video"
+                        ? "Music Video"
+                        : workspaceTab === "music"
+                        ? "Music"
+                        : getVideoModeLabel(videoMode)}
+                    </span>
+                  </div>
+
+                  <div style={styles.summaryLine}>
+                    <span style={styles.summaryLabel}>Scenes:</span>
+                    <span style={styles.summaryValue}>
+                      {videoGeneration.status === "done"
+                        ? displayScenes.length
+                        : "-"}
+                    </span>
+                  </div>
+
+                  <div style={styles.summaryLine}>
+                    <span style={styles.summaryLabel}>Duration:</span>
+                    <span style={styles.summaryValue}>
+                      {videoGeneration.status === "done" && totalDuration
+                        ? `${totalDuration}s`
+                        : workspaceTab === "music" &&
+                          musicGeneration.status === "done" &&
+                          musicGeneration.durationSec
+                        ? `${musicGeneration.durationSec}s`
+                        : "-"}
+                    </span>
+                  </div>
+
+                  <div style={styles.summaryLine}>
+                    <span style={styles.summaryLabel}>Status:</span>
+                    <span style={styles.summaryValue}>
+                      {workspaceTab === "music"
+                        ? musicStatusText
+                        : videoStatusText}
+                    </span>
+                  </div>
+                </div>
+
+                {workspaceTab === "music" && activeAudioUrl ? (
+                  <a href={activeAudioUrl} download style={styles.downloadButton}>
+                    Download Audio
+                  </a>
+                ) : videoGeneration.status === "done" ? (
+                  <a
+                    href={videoGeneration.videoUrl}
+                    download
+                    style={styles.downloadButton}
+                  >
+                    Download Video
+                  </a>
+                ) : null}
+              </div>
             </div>
+
+            {(workspaceTab === "video" || workspaceTab === "music_video") && (
+              <div style={styles.sceneOverviewFull}>
+                <div style={styles.sceneOverviewHeader}>Scene Overview</div>
+
+                {displayScenes.length === 0 ? (
+                  <div style={styles.emptySceneText}>
+                    Video oluşturulduktan sonra sahneler burada görünecek.
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      ...styles.sceneGrid,
+                      gridTemplateColumns: isMobileViewport
+                        ? "1fr"
+                        : "repeat(3, minmax(0, 1fr))",
+                    }}
+                  >
+                    {displayScenes.map((scene) => {
+                      const isSelected =
+                        previewTarget !== "final" &&
+                        selectedSceneId === scene.id;
+
+                      return (
+                        <div
+                          key={scene.id}
+                          style={{
+                            ...styles.sceneOverviewCard,
+                            ...(isSelected ? styles.sceneOverviewCardActive : {}),
+                          }}
+                        >
+                          <div style={styles.sceneOverviewThumbWrap}>
+                            {scene.videoUrl ? (
+                              <video
+                                src={scene.videoUrl}
+                                muted
+                                playsInline
+                                controls
+                                style={styles.sceneOverviewThumb}
+                              />
+                            ) : scene.imageUrl ? (
+                              <img
+                                src={scene.imageUrl}
+                                alt={scene.title}
+                                style={styles.sceneOverviewThumb}
+                              />
+                            ) : (
+                              <div style={styles.sceneOverviewThumbPlaceholder}>
+                                {scene.title}
+                              </div>
+                            )}
+                          </div>
+
+                          <div style={styles.sceneOverviewTitle}>
+                            {scene.title}
+                          </div>
+
+                          <div style={styles.sceneOverviewActions}>
+                            <button
+                              type="button"
+                              style={styles.sceneSelectButton}
+                              onClick={() => handleSelectScene(scene.id)}
+                            >
+                              Select
+                            </button>
+                            <button
+                              type="button"
+                              style={styles.sceneDeleteButton}
+                              onClick={() => handleDeleteScene(scene.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {workspaceTab === "music" && musicGeneration.status === "done" ? (
+              <div style={styles.sceneOverviewFull}>
+                <div style={styles.sceneOverviewHeader}>Lyrics Preview</div>
+                <div style={styles.lyricsBox}>
+                  {musicGeneration.lyrics || "No lyrics available."}
+                </div>
+              </div>
+            ) : null}
           </section>
         );
     }
@@ -1929,70 +1781,43 @@ function PageContent() {
     >
       <AppSidebar activeKey={activeNav} onSelect={setActiveNav} />
 
-      <main
-        style={{
-          ...styles.main,
-          padding: isMobileViewport ? "14px 12px 20px" : "20px 22px 24px",
-        }}
-      >
-        <div
-          style={{
-            ...styles.topBar,
-            flexDirection: isMobileViewport ? "column" : "row",
-            alignItems: isMobileViewport ? "stretch" : "center",
-          }}
-        >
-          <div style={{ minWidth: 0 }}>
-            <div style={styles.kicker}>DUBLE-S MOTION</div>
-            <h1
-              style={{
-                ...styles.title,
-                fontSize: isMobileViewport ? 26 : 34,
-              }}
-            >
-              {t.home.title}
-            </h1>
-            <div style={styles.topSub}>{t.home.subtitle}</div>
+      <main style={styles.main}>
+        <div style={styles.topHeaderBar}>
+          <div style={styles.topHeaderText}>
+            Create and edit AI <strong>videos</strong>, music, and voiceovers
           </div>
 
           <div
             style={{
-              ...styles.topBarRight,
+              ...styles.topHeaderActions,
               width: isMobileViewport ? "100%" : "auto",
             }}
           >
-            {renderWorkspaceMenu()}
-
-            {(workspaceTab === "video" || workspaceTab === "music_video") && (
-              <button
-                type="button"
-                style={{
-                  ...styles.topActionButton,
-                  width: isMobileViewport ? "100%" : "auto",
-                  ...(previewTarget === "final"
-                    ? styles.topActionButtonActive
-                    : {}),
-                }}
-                onClick={() => {
-                  setPreviewTarget("final");
-                  setSelectedSceneId(null);
-                }}
-              >
-                {workspaceTab === "music_video"
-                  ? "Final Music Video"
-                  : t.home.finalVideoButton}
-              </button>
-            )}
+            {renderTopMiniTabs()}
 
             <button
               type="button"
               style={{
-                ...styles.topActionButton,
+                ...styles.headerActionButton,
                 width: isMobileViewport ? "100%" : "auto",
               }}
               onClick={() => router.push("/billing")}
             >
-              {t.home.upgradeCta}
+              Upgrade Plan
+            </button>
+
+            <button
+              type="button"
+              style={{
+                ...styles.headerDarkActionButton,
+                width: isMobileViewport ? "100%" : "auto",
+              }}
+              onClick={() => {
+                setPreviewTarget("final");
+                setSelectedSceneId(null);
+              }}
+            >
+              Final Video ▶▶
             </button>
 
             <div
@@ -2005,25 +1830,14 @@ function PageContent() {
               <button
                 type="button"
                 style={{
-                  ...styles.accountMiniButton,
-                  width: isMobileViewport ? "100%" : undefined,
+                  ...styles.accountCircleButton,
+                  width: isMobileViewport ? "100%" : 58,
                 }}
                 onClick={() => setAccountMenuOpen((prev) => !prev)}
               >
-                <div style={styles.accountMiniAvatar}>
-                  {(user?.name?.[0] || user?.email?.[0] || "D").toUpperCase()}
-                </div>
-
-                <div style={styles.accountMiniText}>
-                  <strong style={styles.accountMiniName}>
-                    {isAuthenticated ? user?.name || "User" : "Guest"}
-                  </strong>
-                  <span style={styles.accountMiniPlan}>
-                    {user?.planLabel ?? "Free"}
-                  </span>
-                </div>
-
-                <span style={styles.accountMiniCaret}>▾</span>
+                <span style={styles.accountCircleText}>
+                  {(user?.name?.[0] || user?.email?.[0] || "A").toUpperCase()}
+                </span>
               </button>
 
               {accountMenuOpen ? (
@@ -2126,12 +1940,12 @@ function PageContent() {
 
 function getDefaultPrompt(language: AppLanguage) {
   if (language === "tr") {
-    return "Berlin sokaklarında yürüyen sinematik bir gezgin, yumuşak ışık, premium reklam hissi";
+    return "A cinematic traveller walking in New York City";
   }
   if (language === "de") {
-    return "Ein cineastischer Reisender in den Straßen Berlins, weiches Licht, hochwertiger Werbestil";
+    return "Ein cineastischer Reisender in New York City";
   }
-  return "A cinematic traveler walking through Berlin streets, soft light, premium ad mood";
+  return "A cinematic traveller walking in New York City";
 }
 
 function getVideoModeLabel(mode: VideoMode) {
@@ -2146,23 +1960,6 @@ function getVideoModeLabel(mode: VideoMode) {
       return "Logo to Video";
     default:
       return mode;
-  }
-}
-
-function getWorkspaceLabel(tab: WorkspaceTab) {
-  switch (tab) {
-    case "video":
-      return "Video";
-    case "voice":
-      return "Voice";
-    case "music":
-      return "Music";
-    case "music_video":
-      return "Music Video";
-    case "support":
-      return "Support";
-    default:
-      return tab;
   }
 }
 
@@ -2183,7 +1980,7 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     minHeight: "100vh",
     background:
-      "linear-gradient(135deg, #f5f6f8 0%, #eef1f4 34%, #e8edf2 100%)",
+      "radial-gradient(circle at top left, rgba(255,255,255,0.55), transparent 28%), linear-gradient(135deg, #d9dde2 0%, #cfd5dc 42%, #b9c1cb 100%)",
     color: "#0f172a",
     overflowX: "hidden",
   },
@@ -2194,26 +1991,33 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: "column",
     gap: 18,
     minWidth: 0,
-    background:
-      "radial-gradient(circle at top left, rgba(255,255,255,0.62), transparent 26%), radial-gradient(circle at top right, rgba(182,196,214,0.15), transparent 20%)",
+    padding: "20px 18px 24px",
     overflowX: "hidden",
   },
 
-  topBar: {
+  topHeaderBar: {
+    minHeight: 74,
+    borderRadius: 14,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(240,243,247,0.98) 0%, rgba(214,220,227,0.98) 100%)",
     display: "flex",
     justifyContent: "space-between",
-    gap: 14,
+    alignItems: "center",
+    gap: 16,
+    padding: "12px 18px",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.75), 0 4px 14px rgba(15,23,42,0.05)",
     flexWrap: "wrap",
-    minWidth: 0,
-    padding: 16,
-    borderRadius: 24,
-    background: "rgba(255,255,255,0.72)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 16px 34px rgba(15,23,42,0.05)",
-    backdropFilter: "blur(10px)",
   },
 
-  topBarRight: {
+  topHeaderText: {
+    fontSize: 18,
+    color: "#4b5563",
+    lineHeight: 1.4,
+  },
+
+  topHeaderActions: {
     display: "flex",
     alignItems: "center",
     justifyContent: "flex-end",
@@ -2222,33 +2026,33 @@ const styles: Record<string, CSSProperties> = {
     minWidth: 0,
   },
 
-  workspaceTopTabs: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    flexWrap: "nowrap",
-    overflowX: "auto",
-    paddingBottom: 2,
-    maxWidth: "100%",
-  },
-
-  workspaceTopTab: {
-    padding: "10px 14px",
-    borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-    color: "#0f172a",
-    fontWeight: 800,
-    fontSize: 14,
+  headerActionButton: {
+    minHeight: 44,
+    padding: "0 18px",
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#4b5563",
+    fontWeight: 700,
+    fontSize: 15,
     cursor: "pointer",
-    whiteSpace: "nowrap",
-    flexShrink: 0,
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
   },
 
-  workspaceTopTabActive: {
-    background: "#0f172a",
-    color: "#fff",
-    border: "1px solid #0f172a",
+  headerDarkActionButton: {
+    minHeight: 44,
+    padding: "0 18px",
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
+    color: "#ffffff",
+    fontWeight: 700,
+    fontSize: 15,
+    cursor: "pointer",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 10px rgba(15,23,42,0.08)",
   },
 
   mobileWorkspaceMenuWrap: {
@@ -2260,11 +2064,12 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     minHeight: 42,
     padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "rgba(255,255,255,0.96)",
-    color: "#0f172a",
-    fontWeight: 800,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#4b5563",
+    fontWeight: 700,
     cursor: "pointer",
     textAlign: "left",
   },
@@ -2274,10 +2079,11 @@ const styles: Record<string, CSSProperties> = {
     top: "calc(100% + 8px)",
     left: 0,
     right: 0,
-    background: "rgba(255,255,255,0.98)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    borderRadius: 16,
-    boxShadow: "0 18px 40px rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(240,243,247,0.98) 0%, rgba(214,220,227,0.98) 100%)",
+    border: "1px solid rgba(15,23,42,0.12)",
+    borderRadius: 10,
+    boxShadow: "0 14px 28px rgba(15,23,42,0.12)",
     padding: 8,
     zIndex: 60,
     display: "flex",
@@ -2288,62 +2094,19 @@ const styles: Record<string, CSSProperties> = {
   mobileWorkspaceItem: {
     width: "100%",
     padding: "12px 12px",
-    borderRadius: 12,
+    borderRadius: 8,
     border: "1px solid transparent",
-    background: "#fff",
-    color: "#0f172a",
-    fontWeight: 800,
+    background: "rgba(255,255,255,0.7)",
+    color: "#4b5563",
+    fontWeight: 700,
     cursor: "pointer",
     textAlign: "left",
   },
 
   mobileWorkspaceItemActive: {
-    background: "#0f172a",
-    color: "#fff",
-    border: "1px solid #0f172a",
-  },
-
-  topActionButton: {
-    padding: "10px 14px",
-    borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "rgba(255,255,255,0.96)",
-    color: "#0f172a",
-    fontWeight: 800,
-    fontSize: 14,
-    cursor: "pointer",
-    minHeight: 42,
-    whiteSpace: "nowrap",
-    flexShrink: 0,
-  },
-
-  topActionButtonActive: {
-    background: "#0f172a",
-    color: "#fff",
-    border: "1px solid #0f172a",
-  },
-
-  kicker: {
-    fontSize: 12,
-    color: "#64748b",
-    letterSpacing: 0.5,
-    fontWeight: 900,
-  },
-
-  title: {
-    margin: "4px 0 0 0",
-    lineHeight: 1.08,
-    color: "#0f172a",
-    fontWeight: 900,
-    letterSpacing: -0.8,
-  },
-
-  topSub: {
-    marginTop: 8,
-    color: "#64748b",
-    fontSize: 13,
-    lineHeight: 1.55,
-    maxWidth: 720,
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    border: "1px solid rgba(15,23,42,0.12)",
   },
 
   accountTopRight: {
@@ -2355,73 +2118,38 @@ const styles: Record<string, CSSProperties> = {
     flexShrink: 0,
   },
 
-  accountMiniButton: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "rgba(255,255,255,0.94)",
-    borderRadius: 16,
-    padding: "8px 10px",
-    cursor: "pointer",
-    boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
-    minWidth: 170,
-    maxWidth: "100%",
-    flexShrink: 0,
-  },
-
-  accountMiniAvatar: {
-    width: 34,
-    height: 34,
+  accountCircleButton: {
+    width: 58,
+    height: 58,
     borderRadius: 999,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
+    color: "#ffffff",
+    cursor: "pointer",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 10px rgba(15,23,42,0.08)",
     display: "grid",
     placeItems: "center",
-    background: "linear-gradient(135deg, #8d96a3 0%, #bcc5cf 100%)",
-    color: "#fff",
-    fontWeight: 900,
-    fontSize: 14,
     flexShrink: 0,
   },
 
-  accountMiniText: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    minWidth: 0,
-    flex: 1,
-  },
-
-  accountMiniName: {
-    fontSize: 13,
-    color: "#0f172a",
-    lineHeight: 1.2,
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    maxWidth: 120,
-  },
-
-  accountMiniPlan: {
-    fontSize: 11,
-    color: "#64748b",
-    lineHeight: 1.2,
-  },
-
-  accountMiniCaret: {
-    color: "#64748b",
-    fontSize: 12,
+  accountCircleText: {
+    fontSize: 22,
     fontWeight: 800,
+    lineHeight: 1,
   },
 
   accountDropdown: {
     position: "absolute",
     top: "calc(100% + 10px)",
-    borderRadius: 18,
-    background: "rgba(255,255,255,0.98)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 22px 50px rgba(15,23,42,0.12)",
+    borderRadius: 14,
+    background:
+      "linear-gradient(180deg, rgba(240,243,247,0.98) 0%, rgba(214,220,227,0.98) 100%)",
+    border: "1px solid rgba(15,23,42,0.12)",
+    boxShadow: "0 22px 50px rgba(15,23,42,0.14)",
     padding: 14,
-    zIndex: 70,
+    zIndex: 80,
     display: "flex",
     flexDirection: "column",
     gap: 12,
@@ -2429,19 +2157,19 @@ const styles: Record<string, CSSProperties> = {
 
   accountDropdownHeader: {
     paddingBottom: 10,
-    borderBottom: "1px solid rgba(15,23,42,0.06)",
+    borderBottom: "1px solid rgba(15,23,42,0.08)",
   },
 
   accountDropdownName: {
     fontSize: 14,
-    fontWeight: 900,
-    color: "#0f172a",
+    fontWeight: 800,
+    color: "#374151",
     marginBottom: 4,
   },
 
   accountDropdownEmail: {
     fontSize: 12,
-    color: "#64748b",
+    color: "#6b7280",
     lineHeight: 1.4,
     wordBreak: "break-word",
   },
@@ -2458,7 +2186,7 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "center",
     gap: 12,
     fontSize: 12,
-    color: "#475569",
+    color: "#4b5563",
   },
 
   accountDropdownGroup: {
@@ -2470,7 +2198,7 @@ const styles: Record<string, CSSProperties> = {
   accountDropdownLabel: {
     fontSize: 11,
     fontWeight: 800,
-    color: "#64748b",
+    color: "#6b7280",
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
@@ -2478,10 +2206,10 @@ const styles: Record<string, CSSProperties> = {
   accountDropdownSelect: {
     width: "100%",
     height: 42,
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-    color: "#0f172a",
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background: "#f8fafc",
+    color: "#374151",
     padding: "0 12px",
     fontWeight: 700,
   },
@@ -2497,11 +2225,12 @@ const styles: Record<string, CSSProperties> = {
     flex: 1,
     minWidth: 110,
     padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-    color: "#0f172a",
-    fontWeight: 800,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
+    fontWeight: 700,
     cursor: "pointer",
   },
 
@@ -2509,144 +2238,138 @@ const styles: Record<string, CSSProperties> = {
     flex: 1,
     minWidth: 110,
     padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(239,68,68,0.16)",
+    borderRadius: 8,
+    border: "1px solid rgba(239,68,68,0.18)",
     background: "#fff5f5",
     color: "#b91c1c",
-    fontWeight: 800,
+    fontWeight: 700,
     cursor: "pointer",
   },
 
-  workspaceShell: {
+  mainGrid: {
     display: "grid",
     gap: 18,
     alignItems: "start",
     width: "100%",
-    maxWidth: 1600,
+    maxWidth: 1700,
     minWidth: 0,
   },
 
-  studioRail: {
+  leftColumn: {
+    display: "flex",
+    flexDirection: "column",
+    minWidth: 0,
+  },
+
+  rightColumn: {
     display: "flex",
     flexDirection: "column",
     gap: 16,
     minWidth: 0,
   },
 
-  canvasColumn: {
+  workspaceCard: {
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(242,245,248,0.97) 0%, rgba(220,226,233,0.97) 100%)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.75), 0 5px 16px rgba(15,23,42,0.05)",
+    overflow: "hidden",
+  },
+
+  workspaceTabsHeader: {
+    display: "flex",
+    alignItems: "flex-end",
+    gap: 4,
+    padding: "10px 12px 0",
+    overflowX: "auto",
+  },
+
+  workspaceHeaderTab: {
+    minHeight: 40,
+    padding: "0 22px",
+    borderRadius: "8px 8px 0 0",
+    border: "1px solid rgba(15,23,42,0.12)",
+    borderBottom: "none",
+    background:
+      "linear-gradient(180deg, rgba(231,236,241,0.96) 0%, rgba(201,209,218,0.96) 100%)",
+    color: "#4b5563",
+    fontWeight: 700,
+    fontSize: 15,
+    cursor: "pointer",
+    flexShrink: 0,
+  },
+
+  workspaceHeaderTabActive: {
+    background:
+      "linear-gradient(180deg, rgba(248,250,252,0.98) 0%, rgba(222,228,235,0.98) 100%)",
+    color: "#374151",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
+  },
+
+  formCardInner: {
+    padding: 18,
+    borderTop: "1px solid rgba(15,23,42,0.08)",
     display: "flex",
     flexDirection: "column",
-    gap: 14,
-    minWidth: 0,
-    alignItems: "stretch",
-  },
-
-  toolCard: {
-    padding: 18,
-    borderRadius: 24,
-    background: "rgba(255,255,255,0.88)",
-    border: "1px solid rgba(15,23,42,0.07)",
-    boxShadow: "0 12px 28px rgba(15,23,42,0.05)",
-    width: "100%",
-    minWidth: 0,
-    backdropFilter: "blur(8px)",
-  },
-
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 900,
-    color: "#0f172a",
-    marginBottom: 6,
-  },
-
-  sectionSub: {
-    fontSize: 13,
-    color: "#64748b",
-    lineHeight: 1.6,
-    marginBottom: 16,
-  },
-
-  modeTabs: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 8,
-    marginBottom: 14,
-  },
-
-  modeTab: {
-    padding: "11px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-    color: "#334155",
-    cursor: "pointer",
-    fontWeight: 700,
-    width: "100%",
-  },
-
-  modeTabActive: {
-    background: "linear-gradient(180deg, #ffffff 0%, #e7ebf0 100%)",
-    color: "#0f172a",
-    border: "1px solid rgba(15,23,42,0.12)",
-    boxShadow: "0 8px 18px rgba(15,23,42,0.06)",
+    gap: 0,
   },
 
   label: {
     marginBottom: 8,
     display: "block",
-    fontWeight: 800,
-    fontSize: 13,
-    color: "#334155",
+    fontWeight: 700,
+    fontSize: 16,
+    color: "#4b5563",
   },
 
   inputGroup: {
-    marginTop: 12,
+    marginTop: 18,
     minWidth: 0,
   },
 
-  prompt: {
+  heroInput: {
     width: "100%",
-    minHeight: 130,
-    borderRadius: 16,
-    border: "1px solid rgba(15,23,42,0.08)",
-    padding: 14,
-    background: "#fff",
-    color: "#111827",
+    minHeight: 62,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    padding: "14px 16px",
+    background:
+      "linear-gradient(180deg, rgba(250,251,252,0.98) 0%, rgba(235,239,243,0.98) 100%)",
+    color: "#374151",
     resize: "vertical",
+    fontSize: 16,
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
     minWidth: 0,
   },
 
-  promptSmall: {
+  promptArea: {
     width: "100%",
-    minHeight: 88,
-    borderRadius: 16,
-    border: "1px solid rgba(15,23,42,0.08)",
-    padding: 14,
-    background: "#fff",
-    color: "#111827",
+    minHeight: 110,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    padding: "14px 16px",
+    background:
+      "linear-gradient(180deg, rgba(250,251,252,0.98) 0%, rgba(235,239,243,0.98) 100%)",
+    color: "#374151",
     resize: "vertical",
+    fontSize: 15,
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
     minWidth: 0,
   },
 
-  input: {
+  selectMetal: {
     width: "100%",
-    height: 48,
-    borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.08)",
-    padding: "0 12px",
-    background: "#fff",
-    color: "#111827",
-    minWidth: 0,
-  },
-
-  selectWide: {
-    width: "100%",
-    height: 48,
-    borderRadius: 14,
-    border: "1px solid rgba(15,23,42,0.08)",
-    padding: "0 12px",
-    background: "#fff",
-    color: "#111827",
+    height: 52,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    padding: "0 14px",
+    background:
+      "linear-gradient(180deg, rgba(250,251,252,0.98) 0%, rgba(235,239,243,0.98) 100%)",
+    color: "#374151",
+    fontSize: 15,
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
     minWidth: 0,
   },
 
@@ -2657,75 +2380,76 @@ const styles: Record<string, CSSProperties> = {
     flexWrap: "wrap",
   },
 
-  uploadButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "10px 14px",
-    borderRadius: 12,
-    background: "linear-gradient(180deg, #ffffff 0%, #e7ebf0 100%)",
-    color: "#0f172a",
-    cursor: "pointer",
-    fontWeight: 800,
-    border: "1px solid rgba(15,23,42,0.08)",
-  },
-
-  uploadReady: {
-    fontSize: 13,
-    color: "#059669",
-    fontWeight: 800,
-  },
-
-  uploadHint: {
-    fontSize: 13,
-    color: "#64748b",
-  },
-
-  imagePreviewWrap: {
-    marginTop: 12,
-    width: 120,
-    aspectRatio: "1 / 1",
-    borderRadius: 14,
-    overflow: "hidden",
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-  },
-
-  imagePreview: {
+  uploadFieldLike: {
     width: "100%",
-    height: "100%",
-    objectFit: "cover",
+    minHeight: 52,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(250,251,252,0.98) 0%, rgba(235,239,243,0.98) 100%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "0 14px",
+    cursor: "pointer",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
   },
 
-  controls: {
+  uploadFieldText: {
+    fontSize: 15,
+    color: "#6b7280",
+    fontStyle: "italic",
+  },
+
+  uploadFieldIcon: {
+    fontSize: 24,
+    color: "#6b7280",
+    flexShrink: 0,
+  },
+
+  actionRow: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 10,
-    marginTop: 14,
-    alignItems: "center",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 16,
+    marginTop: 22,
+    paddingTop: 16,
+    borderTop: "1px solid rgba(15,23,42,0.10)",
   },
 
-  reset: {
-    padding: "12px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.10)",
-    background: "#fff",
-    color: "#0f172a",
-    cursor: "pointer",
+  actionRowSingle: {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gap: 16,
+    marginTop: 22,
+    paddingTop: 16,
+    borderTop: "1px solid rgba(15,23,42,0.10)",
+  },
+
+  resetButton: {
+    minHeight: 54,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
     fontWeight: 700,
-    width: "100%",
+    fontSize: 16,
+    cursor: "pointer",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
   },
 
-  generate: {
-    padding: "12px 18px",
-    background: "#0f172a",
-    border: "none",
-    borderRadius: 12,
-    color: "#fff",
+  primaryGenerateButton: {
+    minHeight: 54,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.16)",
+    background:
+      "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
+    color: "#ffffff",
+    fontWeight: 700,
+    fontSize: 16,
     cursor: "pointer",
-    fontWeight: 800,
-    width: "100%",
-    boxShadow: "0 10px 22px rgba(15,23,42,0.12)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 10px rgba(15,23,42,0.08)",
   },
 
   generateDisabled: {
@@ -2733,101 +2457,52 @@ const styles: Record<string, CSSProperties> = {
     cursor: "not-allowed",
   },
 
-  limitBox: {
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 14,
-    background: "rgba(254,226,226,0.9)",
-    border: "1px solid rgba(239,68,68,0.16)",
-    color: "#b91c1c",
-    fontWeight: 700,
-    fontSize: 13,
-    lineHeight: 1.5,
+  previewCard: {
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(242,245,248,0.97) 0%, rgba(220,226,233,0.97) 100%)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.75), 0 5px 16px rgba(15,23,42,0.05)",
+    padding: 14,
   },
 
-  smallNote: {
-    marginTop: 12,
-    fontSize: 12,
-    color: "#64748b",
-    lineHeight: 1.5,
-  },
-
-  logoInfoBox: {
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 14,
-    background: "rgba(241,245,249,0.92)",
-    border: "1px solid rgba(148,163,184,0.18)",
-    color: "#334155",
-    fontWeight: 700,
-    fontSize: 13,
-    lineHeight: 1.5,
-  },
-
-  previewMainRow: {
-    display: "grid",
-    gap: 18,
-    alignItems: "start",
-    width: "100%",
-    minWidth: 0,
-  },
-
-  previewMainLeft: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 14,
-    minWidth: 0,
-  },
-
-  previewMainRight: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 14,
-    minWidth: 0,
-  },
-
-  previewHeaderCard: {
+  previewCardHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 16,
-    flexWrap: "wrap",
-    width: "100%",
-    padding: 14,
-    borderRadius: 18,
-    background: "rgba(255,255,255,0.78)",
-    border: "1px solid rgba(15,23,42,0.07)",
-    boxShadow: "0 10px 24px rgba(15,23,42,0.04)",
+    gap: 12,
+    marginBottom: 12,
   },
 
-  inlineGhostButton: {
-    minHeight: 40,
-    padding: "0 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "#fff",
-    color: "#0f172a",
+  previewCardTitle: {
+    fontSize: 18,
     fontWeight: 800,
-    cursor: "pointer",
+    color: "#4b5563",
   },
 
-  previewHeaderSub: {
-    color: "#64748b",
-    fontSize: 13,
-    marginTop: 4,
+  previewCardTools: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    color: "#8b949e",
   },
 
-  previewBoxLarge: {
+  previewTool: {
+    fontSize: 20,
+    lineHeight: 1,
+  },
+
+  previewFrame: {
     width: "100%",
-    borderRadius: 24,
-    background: "#0b0d11",
+    borderRadius: 8,
+    overflow: "hidden",
+    background: "#0f1115",
+    border: "1px solid rgba(15,23,42,0.14)",
+    boxShadow: "0 8px 16px rgba(15,23,42,0.08)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 18px 38px rgba(15,23,42,0.10)",
-    minWidth: 0,
   },
 
   previewImage: {
@@ -2841,8 +2516,8 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     height: "100%",
     objectFit: "cover",
-    background: "#000",
     display: "block",
+    background: "#000",
   },
 
   centerBox: {
@@ -2860,7 +2535,7 @@ const styles: Record<string, CSSProperties> = {
 
   previewSubtext: {
     marginTop: 10,
-    opacity: 0.72,
+    opacity: 0.75,
     fontSize: 13,
     lineHeight: 1.5,
     whiteSpace: "pre-wrap",
@@ -2876,203 +2551,191 @@ const styles: Record<string, CSSProperties> = {
     margin: "0 auto 16px",
   },
 
-  warningBox: {
-    padding: 14,
-    borderRadius: 16,
-    background: "rgba(254,249,195,0.92)",
-    border: "1px solid rgba(250,204,21,0.25)",
-    color: "#854d0e",
-    fontWeight: 700,
-    fontSize: 14,
-    width: "100%",
+  summaryCard: {
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(242,245,248,0.97) 0%, rgba(220,226,233,0.97) 100%)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.75), 0 5px 16px rgba(15,23,42,0.05)",
+    overflow: "hidden",
   },
 
-  outputCard: {
-    padding: 16,
-    borderRadius: 20,
-    background: "rgba(255,255,255,0.86)",
-    border: "1px solid rgba(15,23,42,0.07)",
-    boxShadow: "0 10px 24px rgba(15,23,42,0.04)",
-    width: "100%",
-    minWidth: 0,
-  },
-
-  infoRow: {
+  summaryHeader: {
+    minHeight: 58,
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 10,
-  },
-
-  infoLabel: {
-    color: "#64748b",
-    fontSize: 13,
-  },
-
-  infoValue: {
-    fontSize: 13,
-    color: "#0f172a",
-    textAlign: "right",
-  },
-
-  status: {
-    background: "#eef2f7",
-    color: "#334155",
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: 12,
+    padding: "0 18px",
+    borderBottom: "1px solid rgba(15,23,42,0.10)",
+    fontSize: 18,
     fontWeight: 800,
+    color: "#4b5563",
   },
 
-  downloadLink: {
+  summaryList: {
+    padding: "16px 18px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+
+  summaryLine: {
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+    fontSize: 16,
+    color: "#4b5563",
+  },
+
+  summaryLabel: {
+    fontWeight: 500,
+  },
+
+  summaryValue: {
+    fontWeight: 700,
+    color: "#374151",
+  },
+
+  downloadButton: {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "100%",
-    marginTop: 8,
-    padding: "10px 14px",
-    borderRadius: 12,
-    background: "#0f172a",
-    color: "#fff",
+    margin: "0 18px 18px",
+    minHeight: 50,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.16)",
+    background:
+      "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
+    color: "#ffffff",
     textDecoration: "none",
+    fontWeight: 700,
+    fontSize: 16,
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 10px rgba(15,23,42,0.08)",
+  },
+
+  sceneOverviewFull: {
+    gridColumn: "1 / -1",
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(242,245,248,0.97) 0%, rgba(220,226,233,0.97) 100%)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.75), 0 5px 16px rgba(15,23,42,0.05)",
+    padding: 14,
+  },
+
+  sceneOverviewHeader: {
+    fontSize: 18,
     fontWeight: 800,
+    color: "#4b5563",
+    marginBottom: 14,
   },
 
-  scenesRailCard: {
-    padding: 16,
-    borderRadius: 20,
-    background: "rgba(255,255,255,0.86)",
-    border: "1px solid rgba(15,23,42,0.07)",
-    boxShadow: "0 10px 24px rgba(15,23,42,0.04)",
-    width: "100%",
-    minHeight: 100,
-    minWidth: 0,
+  emptySceneText: {
+    fontSize: 15,
+    color: "#6b7280",
+    lineHeight: 1.5,
   },
 
-  scenesStack: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    width: "100%",
-    minWidth: 0,
-    maxHeight: 880,
-    overflowY: "auto",
-    paddingRight: 4,
+  sceneGrid: {
+    display: "grid",
+    gap: 14,
   },
 
-  sceneCard: {
+  sceneOverviewCard: {
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
     padding: 12,
-    borderRadius: 14,
-    background: "#fff",
-    border: "1px solid rgba(15,23,42,0.06)",
-    width: "100%",
-    minWidth: 0,
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
   },
 
-  sceneCardActive: {
-    border: "1px solid rgba(100,116,139,0.35)",
-    boxShadow: "0 0 0 3px rgba(148,163,184,0.10)",
+  sceneOverviewCardActive: {
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.75), 0 0 0 2px rgba(137,170,215,0.35)",
+    border: "1px solid rgba(137,170,215,0.45)",
   },
 
-  sceneThumbWrap: {
+  sceneOverviewThumbWrap: {
     width: "100%",
     aspectRatio: "16 / 9",
-    borderRadius: 10,
+    borderRadius: 6,
     overflow: "hidden",
     marginBottom: 10,
-    background: "#f1f5f9",
+    background: "#dbe2ea",
+    border: "1px solid rgba(15,23,42,0.10)",
   },
 
-  sceneThumb: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-
-  sceneVideo: {
+  sceneOverviewThumb: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
     display: "block",
-    background: "#000",
   },
 
-  sceneThumbPlaceholder: {
+  sceneOverviewThumbPlaceholder: {
     width: "100%",
-    aspectRatio: "16 / 9",
-    borderRadius: 10,
-    marginBottom: 10,
-    background: "#e2e8f0",
+    height: "100%",
     display: "grid",
     placeItems: "center",
-    color: "#475569",
-    fontWeight: 800,
-    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: 700,
+    fontSize: 13,
     textAlign: "center",
     padding: 10,
   },
 
-  sceneTitleRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 10,
-    marginBottom: 6,
-    fontSize: 12,
-    color: "#0f172a",
+  sceneOverviewTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#374151",
+    marginBottom: 10,
   },
 
-  sceneDescription: {
-    color: "#64748b",
-    fontSize: 11,
-    lineHeight: 1.45,
-    minHeight: 42,
-    wordBreak: "break-word",
-  },
-
-  sceneActions: {
+  sceneOverviewActions: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 8,
-    marginTop: 10,
+    gridTemplateColumns: "1fr 1fr",
+    gap: 10,
   },
 
-  sceneActionButton: {
-    padding: "8px 9px",
-    borderRadius: 10,
-    border: "1px solid rgba(15,23,42,0.10)",
-    background: "#fff",
-    color: "#0f172a",
-    cursor: "pointer",
+  sceneSelectButton: {
+    minHeight: 40,
+    borderRadius: 6,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
     fontWeight: 700,
-    fontSize: 11,
-    width: "100%",
+    cursor: "pointer",
   },
 
-  sceneActionButtonDanger: {
-    padding: "8px 9px",
-    borderRadius: 10,
-    border: "1px solid rgba(239,68,68,0.16)",
-    background: "#fff5f5",
-    color: "#b91c1c",
-    cursor: "pointer",
+  sceneDeleteButton: {
+    minHeight: 40,
+    borderRadius: 6,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
     fontWeight: 700,
-    fontSize: 11,
-    width: "100%",
+    cursor: "pointer",
   },
 
   secondaryPanel: {
     padding: 20,
-    borderRadius: 24,
-    background: "rgba(255,255,255,0.80)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 20px 50px rgba(15,23,42,0.05)",
+    borderRadius: 12,
+    background:
+      "linear-gradient(180deg, rgba(242,245,248,0.97) 0%, rgba(220,226,233,0.97) 100%)",
+    border: "1px solid rgba(15,23,42,0.12)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.75), 0 5px 16px rgba(15,23,42,0.05)",
   },
 
   secondaryTitle: {
     fontSize: 22,
-    fontWeight: 900,
-    color: "#0f172a",
+    fontWeight: 800,
+    color: "#4b5563",
     marginBottom: 14,
   },
 
@@ -3084,30 +2747,32 @@ const styles: Record<string, CSSProperties> = {
 
   appCard: {
     padding: 18,
-    borderRadius: 18,
-    background: "#fff",
-    border: "1px solid rgba(15,23,42,0.08)",
+    borderRadius: 8,
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    border: "1px solid rgba(15,23,42,0.12)",
   },
 
   appCardTitle: {
     fontSize: 16,
-    fontWeight: 800,
-    color: "#0f172a",
+    fontWeight: 700,
+    color: "#374151",
     marginBottom: 8,
   },
 
   appCardText: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#6b7280",
     lineHeight: 1.5,
   },
 
   chatBox: {
     padding: 18,
-    borderRadius: 18,
-    background: "#fff",
-    border: "1px solid rgba(15,23,42,0.08)",
-    color: "#475569",
+    borderRadius: 8,
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    border: "1px solid rgba(15,23,42,0.12)",
+    color: "#4b5563",
     lineHeight: 1.6,
   },
 
@@ -3119,20 +2784,12 @@ const styles: Record<string, CSSProperties> = {
 
   flowItem: {
     padding: 14,
-    borderRadius: 16,
-    background: "#fff",
-    border: "1px solid rgba(15,23,42,0.08)",
-    color: "#334155",
+    borderRadius: 8,
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    border: "1px solid rgba(15,23,42,0.12)",
+    color: "#4b5563",
     fontWeight: 700,
-  },
-
-  cardTitle: {
-    marginBottom: 10,
-    fontWeight: 900,
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    color: "#475569",
   },
 
   audioPreviewCard: {
@@ -3147,7 +2804,7 @@ const styles: Record<string, CSSProperties> = {
 
   audioPreviewTitle: {
     fontSize: 20,
-    fontWeight: 900,
+    fontWeight: 800,
     marginBottom: 8,
   },
 
@@ -3162,24 +2819,10 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
   },
 
-  audioInlineCard: {
-    padding: 14,
-    borderRadius: 14,
-    background: "rgba(255,255,255,0.96)",
-    border: "1px solid rgba(15,23,42,0.08)",
-  },
-
-  audioInlineTitle: {
-    fontSize: 13,
-    fontWeight: 800,
-    color: "#0f172a",
-    marginBottom: 10,
-  },
-
   lyricsBox: {
     whiteSpace: "pre-wrap",
-    fontSize: 13,
-    lineHeight: 1.65,
-    color: "#334155",
+    fontSize: 14,
+    lineHeight: 1.7,
+    color: "#4b5563",
   },
 };
