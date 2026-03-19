@@ -15,6 +15,7 @@ import { useSession } from "../provider/SessionProvider";
 import { useLanguage } from "../provider/LanguageProvider";
 import { LANGUAGE_LABELS, type AppLanguage } from "../lib/i18n";
 import AppSidebar from "../components/AppSidebar";
+import AppFooter from "../components/AppFooter";
 
 type VideoMode =
   | "text_to_video"
@@ -318,7 +319,8 @@ function PageContent() {
     activeAudioUrl.trim().length > 0 &&
     musicVideoPrompt.trim().length >= 3;
 
-  const canGenerateVideo = canGenerateVideoBase && isAuthenticated && !isPlanBlocked;
+  const canGenerateVideo =
+    canGenerateVideoBase && isAuthenticated && !isPlanBlocked;
   const canGenerateMusic =
     canGenerateMusicBase && isAuthenticated && !isPlanBlocked;
   const canGenerateMusicVideo =
@@ -439,25 +441,25 @@ function PageContent() {
       }
 
       const res = await fetch("/api/generate", {
-  method: "POST",
-  headers: {
-    "content-type": "application/json",
-  },
-  body: JSON.stringify(payload),
-});
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-let data: any = null;
-const rawText = await res.text();
+      let data: any = null;
+      const rawText = await res.text();
 
-try {
-  data = rawText ? JSON.parse(rawText) : null;
-} catch {
-  throw new Error(rawText || "Generation failed");
-}
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        throw new Error(rawText || "Generation failed");
+      }
 
-if (!res.ok || !data?.ok) {
-  throw new Error(data?.error || "Generation failed");
-}
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Generation failed");
+      }
 
       if (!data.videoUrl) {
         throw new Error("No video URL returned");
@@ -732,7 +734,7 @@ if (!res.ok || !data?.ok) {
 
   const handleSupportSend = () => {
     const subject = encodeURIComponent(
-      supportSubject || `${t.support.title} - Duble-S Motion AI`
+      supportSubject || `${t.support.title} - Dublesmotion AI`
     );
     const body = encodeURIComponent(
       `${supportMessage}\n\n---\nUser: ${user?.email ?? "Guest"}\nPlan: ${
@@ -1380,7 +1382,9 @@ if (!res.ok || !data?.ok) {
                 ...styles.generate,
                 ...(!canGenerateMusicVideo ? styles.generateDisabled : {}),
               }}
-              onClick={canGenerateMusicVideo ? handleGenerateMusicVideo : undefined}
+              onClick={
+                canGenerateMusicVideo ? handleGenerateMusicVideo : undefined
+              }
             >
               {videoGeneration.status === "loading"
                 ? "Generating music video..."
@@ -1569,16 +1573,11 @@ if (!res.ok || !data?.ok) {
       default:
         return (
           <section
-            className="studio-responsive"
             style={{
-              display: "grid",
-              gridTemplateColumns: isMobileViewport ? "1fr" : "380px minmax(0, 1fr)",
-              justifyContent: "space-between",
-              gap: isMobileViewport ? 16 : 24,
-              alignItems: "start",
-              width: "100%",
-              maxWidth: 1380,
-              minWidth: 0,
+              ...styles.workspaceShell,
+              gridTemplateColumns: isMobileViewport
+                ? "1fr"
+                : "minmax(320px, 420px) minmax(0, 1fr)",
             }}
           >
             <div style={styles.studioRail}>{renderWorkspaceBody()}</div>
@@ -1589,12 +1588,12 @@ if (!res.ok || !data?.ok) {
                   ...styles.previewMainRow,
                   gridTemplateColumns: isMobileViewport
                     ? "1fr"
-                    : "minmax(0, 620px) minmax(260px, 340px)",
+                    : "minmax(0, 1fr) minmax(280px, 360px)",
                 }}
               >
                 <div style={styles.previewMainLeft}>
-                  <div style={styles.previewHeader}>
-                    <div>
+                  <div style={styles.previewHeaderCard}>
+                    <div style={{ minWidth: 0 }}>
                       <div style={styles.cardTitle}>
                         {workspaceTab === "music"
                           ? "Audio Preview"
@@ -1612,35 +1611,40 @@ if (!res.ok || !data?.ok) {
                           : selectedScene?.title ?? t.home.selectedScene}
                       </div>
                     </div>
+
+                    {(workspaceTab === "video" ||
+                      workspaceTab === "music_video") &&
+                    previewTarget !== "final" ? (
+                      <button
+                        type="button"
+                        style={styles.inlineGhostButton}
+                        onClick={() => {
+                          setPreviewTarget("final");
+                          setSelectedSceneId(null);
+                        }}
+                      >
+                        Back to Final
+                      </button>
+                    ) : null}
                   </div>
 
                   <div
                     style={{
                       ...styles.previewBoxLarge,
                       aspectRatio: previewAspectRatio,
-                      maxWidth: isMobileViewport ? "100%" : 620,
                     }}
                   >
                     {renderPreviewContent()}
                   </div>
 
-                  {videoGeneration.status === "done" && videoGeneration.saveWarning ? (
-                    <div
-                      style={{
-                        ...styles.warningBox,
-                        maxWidth: isMobileViewport ? "100%" : 620,
-                      }}
-                    >
+                  {videoGeneration.status === "done" &&
+                  videoGeneration.saveWarning ? (
+                    <div style={styles.warningBox}>
                       {videoGeneration.saveWarning}
                     </div>
                   ) : null}
 
-                  <div
-                    style={{
-                      ...styles.outputCard,
-                      maxWidth: isMobileViewport ? "100%" : 620,
-                    }}
-                  >
+                  <div style={styles.outputCard}>
                     <div style={styles.cardTitle}>
                       {workspaceTab === "music" ? "Audio Output" : t.home.outputTitle}
                     </div>
@@ -1889,14 +1893,15 @@ if (!res.ok || !data?.ok) {
                     </div>
                   )}
 
-                  {workspaceTab === "music" && musicGeneration.status === "done" && (
-                    <div style={styles.scenesRailCard}>
-                      <div style={styles.cardTitle}>Lyrics Preview</div>
-                      <div style={styles.lyricsBox}>
-                        {musicGeneration.lyrics || "No lyrics available."}
+                  {workspaceTab === "music" &&
+                    musicGeneration.status === "done" && (
+                      <div style={styles.scenesRailCard}>
+                        <div style={styles.cardTitle}>Lyrics Preview</div>
+                        <div style={styles.lyricsBox}>
+                          {musicGeneration.lyrics || "No lyrics available."}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {workspaceTab === "voice" && (
                     <div style={styles.scenesRailCard}>
@@ -1927,14 +1932,14 @@ if (!res.ok || !data?.ok) {
       <main
         style={{
           ...styles.main,
-          padding: isMobileViewport ? 14 : 20,
+          padding: isMobileViewport ? "14px 12px 20px" : "20px 22px 24px",
         }}
       >
         <div
           style={{
             ...styles.topBar,
-            alignItems: isMobileViewport ? "stretch" : "flex-start",
             flexDirection: isMobileViewport ? "column" : "row",
+            alignItems: isMobileViewport ? "stretch" : "center",
           }}
         >
           <div style={{ minWidth: 0 }}>
@@ -2113,6 +2118,7 @@ if (!res.ok || !data?.ok) {
         </div>
 
         {renderPanel()}
+        <AppFooter />
       </main>
     </div>
   );
@@ -2177,7 +2183,7 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     minHeight: "100vh",
     background:
-      "linear-gradient(135deg, #f8fbff 0%, #eef4ff 38%, #f7f2ff 100%)",
+      "linear-gradient(135deg, #f5f6f8 0%, #eef1f4 34%, #e8edf2 100%)",
     color: "#0f172a",
     overflowX: "hidden",
   },
@@ -2189,7 +2195,7 @@ const styles: Record<string, CSSProperties> = {
     gap: 18,
     minWidth: 0,
     background:
-      "radial-gradient(circle at top left, rgba(126, 87, 255, 0.08), transparent 28%), radial-gradient(circle at top right, rgba(77, 182, 255, 0.10), transparent 24%)",
+      "radial-gradient(circle at top left, rgba(255,255,255,0.62), transparent 26%), radial-gradient(circle at top right, rgba(182,196,214,0.15), transparent 20%)",
     overflowX: "hidden",
   },
 
@@ -2199,6 +2205,12 @@ const styles: Record<string, CSSProperties> = {
     gap: 14,
     flexWrap: "wrap",
     minWidth: 0,
+    padding: 16,
+    borderRadius: 24,
+    background: "rgba(255,255,255,0.72)",
+    border: "1px solid rgba(15,23,42,0.08)",
+    boxShadow: "0 16px 34px rgba(15,23,42,0.05)",
+    backdropFilter: "blur(10px)",
   },
 
   topBarRight: {
@@ -2314,8 +2326,8 @@ const styles: Record<string, CSSProperties> = {
   kicker: {
     fontSize: 12,
     color: "#64748b",
-    letterSpacing: 0.4,
-    fontWeight: 800,
+    letterSpacing: 0.5,
+    fontWeight: 900,
   },
 
   title: {
@@ -2330,7 +2342,7 @@ const styles: Record<string, CSSProperties> = {
     marginTop: 8,
     color: "#64748b",
     fontSize: 13,
-    lineHeight: 1.5,
+    lineHeight: 1.55,
     maxWidth: 720,
   },
 
@@ -2364,7 +2376,7 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 999,
     display: "grid",
     placeItems: "center",
-    background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
+    background: "linear-gradient(135deg, #8d96a3 0%, #bcc5cf 100%)",
     color: "#fff",
     fontWeight: 900,
     fontSize: 14,
@@ -2409,7 +2421,7 @@ const styles: Record<string, CSSProperties> = {
     border: "1px solid rgba(15,23,42,0.08)",
     boxShadow: "0 22px 50px rgba(15,23,42,0.12)",
     padding: 14,
-    zIndex: 50,
+    zIndex: 70,
     display: "flex",
     flexDirection: "column",
     gap: 12,
@@ -2505,6 +2517,15 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
   },
 
+  workspaceShell: {
+    display: "grid",
+    gap: 18,
+    alignItems: "start",
+    width: "100%",
+    maxWidth: 1600,
+    minWidth: 0,
+  },
+
   studioRail: {
     display: "flex",
     flexDirection: "column",
@@ -2521,13 +2542,14 @@ const styles: Record<string, CSSProperties> = {
   },
 
   toolCard: {
-    padding: 16,
-    borderRadius: 22,
-    background: "rgba(255,255,255,0.90)",
-    border: "1px solid rgba(15,23,42,0.06)",
-    boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
+    padding: 18,
+    borderRadius: 24,
+    background: "rgba(255,255,255,0.88)",
+    border: "1px solid rgba(15,23,42,0.07)",
+    boxShadow: "0 12px 28px rgba(15,23,42,0.05)",
     width: "100%",
     minWidth: 0,
+    backdropFilter: "blur(8px)",
   },
 
   sectionTitle: {
@@ -2563,9 +2585,10 @@ const styles: Record<string, CSSProperties> = {
   },
 
   modeTabActive: {
-    background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
-    color: "#fff",
-    border: "1px solid transparent",
+    background: "linear-gradient(180deg, #ffffff 0%, #e7ebf0 100%)",
+    color: "#0f172a",
+    border: "1px solid rgba(15,23,42,0.12)",
+    boxShadow: "0 8px 18px rgba(15,23,42,0.06)",
   },
 
   label: {
@@ -2640,10 +2663,11 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: "center",
     padding: "10px 14px",
     borderRadius: 12,
-    background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
-    color: "#fff",
+    background: "linear-gradient(180deg, #ffffff 0%, #e7ebf0 100%)",
+    color: "#0f172a",
     cursor: "pointer",
     fontWeight: 800,
+    border: "1px solid rgba(15,23,42,0.08)",
   },
 
   uploadReady: {
@@ -2694,14 +2718,14 @@ const styles: Record<string, CSSProperties> = {
 
   generate: {
     padding: "12px 18px",
-    background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
+    background: "#0f172a",
     border: "none",
     borderRadius: 12,
     color: "#fff",
     cursor: "pointer",
     fontWeight: 800,
-    boxShadow: "0 10px 22px rgba(77,182,255,0.16)",
     width: "100%",
+    boxShadow: "0 10px 22px rgba(15,23,42,0.12)",
   },
 
   generateDisabled: {
@@ -2732,9 +2756,9 @@ const styles: Record<string, CSSProperties> = {
     marginTop: 12,
     padding: 12,
     borderRadius: 14,
-    background: "rgba(239,246,255,0.95)",
-    border: "1px solid rgba(59,130,246,0.14)",
-    color: "#1d4ed8",
+    background: "rgba(241,245,249,0.92)",
+    border: "1px solid rgba(148,163,184,0.18)",
+    color: "#334155",
     fontWeight: 700,
     fontSize: 13,
     lineHeight: 1.5,
@@ -2762,13 +2786,29 @@ const styles: Record<string, CSSProperties> = {
     minWidth: 0,
   },
 
-  previewHeader: {
+  previewHeaderCard: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     gap: 16,
     flexWrap: "wrap",
     width: "100%",
+    padding: 14,
+    borderRadius: 18,
+    background: "rgba(255,255,255,0.78)",
+    border: "1px solid rgba(15,23,42,0.07)",
+    boxShadow: "0 10px 24px rgba(15,23,42,0.04)",
+  },
+
+  inlineGhostButton: {
+    minHeight: 40,
+    padding: "0 14px",
+    borderRadius: 12,
+    border: "1px solid rgba(15,23,42,0.08)",
+    background: "#fff",
+    color: "#0f172a",
+    fontWeight: 800,
+    cursor: "pointer",
   },
 
   previewHeaderSub: {
@@ -2779,15 +2819,14 @@ const styles: Record<string, CSSProperties> = {
 
   previewBoxLarge: {
     width: "100%",
-    margin: "0",
-    borderRadius: 22,
-    background: "#05070b",
+    borderRadius: 24,
+    background: "#0b0d11",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    border: "1px solid rgba(15,23,42,0.06)",
-    boxShadow: "0 16px 36px rgba(15,23,42,0.10)",
+    border: "1px solid rgba(15,23,42,0.08)",
+    boxShadow: "0 18px 38px rgba(15,23,42,0.10)",
     minWidth: 0,
   },
 
@@ -2850,10 +2889,10 @@ const styles: Record<string, CSSProperties> = {
 
   outputCard: {
     padding: 16,
-    borderRadius: 18,
-    background: "rgba(255,255,255,0.88)",
-    border: "1px solid rgba(15,23,42,0.06)",
-    boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
+    borderRadius: 20,
+    background: "rgba(255,255,255,0.86)",
+    border: "1px solid rgba(15,23,42,0.07)",
+    boxShadow: "0 10px 24px rgba(15,23,42,0.04)",
     width: "100%",
     minWidth: 0,
   },
@@ -2878,8 +2917,8 @@ const styles: Record<string, CSSProperties> = {
   },
 
   status: {
-    background: "#eef2ff",
-    color: "#4338ca",
+    background: "#eef2f7",
+    color: "#334155",
     padding: "4px 10px",
     borderRadius: 999,
     fontSize: 12,
@@ -2894,7 +2933,7 @@ const styles: Record<string, CSSProperties> = {
     marginTop: 8,
     padding: "10px 14px",
     borderRadius: 12,
-    background: "linear-gradient(135deg, #6d5dfc 0%, #4db6ff 100%)",
+    background: "#0f172a",
     color: "#fff",
     textDecoration: "none",
     fontWeight: 800,
@@ -2902,10 +2941,10 @@ const styles: Record<string, CSSProperties> = {
 
   scenesRailCard: {
     padding: 16,
-    borderRadius: 18,
-    background: "rgba(255,255,255,0.88)",
-    border: "1px solid rgba(15,23,42,0.06)",
-    boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
+    borderRadius: 20,
+    background: "rgba(255,255,255,0.86)",
+    border: "1px solid rgba(15,23,42,0.07)",
+    boxShadow: "0 10px 24px rgba(15,23,42,0.04)",
     width: "100%",
     minHeight: 100,
     minWidth: 0,
@@ -2932,8 +2971,8 @@ const styles: Record<string, CSSProperties> = {
   },
 
   sceneCardActive: {
-    border: "1px solid rgba(109,93,252,0.55)",
-    boxShadow: "0 0 0 3px rgba(109,93,252,0.10)",
+    border: "1px solid rgba(100,116,139,0.35)",
+    boxShadow: "0 0 0 3px rgba(148,163,184,0.10)",
   },
 
   sceneThumbWrap: {
@@ -3025,9 +3064,9 @@ const styles: Record<string, CSSProperties> = {
   secondaryPanel: {
     padding: 20,
     borderRadius: 24,
-    background: "rgba(255,255,255,0.74)",
+    background: "rgba(255,255,255,0.80)",
     border: "1px solid rgba(15,23,42,0.08)",
-    boxShadow: "0 20px 50px rgba(15,23,42,0.06)",
+    boxShadow: "0 20px 50px rgba(15,23,42,0.05)",
   },
 
   secondaryTitle: {
