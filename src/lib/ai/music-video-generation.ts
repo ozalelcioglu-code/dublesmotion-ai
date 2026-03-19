@@ -69,6 +69,20 @@ function ratioValue(ratio?: string) {
   return "16:9";
 }
 
+/**
+ * Aktif model sadece 6 veya 10 kabul ediyor.
+ */
+function getClipDuration(durationSec: number) {
+  if (durationSec >= 20) return 10;
+  return 6;
+}
+
+function getSceneCount(durationSec: number) {
+  if (durationSec >= 30) return 3;
+  if (durationSec >= 20) return 2;
+  return 1;
+}
+
 function styleDescriptor(style?: VideoStyle) {
   switch (style) {
     case "realistic":
@@ -124,20 +138,6 @@ function styleDescriptor(style?: VideoStyle) {
     default:
       return "premium cinematic music video quality";
   }
-}
-
-function getClipDuration(durationSec: number) {
-  if (durationSec >= 50) return 8;
-  if (durationSec >= 30) return 6;
-  if (durationSec >= 20) return 5;
-  return 4;
-}
-
-function getSceneCount(durationSec: number) {
-  if (durationSec >= 50) return 5;
-  if (durationSec >= 30) return 4;
-  if (durationSec >= 20) return 3;
-  return 2;
 }
 
 function buildNegativePrompt() {
@@ -197,36 +197,23 @@ function buildScenePrompts(input: {
 }) {
   const count = getSceneCount(input.durationSec);
 
+  if (count === 1) {
+    return [
+      `Scene 1: cinematic performance hero shot, premium rhythm, emotional final frame, ${input.masterPrompt}`,
+    ];
+  }
+
   if (count === 2) {
     return [
-      `Scene 1: cinematic opening performance shot, atmospheric intro, ${input.masterPrompt}`,
-      `Scene 2: emotional payoff shot, stronger energy, memorable ending frame, ${input.masterPrompt}`,
-    ];
-  }
-
-  if (count === 3) {
-    return [
-      `Scene 1: opening establishing shot, cinematic intro, atmospheric world building, ${input.masterPrompt}`,
-      `Scene 2: main performance shot, stronger rhythm and camera movement, ${input.masterPrompt}`,
-      `Scene 3: final payoff shot, emotional climax, premium ending frame, ${input.masterPrompt}`,
-    ];
-  }
-
-  if (count === 4) {
-    return [
-      `Scene 1: opening cinematic intro, wide establishing shot, ${input.masterPrompt}`,
-      `Scene 2: medium performance shot, visual progression and energy rise, ${input.masterPrompt}`,
-      `Scene 3: close emotional detail shot, premium camera language, ${input.masterPrompt}`,
-      `Scene 4: final climax and elegant ending frame, ${input.masterPrompt}`,
+      `Scene 1: opening establishing performance shot, cinematic intro, atmospheric world building, ${input.masterPrompt}`,
+      `Scene 2: final payoff shot, emotional climax, premium ending frame, ${input.masterPrompt}`,
     ];
   }
 
   return [
     `Scene 1: opening cinematic intro, atmospheric establishing shot, ${input.masterPrompt}`,
-    `Scene 2: performance progression shot, medium framing, stronger rhythm, ${input.masterPrompt}`,
-    `Scene 3: emotional close-up shot, premium detail and lighting, ${input.masterPrompt}`,
-    `Scene 4: chorus or climax shot, high energy visual payoff, ${input.masterPrompt}`,
-    `Scene 5: elegant final outro shot, memorable ending frame, ${input.masterPrompt}`,
+    `Scene 2: performance progression shot, stronger rhythm and medium framing, ${input.masterPrompt}`,
+    `Scene 3: elegant final outro shot, memorable ending frame, ${input.masterPrompt}`,
   ];
 }
 

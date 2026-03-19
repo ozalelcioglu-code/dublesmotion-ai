@@ -92,16 +92,20 @@ function ratioValue(ratio?: string) {
   return "16:9";
 }
 
+/**
+ * Aktif model sadece 6 veya 10 kabul ediyor.
+ * Free kullanıcı tarafında genelde kısa klip,
+ * pro/agency tarafında daha uzun klip üretimi için 10 kullanıyoruz.
+ */
 function getClipDuration(durationSec: number) {
-  if (durationSec >= 30) return 8;
-  if (durationSec >= 20) return 6;
-  return 5;
+  if (durationSec >= 20) return 10;
+  return 6;
 }
 
 function getSceneCount(durationSec: number) {
-  if (durationSec >= 30) return 4;
-  if (durationSec >= 20) return 3;
-  return 2;
+  if (durationSec >= 30) return 3;
+  if (durationSec >= 20) return 2;
+  return 1;
 }
 
 function styleDescriptor(style?: VideoStyle) {
@@ -195,6 +199,10 @@ function buildNegativePrompt(negativePrompt?: string) {
     "frame inconsistency",
     "washed out image",
     "messy background",
+    "identity drift",
+    "face change",
+    "costume change",
+    "background collapse",
   ].join(", ");
 
   const custom = sanitizePrompt(negativePrompt);
@@ -212,20 +220,24 @@ function buildModeHint(input: {
       "brand-safe animation",
       "minimal luxurious movement",
       "crisp logo edges",
-      "no distortion on logo",
+      "no logo distortion",
       "refined intro animation",
+      "center composition",
     ].join(", ");
   }
 
   if (input.mode === "image_to_video") {
     return [
-      "preserve the original reference image identity",
-      "keep subject consistency from source image",
-      "natural controlled motion only",
-      "no subject drift",
-      "no face change",
-      "no costume change",
-      "respect original composition while adding cinematic motion",
+      "preserve the original reference image identity exactly",
+      "same person, same face, same clothes, same hairstyle, same subject design",
+      "no character redesign",
+      "no face drift",
+      "no costume drift",
+      "keep the source composition recognizable",
+      "animate from the still image naturally",
+      "controlled motion only",
+      "cinematic but stable movement",
+      "reference image fidelity is critical",
     ].join(", ");
   }
 
@@ -298,73 +310,64 @@ function buildScenePrompts(input: {
   const count = getSceneCount(input.durationSec);
 
   if (input.mode === "logo_to_video") {
-    if (count === 2) {
+    if (count === 1) {
       return [
-        `Scene 1: elegant logo entrance, subtle glow, controlled premium motion, ${input.masterPrompt}`,
-        `Scene 2: final polished logo lockup, refined finish, premium brand reveal, ${input.masterPrompt}`,
+        `Scene 1: elegant logo entrance, subtle glow, refined premium motion, final clean brand reveal, ${input.masterPrompt}`,
       ];
     }
 
-    if (count === 3) {
+    if (count === 2) {
       return [
         `Scene 1: cinematic intro atmosphere, logo begins to appear, subtle luxury motion, ${input.masterPrompt}`,
-        `Scene 2: logo fully emerges with refined motion graphics, clean premium reveal, ${input.masterPrompt}`,
-        `Scene 3: final logo lockup, crisp brand presentation, elegant end frame, ${input.masterPrompt}`,
+        `Scene 2: final logo lockup, crisp brand presentation, elegant end frame, ${input.masterPrompt}`,
       ];
     }
 
     return [
       `Scene 1: elegant cinematic intro, minimal luxury motion, ${input.masterPrompt}`,
       `Scene 2: logo formation phase, refined glow and premium movement, ${input.masterPrompt}`,
-      `Scene 3: logo highlight shot, polished centered reveal, ${input.masterPrompt}`,
-      `Scene 4: final brand lockup, clean premium ending frame, ${input.masterPrompt}`,
+      `Scene 3: final brand lockup, clean premium ending frame, ${input.masterPrompt}`,
     ];
   }
 
   if (input.mode === "image_to_video") {
-    if (count === 2) {
+    if (count === 1) {
       return [
-        `Scene 1: preserve reference identity, gentle cinematic motion, opening hero shot, ${input.masterPrompt}`,
-        `Scene 2: same subject and same visual identity, stronger motion, premium payoff shot, ${input.masterPrompt}`,
+        `Scene 1: exact source-image hero opening, same subject identity, subtle motion only, same face and same styling, ${input.masterPrompt}`,
       ];
     }
 
-    if (count === 3) {
+    if (count === 2) {
       return [
-        `Scene 1: opening hero shot from the reference image, smooth cinematic movement, ${input.masterPrompt}`,
-        `Scene 2: same subject and same styling, medium motion, visual progression, ${input.masterPrompt}`,
-        `Scene 3: final payoff shot, still preserving identity, premium ending frame, ${input.masterPrompt}`,
+        `Scene 1: exact opening frame from the source image, same identity, soft camera push-in, natural micro movement only, ${input.masterPrompt}`,
+        `Scene 2: final hero payoff shot, same identity preserved, elegant motion, premium ending frame, ${input.masterPrompt}`,
       ];
     }
 
     return [
-      `Scene 1: opening reference-based wide shot, smooth cinematic motion, ${input.masterPrompt}`,
-      `Scene 2: same subject and styling, medium framing, elegant motion, ${input.masterPrompt}`,
-      `Scene 3: close detail shot, preserve identity and facial consistency, ${input.masterPrompt}`,
-      `Scene 4: final premium payoff shot, same subject continuity, ${input.masterPrompt}`,
+      `Scene 1: exact source-image hero opening, same subject identity, subtle motion only, ${input.masterPrompt}`,
+      `Scene 2: same subject, same outfit, same face, medium cinematic motion, preserve reference fidelity, ${input.masterPrompt}`,
+      `Scene 3: final premium payoff shot, same subject continuity, same image world, elegant ending motion, ${input.masterPrompt}`,
+    ];
+  }
+
+  if (count === 1) {
+    return [
+      `Scene 1: polished cinematic hero shot, strong composition, smooth motion, ${input.masterPrompt}`,
     ];
   }
 
   if (count === 2) {
     return [
-      `Scene 1: opening establishing shot, premium framing, ${input.masterPrompt}`,
-      `Scene 2: final payoff shot, stronger motion, emotional finish, ${input.masterPrompt}`,
-    ];
-  }
-
-  if (count === 3) {
-    return [
       `Scene 1: opening establishing shot, wide cinematic composition, ${input.masterPrompt}`,
-      `Scene 2: middle action shot, dynamic camera movement and stronger visual energy, ${input.masterPrompt}`,
-      `Scene 3: final payoff shot, memorable ending frame, premium finish, ${input.masterPrompt}`,
+      `Scene 2: final payoff shot, memorable ending frame, premium finish, ${input.masterPrompt}`,
     ];
   }
 
   return [
     `Scene 1: opening cinematic intro, wide composition, ${input.masterPrompt}`,
-    `Scene 2: narrative progression shot, medium framing and smooth motion, ${input.masterPrompt}`,
-    `Scene 3: close emotional detail shot, premium camera language, ${input.masterPrompt}`,
-    `Scene 4: final payoff shot, elegant ending and high-impact finish, ${input.masterPrompt}`,
+    `Scene 2: medium progression shot with smooth motion, ${input.masterPrompt}`,
+    `Scene 3: final payoff shot, elegant ending and high-impact finish, ${input.masterPrompt}`,
   ];
 }
 
@@ -532,7 +535,7 @@ async function generateVideoWithReplicate(
   const finalPrompt =
     scenePrompts.length > 1
       ? scenePrompts.join(
-          " Then transition smoothly to the next scene while preserving subject continuity. "
+          " Then transition smoothly to the next scene while preserving subject continuity, same identity, same styling, same visual world. "
         )
       : masterPrompt;
 
