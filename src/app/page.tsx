@@ -439,18 +439,25 @@ function PageContent() {
       }
 
       const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+  method: "POST",
+  headers: {
+    "content-type": "application/json",
+  },
+  body: JSON.stringify(payload),
+});
 
-      const data = await res.json();
+let data: any = null;
+const rawText = await res.text();
 
-      if (!res.ok || !data?.ok) {
-        throw new Error(data?.error || "Generation failed");
-      }
+try {
+  data = rawText ? JSON.parse(rawText) : null;
+} catch {
+  throw new Error(rawText || "Generation failed");
+}
+
+if (!res.ok || !data?.ok) {
+  throw new Error(data?.error || "Generation failed");
+}
 
       if (!data.videoUrl) {
         throw new Error("No video URL returned");
