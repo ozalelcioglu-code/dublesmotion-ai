@@ -1,3 +1,8 @@
+import {
+  buildCloudinaryConcatUrl,
+  uploadRemoteVideoToCloudinary,
+} from "../server/cloudinary-video";
+
 type GenerationMode =
   | "image_to_video"
   | "url_to_video"
@@ -92,11 +97,6 @@ function ratioValue(ratio?: string) {
   return "16:9";
 }
 
-/**
- * Aktif model sadece 6 veya 10 kabul ediyor.
- * Free kullanıcı tarafında genelde kısa klip,
- * pro/agency tarafında daha uzun klip üretimi için 10 kullanıyoruz.
- */
 function getClipDuration(durationSec: number) {
   if (durationSec >= 20) return 10;
   return 6;
@@ -171,11 +171,7 @@ function styleDescriptor(style?: VideoStyle) {
       ].join(", ");
 
     default:
-      return [
-        "premium cinematic quality",
-        "clean motion",
-        "high prompt adherence",
-      ].join(", ");
+      return ["premium cinematic quality", "clean motion", "high prompt adherence"].join(", ");
   }
 }
 
@@ -315,14 +311,12 @@ function buildScenePrompts(input: {
         `Scene 1: elegant logo entrance, subtle glow, refined premium motion, final clean brand reveal, ${input.masterPrompt}`,
       ];
     }
-
     if (count === 2) {
       return [
         `Scene 1: cinematic intro atmosphere, logo begins to appear, subtle luxury motion, ${input.masterPrompt}`,
         `Scene 2: final logo lockup, crisp brand presentation, elegant end frame, ${input.masterPrompt}`,
       ];
     }
-
     return [
       `Scene 1: elegant cinematic intro, minimal luxury motion, ${input.masterPrompt}`,
       `Scene 2: logo formation phase, refined glow and premium movement, ${input.masterPrompt}`,
@@ -336,18 +330,16 @@ function buildScenePrompts(input: {
         `Scene 1: exact source-image hero opening, same subject identity, subtle motion only, same face and same styling, ${input.masterPrompt}`,
       ];
     }
-
     if (count === 2) {
       return [
         `Scene 1: exact opening frame from the source image, same identity, soft camera push-in, natural micro movement only, ${input.masterPrompt}`,
         `Scene 2: final hero payoff shot, same identity preserved, elegant motion, premium ending frame, ${input.masterPrompt}`,
       ];
     }
-
     return [
       `Scene 1: exact source-image hero opening, same subject identity, subtle motion only, ${input.masterPrompt}`,
       `Scene 2: same subject, same outfit, same face, medium cinematic motion, preserve reference fidelity, ${input.masterPrompt}`,
-      `Scene 3: final premium payoff shot, same subject continuity, same image world, elegant ending motion, ${input.masterPrompt}`,
+      `Scene 3: final premium payoff shot, same subject continuity, same visual world, elegant ending motion, ${input.masterPrompt}`,
     ];
   }
 
@@ -356,14 +348,12 @@ function buildScenePrompts(input: {
       `Scene 1: polished cinematic hero shot, strong composition, smooth motion, ${input.masterPrompt}`,
     ];
   }
-
   if (count === 2) {
     return [
       `Scene 1: opening establishing shot, wide cinematic composition, ${input.masterPrompt}`,
       `Scene 2: final payoff shot, memorable ending frame, premium finish, ${input.masterPrompt}`,
     ];
   }
-
   return [
     `Scene 1: opening cinematic intro, wide composition, ${input.masterPrompt}`,
     `Scene 2: medium progression shot with smooth motion, ${input.masterPrompt}`,
@@ -441,18 +431,13 @@ async function waitForPrediction(id: string) {
 }
 
 function pickFirstUrl(output: unknown): string {
-  if (!output) {
-    throw new Error("Replicate returned empty output");
-  }
+  if (!output) throw new Error("Replicate returned empty output");
 
-  if (typeof output === "string") {
-    return output;
-  }
+  if (typeof output === "string") return output;
 
   if (Array.isArray(output)) {
     const first = output[0];
     if (!first) throw new Error("Replicate returned empty output array");
-
     if (typeof first === "string") return first;
 
     if (typeof first === "object" && first) {
@@ -460,7 +445,6 @@ function pickFirstUrl(output: unknown): string {
         (first as { url?: string }).url ||
         (first as { href?: string }).href ||
         null;
-
       if (maybeUrl) return maybeUrl;
     }
   }
@@ -516,6 +500,46 @@ function buildImageInput(params: {
   };
 }
 
+async function generateSingleSceneVideo(params: {
+  model: string;
+  mode: GenerationMode;
+  scenePrompt: string;
+  negativePrompt: string;
+  imageUrl?: string;
+  durationSec: number;
+  ratio?: "1:1" | "16:9" | "9:16";
+}) {
+  const prediction = await createPrediction(
+    params.model,
+    buildVideoInput({
+      mode: params.mode,
+      prompt: params.scenePrompt,
+      negativePrompt: params.negativePrompt,
+      imageUrl: params.imageUrl,
+      durationSec: params.durationSec,
+      ratio: params.ratio,
+    })
+  );
+
+  const finished = await waitForPrediction(prediction.id);
+  return pickFirstUrl(finished.output);
+}
+
+async function uploadSceneVideosToCloudinary(sceneVideoUrls: string[]) {
+  const uploaded = [];
+
+  for (let i = 0; i < sceneVideoUrls.length; i += 1) {
+    const result = await uploadRemoteVideoToCloudinary(sceneVideoUrls[i], {
+      folder: "dubles-motion/generated/scenes",
+      publicId: `scene-${Date.now()}-${i + 1}`,
+    });
+
+    uploaded.push(result);
+  }
+
+  return uploaded;
+}
+
 async function generateVideoWithReplicate(
   input: GenerateContentInput
 ): Promise<VideoResult> {
@@ -532,13 +556,6 @@ async function generateVideoWithReplicate(
     mode: input.mode,
   });
 
-  const finalPrompt =
-    scenePrompts.length > 1
-      ? scenePrompts.join(
-          " Then transition smoothly to the next scene while preserving subject continuity, same identity, same styling, same visual world. "
-        )
-      : masterPrompt;
-
   const model =
     input.mode === "logo_to_video"
       ? LOGO_VIDEO_MODEL
@@ -546,33 +563,39 @@ async function generateVideoWithReplicate(
       ? IMAGE_VIDEO_MODEL
       : TEXT_VIDEO_MODEL;
 
-  const prediction = await createPrediction(
-    model,
-    buildVideoInput({
+  const negativePrompt = buildNegativePrompt(input.negativePrompt);
+
+  const sceneVideoUrls: string[] = [];
+  for (const scenePrompt of scenePrompts) {
+    const sceneVideoUrl = await generateSingleSceneVideo({
+      model,
       mode: input.mode,
-      prompt: finalPrompt,
-      negativePrompt: buildNegativePrompt(input.negativePrompt),
+      scenePrompt,
+      negativePrompt,
       imageUrl: input.imageUrl,
       durationSec: input.durationSec,
       ratio: input.ratio,
-    })
-  );
+    });
+    sceneVideoUrls.push(sceneVideoUrl);
+  }
 
-  const finished = await waitForPrediction(prediction.id);
-  const videoUrl = pickFirstUrl(finished.output);
-  const clipDuration = getClipDuration(input.durationSec);
+  const uploadedSceneAssets = await uploadSceneVideosToCloudinary(sceneVideoUrls);
+  const uploadedSceneUrls = uploadedSceneAssets.map((item) => item.secure_url);
+  const uploadedPublicIds = uploadedSceneAssets.map((item) => item.public_id);
+
+  const finalVideoUrl = buildCloudinaryConcatUrl(uploadedPublicIds);
 
   return {
     mode: input.mode,
     provider: "replicate",
     model,
-    videoUrl,
+    videoUrl: finalVideoUrl,
     imageUrl: input.imageUrl ?? null,
     durationSec: input.durationSec,
     sceneImages: [],
     scenePrompts,
-    sceneVideoUrls: scenePrompts.map(() => videoUrl),
-    actualClipDurationSec: clipDuration,
+    sceneVideoUrls: uploadedSceneUrls,
+    actualClipDurationSec: getClipDuration(input.durationSec),
   };
 }
 
