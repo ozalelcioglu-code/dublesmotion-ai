@@ -153,7 +153,11 @@ function getSceneDurations(totalDurationSec: number, sceneCount: number) {
 }
 
 function getClipDuration(durationSec: number, sceneCount: number) {
-  return Math.max(4, Math.round(durationSec / Math.max(sceneCount, 1)));
+  const perScene = Math.round(durationSec / Math.max(sceneCount, 1));
+
+  // Replicate model only accepts 6 or 10
+  if (perScene >= 8) return 10;
+  return 6;
 }
 
 function styleDescriptor(style?: VideoStyle) {
