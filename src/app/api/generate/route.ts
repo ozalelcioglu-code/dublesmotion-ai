@@ -12,7 +12,7 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const RequestSchema = z.object({
   mode: z.enum([
@@ -22,7 +22,7 @@ const RequestSchema = z.object({
     "text_to_video",
     "logo_to_video",
   ]),
-  prompt: z.string().min(3).optional(),
+  prompt: z.string().min(1).optional(),
   negativePrompt: z.string().optional(),
   imageUrl: z.string().url().optional(),
   sourceUrl: z.string().url().optional(),
@@ -56,6 +56,25 @@ function getPlanDurationSec(plan: string) {
     default:
       return 10;
   }
+}
+
+function getPlanSceneCount(plan: string, durationSec: number) {
+  if (durationSec <= 10 || plan === "free") return 2;
+  if (durationSec <= 20 || plan === "starter") return 3;
+  return 4;
+}
+
+function getLanguageFromHeaders(req: Request): "tr" | "en" | "de" {
+  const cookie = req.headers.get("cookie") || "";
+  const cookieMatch = cookie.match(/app-language=(tr|en|de)/);
+  if (cookieMatch?.[1] === "tr" || cookieMatch?.[1] === "en" || cookieMatch?.[1] === "de") {
+    return cookieMatch[1];
+  }
+
+  const accept = req.headers.get("accept-language") || "";
+  if (accept.startsWith("tr")) return "tr";
+  if (accept.startsWith("de")) return "de";
+  return "en";
 }
 
 function makeVideoTitle(prompt?: string) {
@@ -163,22 +182,28 @@ export async function POST(req: Request) {
 
     const activePlan = planInfo.plan;
     const targetDurationSec = getPlanDurationSec(activePlan);
+    const targetSceneCount = getPlanSceneCount(activePlan, targetDurationSec);
+    const language = getLanguageFromHeaders(req);
+
+    const normalizedPrompt =
+      input.prompt ||
+      (input.mode === "logo_to_video"
+        ? "clean premium technology logo reveal"
+        : undefined);
 
     const result = await generateContent({
       mode: input.mode,
-      prompt:
-        input.prompt ||
-        (input.mode === "logo_to_video"
-          ? "clean premium technology logo reveal"
-          : undefined),
+      prompt: normalizedPrompt,
       negativePrompt: input.negativePrompt,
       imageUrl: input.imageUrl,
       sourceUrl: input.sourceUrl,
       durationSec: targetDurationSec,
+      sceneCount: targetSceneCount,
       ratio: input.ratio ?? "16:9",
       plan: activePlan,
       style: input.style,
       preview: isPreview,
+      language,
     });
 
     if (isPreview) {
@@ -216,8 +241,7 @@ export async function POST(req: Request) {
     const videoId = crypto.randomUUID();
     const seed = createSeed();
     const title = makeVideoTitle(
-      input.prompt ||
-        (input.mode === "logo_to_video" ? "Logo Animation" : "AI Video")
+      normalizedPrompt || (input.mode === "logo_to_video" ? "Logo Animation" : "AI Video")
     );
     const dbMode = toDbMode(input.mode);
 
@@ -252,12 +276,7 @@ export async function POST(req: Request) {
             ${input.projectId ?? null},
             ${title},
             ${dbMode},
-            ${
-              input.prompt ||
-              (input.mode === "logo_to_video"
-                ? "clean premium technology logo reveal"
-                : "AI Video")
-            },
+            ${normalizedPrompt || "AI Video"},
             ${result.model},
             ${seed},
             ${"ready"},

@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "../lib/auth-client";
 import { useSession } from "../provider/SessionProvider";
 import { useLanguage } from "../provider/LanguageProvider";
+import type { AppLanguage } from "../lib/i18n";
 
 type NavKey = "tool" | "apps" | "chat" | "flow" | "live";
 
@@ -16,13 +16,88 @@ type NavItem = {
   badge?: boolean;
 };
 
-const navItems: NavItem[] = [
-  { key: "tool", label: "Tool", icon: "⌘" },
-  { key: "apps", label: "Apps", icon: "◫" },
-  { key: "chat", label: "Chat", icon: "✦" },
-  { key: "flow", label: "Flow", icon: "⇄" },
-  { key: "live", label: "Live", icon: "◉", badge: true },
-];
+const LANGUAGE_FLAGS: Record<AppLanguage, string> = {
+  tr: "🇹🇷",
+  en: "🇬🇧",
+  de: "🇩🇪",
+};
+
+const LANGUAGE_LABELS: Record<AppLanguage, string> = {
+  tr: "Türkçe",
+  en: "English",
+  de: "Deutsch",
+};
+
+const LANGUAGE_OPTIONS: AppLanguage[] = ["tr", "en", "de"];
+
+function getSidebarText(language: string) {
+  const tr = {
+    brand: "DUBLE-S MOTION",
+    tool: "Araç",
+    apps: "Uygulamalar",
+    chat: "Destek",
+    flow: "Akış",
+    live: "Canlı",
+    userPanel: "KULLANICI PANELİ",
+    guestUser: "Misafir",
+    guestPlan: "Ücretsiz Üye",
+    plan: "Plan",
+    credits: "Kredi",
+    unlimited: "Sınırsız",
+    manageBilling: "Faturayı Yönet",
+    editProfile: "Profili Düzenle",
+    language: "Dil",
+    signOut: "Çıkış Yap",
+    logIn: "Giriş Yap",
+    billing: "Fatura",
+  };
+
+  const de = {
+    brand: "DUBLE-S MOTION",
+    tool: "Tool",
+    apps: "Apps",
+    chat: "Support",
+    flow: "Ablauf",
+    live: "Live",
+    userPanel: "BENUTZERBEREICH",
+    guestUser: "Gast",
+    guestPlan: "Free Mitglied",
+    plan: "Plan",
+    credits: "Credits",
+    unlimited: "Unbegrenzt",
+    manageBilling: "Billing verwalten",
+    editProfile: "Profil bearbeiten",
+    language: "Sprache",
+    signOut: "Abmelden",
+    logIn: "Anmelden",
+    billing: "Billing",
+  };
+
+  const en = {
+    brand: "DUBLE-S MOTION",
+    tool: "Tool",
+    apps: "Apps",
+    chat: "Support",
+    flow: "Flow",
+    live: "Live",
+    userPanel: "USER PANEL",
+    guestUser: "Guest",
+    guestPlan: "Free Member",
+    plan: "Plan",
+    credits: "Credits",
+    unlimited: "Unlimited",
+    manageBilling: "Manage Billing",
+    editProfile: "Edit Profile",
+    language: "Language",
+    signOut: "Sign Out",
+    logIn: "Log In",
+    billing: "Billing",
+  };
+
+  if (language === "tr") return tr;
+  if (language === "de") return de;
+  return en;
+}
 
 export default function AppSidebar({
   activeKey,
@@ -34,10 +109,22 @@ export default function AppSidebar({
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, clearSession } = useSession();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
+
+  const ui = getSidebarText(language);
+
+  const navItems: NavItem[] = [
+    { key: "tool", label: ui.tool, icon: "⌘" },
+    { key: "apps", label: ui.apps, icon: "◫" },
+    { key: "chat", label: ui.chat, icon: "✦" },
+    { key: "flow", label: ui.flow, icon: "⇄" },
+    { key: "live", label: ui.live, icon: "◉", badge: true },
+  ];
 
   const [isMobile, setIsMobile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  const languageMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth <= 980);
@@ -48,7 +135,20 @@ export default function AppSidebar({
 
   useEffect(() => {
     setMobileOpen(false);
+    setLanguageMenuOpen(false);
   }, [pathname, activeKey]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!languageMenuRef.current) return;
+      if (!languageMenuRef.current.contains(event.target as Node)) {
+        setLanguageMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const userInitial = useMemo(() => {
     return (user?.name?.[0] || user?.email?.[0] || "A").toUpperCase();
@@ -56,11 +156,8 @@ export default function AppSidebar({
 
   const remainingCreditsText =
     user?.remainingCredits === null
-      ? "Unlimited"
-      : `${user?.remainingCredits ?? 0} left`;
-
-  const languageLabel =
-    language === "tr" ? "Türkçe" : language === "de" ? "Deutsch" : "English";
+      ? ui.unlimited
+      : `${user?.remainingCredits ?? 0}`;
 
   const handleLogout = async () => {
     try {
@@ -90,6 +187,11 @@ export default function AppSidebar({
     if (isMobile) setMobileOpen(false);
   };
 
+  const handleLanguageSelect = (nextLanguage: AppLanguage) => {
+    setLanguage(nextLanguage);
+    setLanguageMenuOpen(false);
+  };
+
   const navContent = (
     <div style={styles.navList}>
       {navItems.map((item) => {
@@ -116,17 +218,17 @@ export default function AppSidebar({
 
   const userPanel = (
     <div style={styles.userPanelWrap}>
-      <div style={styles.userPanelHeader}>USER PANEL</div>
+      <div style={styles.userPanelHeader}>{ui.userPanel}</div>
 
       <div style={styles.profileCard}>
         <div style={styles.profileAvatar}>{userInitial}</div>
 
         <div style={styles.profileMeta}>
           <div style={styles.profileName}>
-            {isAuthenticated ? user?.name || "Alex Johnson" : "Guest User"}
+            {isAuthenticated ? user?.name || ui.guestUser : ui.guestUser}
           </div>
           <div style={styles.profilePlan}>
-            {user?.planLabel || "Pro Member"}
+            {user?.planLabel || ui.guestPlan}
           </div>
         </div>
       </div>
@@ -134,14 +236,14 @@ export default function AppSidebar({
       <div style={styles.infoLine}>
         <span style={styles.infoArrow}>▸</span>
         <span style={styles.infoText}>
-          Plan: <strong>{user?.planLabel || "Pro"}</strong>
+          {ui.plan}: <strong>{user?.planLabel || "Free"}</strong>
         </span>
       </div>
 
       <div style={styles.infoLine}>
         <span style={styles.infoArrow}>▸</span>
         <span style={styles.infoText}>
-          Credits: <strong>{remainingCreditsText}</strong>
+          {ui.credits}: <strong>{remainingCreditsText}</strong>
         </span>
       </div>
 
@@ -150,7 +252,7 @@ export default function AppSidebar({
         style={styles.sidebarActionButton}
         onClick={() => router.push("/billing")}
       >
-        <span>Manage Billing</span>
+        <span>{ui.manageBilling}</span>
         <span style={styles.buttonChevron}>›</span>
       </button>
 
@@ -159,30 +261,68 @@ export default function AppSidebar({
         style={styles.sidebarActionButton}
         onClick={() => router.push("/profile")}
       >
-        <span>Edit Profile</span>
+        <span>{ui.editProfile}</span>
         <span style={styles.buttonChevron}>›</span>
       </button>
 
       <div style={styles.languageRow}>
         <div style={styles.languageLabelWrap}>
           <span style={styles.languageIcon}>🌐</span>
-          <span style={styles.languageLabel}>Language</span>
+          <span style={styles.languageLabel}>{ui.language}</span>
         </div>
         <div style={styles.languagePower}>⏻</div>
       </div>
 
-      <button type="button" style={styles.languageSelect}>
-        <span style={styles.flag}>🇺🇸</span>
-        <span style={styles.languageSelectText}>{languageLabel}</span>
-        <span style={styles.languageCaret}>⌄</span>
-      </button>
+      <div style={styles.languageSelectWrap} ref={languageMenuRef}>
+        <button
+          type="button"
+          style={styles.languageSelect}
+          onClick={() => setLanguageMenuOpen((prev) => !prev)}
+          aria-haspopup="menu"
+          aria-expanded={languageMenuOpen}
+        >
+          <span style={styles.flag}>{LANGUAGE_FLAGS[language]}</span>
+          <span style={styles.languageSelectText}>
+            {LANGUAGE_LABELS[language]}
+          </span>
+          <span style={styles.languageCaret}>{languageMenuOpen ? "⌃" : "⌄"}</span>
+        </button>
+
+        {languageMenuOpen ? (
+          <div style={styles.languageMenu}>
+            {LANGUAGE_OPTIONS.map((option) => {
+              const selected = option === language;
+
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => handleLanguageSelect(option)}
+                  style={{
+                    ...styles.languageOption,
+                    ...(selected ? styles.languageOptionActive : {}),
+                  }}
+                >
+                  <span style={styles.flag}>{LANGUAGE_FLAGS[option]}</span>
+                  <span style={styles.languageOptionText}>
+                    {LANGUAGE_LABELS[option]}
+                  </span>
+                  {selected ? (
+                    <span style={styles.languageOptionCheck}>✓</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
 
       <button
         type="button"
         style={styles.signOutButton}
         onClick={isAuthenticated ? handleLogout : () => router.push("/login")}
       >
-        {isAuthenticated ? "Sign Out" : "Log In"}
+        {isAuthenticated ? ui.signOut : ui.logIn}
       </button>
     </div>
   );
@@ -206,15 +346,7 @@ export default function AppSidebar({
             style={styles.mobileLogoButton}
             title="Home"
           >
-            <div style={styles.mobileLogoWrap}>
-              <Image
-                src="/Dubleslogo.png"
-                alt="Duble-S Technology"
-                fill
-                sizes="160px"
-                style={{ objectFit: "contain" }}
-              />
-            </div>
+            <div style={styles.mobileLogoText}>{ui.brand}</div>
           </button>
 
           <button
@@ -222,7 +354,7 @@ export default function AppSidebar({
             style={styles.mobileBillingButton}
             onClick={() => router.push("/billing")}
           >
-            Billing
+            {ui.billing}
           </button>
         </div>
 
@@ -232,10 +364,9 @@ export default function AppSidebar({
               style={styles.mobileOverlay}
               onClick={() => setMobileOpen(false)}
             />
-
             <aside style={styles.mobileDrawer}>
               <div style={styles.mobileDrawerTop}>
-                <div style={styles.mobileDrawerBrand}>DUBLE-S MOTION</div>
+                <div style={styles.mobileDrawerBrand}>{ui.brand}</div>
 
                 <button
                   type="button"
@@ -264,7 +395,7 @@ export default function AppSidebar({
           style={styles.brandButton}
           title="Home"
         >
-          <div style={styles.brandTitle}>DUBLE-S MOTION</div>
+          <div style={styles.brandTitle}>{ui.brand}</div>
         </button>
       </div>
 
@@ -406,8 +537,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 999,
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(180deg, #7a8088 0%, #626973 100%)",
+    background: "linear-gradient(180deg, #7a8088 0%, #626973 100%)",
     color: "#fff",
     fontWeight: 800,
     fontSize: 28,
@@ -514,8 +644,13 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#8b949e",
   },
 
-  languageSelect: {
+  languageSelectWrap: {
+    position: "relative",
     margin: "14px 18px 0",
+  },
+
+  languageSelect: {
+    width: "100%",
     minHeight: 48,
     borderRadius: 8,
     border: "1px solid rgba(15,23,42,0.14)",
@@ -547,13 +682,57 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#6b7280",
   },
 
+  languageMenu: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: "calc(100% + 8px)",
+    borderRadius: 10,
+    overflow: "hidden",
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(247,249,252,0.99) 0%, rgba(223,229,236,0.99) 100%)",
+    boxShadow: "0 10px 24px rgba(15,23,42,0.14)",
+    zIndex: 100,
+  },
+
+  languageOption: {
+    width: "100%",
+    minHeight: 46,
+    border: "none",
+    borderBottom: "1px solid rgba(15,23,42,0.08)",
+    background: "transparent",
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "0 14px",
+    cursor: "pointer",
+    color: "#374151",
+    fontSize: 15,
+    fontWeight: 700,
+    textAlign: "left",
+  },
+
+  languageOptionActive: {
+    background: "rgba(138,167,211,0.14)",
+  },
+
+  languageOptionText: {
+    flex: 1,
+  },
+
+  languageOptionCheck: {
+    fontSize: 16,
+    color: "#4b5563",
+    fontWeight: 800,
+  },
+
   signOutButton: {
     margin: "18px 18px 18px",
     minHeight: 50,
     borderRadius: 8,
     border: "1px solid rgba(15,23,42,0.14)",
-    background:
-      "linear-gradient(180deg, #6f7781 0%, #555d67 100%)",
+    background: "linear-gradient(180deg, #6f7781 0%, #555d67 100%)",
     color: "#ffffff",
     fontWeight: 700,
     fontSize: 17,
@@ -601,10 +780,10 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
 
-  mobileLogoWrap: {
-    position: "relative",
-    width: 170,
-    height: 40,
+  mobileLogoText: {
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#4b5563",
   },
 
   mobileBillingButton: {

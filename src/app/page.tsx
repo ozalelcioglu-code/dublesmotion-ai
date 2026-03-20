@@ -74,6 +74,389 @@ type MusicGenerationState =
     }
   | { status: "error"; message: string };
 
+type UiCopy = {
+  topTitle: string;
+  headerHero: string;
+  upgradePlan: string;
+  finalVideo: string;
+  textToVideo: string;
+  imageToVideo: string;
+  urlToVideo: string;
+  textToVoice: string;
+  audioToVideo: string;
+  logoPrompt: string;
+  textPrompt: string;
+  sourceUrl: string;
+  uploadLogo: string;
+  uploadImage: string;
+  noImageSelected: string;
+  imageSelected: string;
+  style: string;
+  aspectRatio: string;
+  preview: string;
+  generateFinalVideo: string;
+  reset: string;
+  previewStoryboard: string;
+  finalPreview: string;
+  outputSummary: string;
+  mode: string;
+  type: string;
+  final: string;
+  previewType: string;
+  scenes: string;
+  duration: string;
+  status: string;
+  downloadVideo: string;
+  downloadAudio: string;
+  sceneOverview: string;
+  previewOverview: string;
+  noScenesYet: string;
+  select: string;
+  delete: string;
+  supportCenter: string;
+  supportHint: string;
+  voicePreview: string;
+  voiceHint: string;
+  music: string;
+  musicTitle: string;
+  musicPrompt: string;
+  lyricsIdea: string;
+  musicDuration: string;
+  generateMusic: string;
+  generatingMusic: string;
+  uploadExistingAudio: string;
+  noAudioSelected: string;
+  audioUploaded: string;
+  connectedAudio: string;
+  musicVideoPrompt: string;
+  generateVideo: string;
+  generatingVideo: string;
+  previewReady: string;
+  ready: string;
+  done: string;
+  error: string;
+  loading: string;
+  creatingPreview: string;
+  creatingFinal: string;
+  createMusicTrack: string;
+  createMusicVideo: string;
+  noMusicYet: string;
+  musicReadyHint: string;
+  uploadedAudio: string;
+  lyricsPreview: string;
+  noLyrics: string;
+  workflow: string;
+  apps: string;
+  live: string;
+  comingSoon: string;
+  productAdMaker: string;
+  productAdMakerText: string;
+  socialReelBuilder: string;
+  socialReelBuilderText: string;
+  aiMusicStudio: string;
+  aiMusicStudioText: string;
+  flow1: string;
+  flow2: string;
+  flow3: string;
+  flow4: string;
+  flow5: string;
+  songTitle: string;
+  uploadedAudioHint: string;
+  firstGenerateMusic: string;
+  previewErrorNoImage: string;
+  noVideoUrl: string;
+};
+
+const UI_COPY: Record<AppLanguage, UiCopy> = {
+  en: {
+    topTitle: "Create and edit AI videos, music, and voiceovers",
+    headerHero: "Create and edit AI videos, music, and voiceovers",
+    upgradePlan: "Upgrade Plan",
+    finalVideo: "Final Video",
+    textToVideo: "Text to Video",
+    imageToVideo: "Image to Video",
+    urlToVideo: "URL to Video",
+    textToVoice: "Text to Voice",
+    audioToVideo: "Audio to Video Clip",
+    logoPrompt: "Logo Prompt",
+    textPrompt: "Text Prompt",
+    sourceUrl: "Source URL",
+    uploadLogo: "Upload Logo",
+    uploadImage: "Upload Image",
+    noImageSelected: "No image selected.",
+    imageSelected: "Image selected",
+    style: "Style",
+    aspectRatio: "Aspect Ratio",
+    preview: "Preview",
+    generateFinalVideo: "Generate Final Video",
+    reset: "Reset",
+    previewStoryboard: "Preview Storyboard",
+    finalPreview: "Final Preview",
+    outputSummary: "Output Summary",
+    mode: "Mode",
+    type: "Type",
+    final: "Final",
+    previewType: "Preview",
+    scenes: "Scenes",
+    duration: "Duration",
+    status: "Status",
+    downloadVideo: "Download Video",
+    downloadAudio: "Download Audio",
+    sceneOverview: "Scene Overview",
+    previewOverview: "Preview Overview",
+    noScenesYet: "Scenes will appear here after generation.",
+    select: "Select",
+    delete: "Delete",
+    supportCenter: "Support Center",
+    supportHint: "Send your support request directly from the form.",
+    voicePreview: "Voice Preview",
+    voiceHint: "Type your text and preview it with the selected voice.",
+    music: "Music",
+    musicTitle: "Song Title",
+    musicPrompt: "Music Prompt",
+    lyricsIdea: "Lyrics / Vocal Idea",
+    musicDuration: "Duration",
+    generateMusic: "Generate Music",
+    generatingMusic: "Generating Music",
+    uploadExistingAudio: "Upload Existing Audio",
+    noAudioSelected: "No audio selected.",
+    audioUploaded: "Audio uploaded",
+    connectedAudio: "Connected Audio",
+    musicVideoPrompt: "Audio to Video Clip Prompt",
+    generateVideo: "Generate Video",
+    generatingVideo: "Generating Video",
+    previewReady: "Preview Ready",
+    ready: "Ready",
+    done: "Done",
+    error: "Error",
+    loading: "Loading",
+    creatingPreview: "Creating preview storyboard...",
+    creatingFinal: "Submitting final generation request...",
+    createMusicTrack: "Generating music track...",
+    createMusicVideo: "Creating music video from your track...",
+    noMusicYet: "No music yet",
+    musicReadyHint: "Generate a new song or upload audio to continue.",
+    uploadedAudio: "Uploaded Audio",
+    lyricsPreview: "Lyrics Preview",
+    noLyrics: "No lyrics available.",
+    workflow: "Workflow",
+    apps: "Apps",
+    live: "Live",
+    comingSoon: "Coming soon",
+    productAdMaker: "Product Ad Maker",
+    productAdMakerText: "Generate short ad videos from product images.",
+    socialReelBuilder: "Social Reel Builder",
+    socialReelBuilderText: "Create fast vertical videos for Reels and TikTok.",
+    aiMusicStudio: "AI Music Studio",
+    aiMusicStudioText: "Create songs, then turn them into videos.",
+    flow1: "1. Choose a tool",
+    flow2: "2. Add prompt or media",
+    flow3: "3. Create preview",
+    flow4: "4. Generate final video",
+    flow5: "5. Download the final result",
+    songTitle: "Song Title",
+    uploadedAudioHint:
+      "Audio uploaded successfully. You can use it to create a music video.",
+    firstGenerateMusic:
+      "First generate music in the music section or upload an audio file.",
+    previewErrorNoImage: "No preview image returned",
+    noVideoUrl: "No video URL returned",
+  },
+  tr: {
+    topTitle: "Yapay zeka videoları, müzik ve seslendirmeler oluştur ve düzenle",
+    headerHero:
+      "Yapay zeka videoları, müzik ve seslendirmeler oluştur ve düzenle",
+    upgradePlan: "Planı Yükselt",
+    finalVideo: "Final Video",
+    textToVideo: "Yazıdan Videoya",
+    imageToVideo: "Görselden Videoya",
+    urlToVideo: "URL'den Videoya",
+    textToVoice: "Yazıdan Sese",
+    audioToVideo: "Sesten Video Klibe",
+    logoPrompt: "Logo Promptu",
+    textPrompt: "Metin Promptu",
+    sourceUrl: "Kaynak URL",
+    uploadLogo: "Logo Yükle",
+    uploadImage: "Görsel Yükle",
+    noImageSelected: "Görsel seçilmedi.",
+    imageSelected: "Görsel seçildi",
+    style: "Stil",
+    aspectRatio: "En Boy Oranı",
+    preview: "Önizleme",
+    generateFinalVideo: "Final Video Oluştur",
+    reset: "Sıfırla",
+    previewStoryboard: "Önizleme Storyboard",
+    finalPreview: "Final Önizleme",
+    outputSummary: "Çıktı Özeti",
+    mode: "Mod",
+    type: "Tür",
+    final: "Final",
+    previewType: "Önizleme",
+    scenes: "Sahneler",
+    duration: "Süre",
+    status: "Durum",
+    downloadVideo: "Videoyu İndir",
+    downloadAudio: "Sesi İndir",
+    sceneOverview: "Sahne Genel Görünümü",
+    previewOverview: "Önizleme Genel Görünümü",
+    noScenesYet: "Üretimden sonra sahneler burada görünecek.",
+    select: "Seç",
+    delete: "Sil",
+    supportCenter: "Destek Merkezi",
+    supportHint: "Destek talebinizi formdan direkt gönderin.",
+    voicePreview: "Ses Önizleme",
+    voiceHint: "Metni yaz ve seçilen sesle önizleme yap.",
+    music: "Müzik",
+    musicTitle: "Şarkı Başlığı",
+    musicPrompt: "Müzik Promptu",
+    lyricsIdea: "Söz / Vokal Fikri",
+    musicDuration: "Süre",
+    generateMusic: "Müzik Oluştur",
+    generatingMusic: "Müzik Oluşturuluyor",
+    uploadExistingAudio: "Mevcut Ses Yükle",
+    noAudioSelected: "Ses seçilmedi.",
+    audioUploaded: "Ses yüklendi",
+    connectedAudio: "Bağlı Ses",
+    musicVideoPrompt: "Sesten Video Klip Promptu",
+    generateVideo: "Video Oluştur",
+    generatingVideo: "Video Oluşturuluyor",
+    previewReady: "Önizleme Hazır",
+    ready: "Hazır",
+    done: "Tamam",
+    error: "Hata",
+    loading: "Yükleniyor",
+    creatingPreview: "Önizleme storyboard oluşturuluyor...",
+    creatingFinal: "Final üretim isteği gönderiliyor...",
+    createMusicTrack: "Müzik parçası oluşturuluyor...",
+    createMusicVideo: "Parçandan müzik videosu oluşturuluyor...",
+    noMusicYet: "Henüz müzik yok",
+    musicReadyHint: "Devam etmek için yeni bir şarkı üret veya ses yükle.",
+    uploadedAudio: "Yüklenen Ses",
+    lyricsPreview: "Söz Önizleme",
+    noLyrics: "Söz bulunamadı.",
+    workflow: "İş Akışı",
+    apps: "Uygulamalar",
+    live: "Canlı",
+    comingSoon: "Yakında",
+    productAdMaker: "Ürün Reklam Oluşturucu",
+    productAdMakerText: "Ürün görsellerinden kısa reklam videoları üret.",
+    socialReelBuilder: "Sosyal Reel Oluşturucu",
+    socialReelBuilderText:
+      "Reels ve TikTok için hızlı dikey videolar oluştur.",
+    aiMusicStudio: "AI Müzik Stüdyosu",
+    aiMusicStudioText: "Şarkı üret, sonra videoya dönüştür.",
+    flow1: "1. Bir araç seç",
+    flow2: "2. Prompt veya medya ekle",
+    flow3: "3. Önizleme oluştur",
+    flow4: "4. Final videoyu üret",
+    flow5: "5. Final sonucu indir",
+    songTitle: "Şarkı Başlığı",
+    uploadedAudioHint:
+      "Ses başarıyla yüklendi. Bunu müzik videosu oluşturmak için kullanabilirsin.",
+    firstGenerateMusic:
+      "Önce müzik bölümünde müzik oluştur veya bir ses dosyası yükle.",
+    previewErrorNoImage: "Önizleme görseli dönmedi",
+    noVideoUrl: "Video URL'si dönmedi",
+  },
+  de: {
+    topTitle: "KI-Videos, Musik und Sprachaufnahmen erstellen und bearbeiten",
+    headerHero: "KI-Videos, Musik und Sprachaufnahmen erstellen und bearbeiten",
+    upgradePlan: "Plan upgraden",
+    finalVideo: "Finales Video",
+    textToVideo: "Text zu Video",
+    imageToVideo: "Bild zu Video",
+    urlToVideo: "URL zu Video",
+    textToVoice: "Text zu Sprache",
+    audioToVideo: "Audio zu Videoclip",
+    logoPrompt: "Logo-Prompt",
+    textPrompt: "Text-Prompt",
+    sourceUrl: "Quell-URL",
+    uploadLogo: "Logo hochladen",
+    uploadImage: "Bild hochladen",
+    noImageSelected: "Kein Bild ausgewählt.",
+    imageSelected: "Bild ausgewählt",
+    style: "Stil",
+    aspectRatio: "Seitenverhältnis",
+    preview: "Vorschau",
+    generateFinalVideo: "Finales Video erzeugen",
+    reset: "Zurücksetzen",
+    previewStoryboard: "Vorschau-Storyboard",
+    finalPreview: "Finale Vorschau",
+    outputSummary: "Ausgabeübersicht",
+    mode: "Modus",
+    type: "Typ",
+    final: "Final",
+    previewType: "Vorschau",
+    scenes: "Szenen",
+    duration: "Dauer",
+    status: "Status",
+    downloadVideo: "Video herunterladen",
+    downloadAudio: "Audio herunterladen",
+    sceneOverview: "Szenenübersicht",
+    previewOverview: "Vorschauübersicht",
+    noScenesYet: "Nach der Generierung erscheinen die Szenen hier.",
+    select: "Auswählen",
+    delete: "Löschen",
+    supportCenter: "Support-Center",
+    supportHint: "Sende deine Support-Anfrage direkt über das Formular.",
+    voicePreview: "Sprachvorschau",
+    voiceHint:
+      "Gib deinen Text ein und höre ihn mit der ausgewählten Stimme an.",
+    music: "Musik",
+    musicTitle: "Songtitel",
+    musicPrompt: "Musik-Prompt",
+    lyricsIdea: "Text / Gesangsidee",
+    musicDuration: "Dauer",
+    generateMusic: "Musik erzeugen",
+    generatingMusic: "Musik wird erzeugt",
+    uploadExistingAudio: "Vorhandenes Audio hochladen",
+    noAudioSelected: "Kein Audio ausgewählt.",
+    audioUploaded: "Audio hochgeladen",
+    connectedAudio: "Verbundenes Audio",
+    musicVideoPrompt: "Audio-zu-Video-Clip Prompt",
+    generateVideo: "Video erzeugen",
+    generatingVideo: "Video wird erzeugt",
+    previewReady: "Vorschau bereit",
+    ready: "Bereit",
+    done: "Fertig",
+    error: "Fehler",
+    loading: "Lädt",
+    creatingPreview: "Vorschau-Storyboard wird erstellt...",
+    creatingFinal: "Finale Anfrage wird gesendet...",
+    createMusicTrack: "Musikstück wird erstellt...",
+    createMusicVideo: "Musikvideo aus deinem Track wird erstellt...",
+    noMusicYet: "Noch keine Musik",
+    musicReadyHint:
+      "Erzeuge einen neuen Song oder lade Audio hoch, um fortzufahren.",
+    uploadedAudio: "Hochgeladenes Audio",
+    lyricsPreview: "Textvorschau",
+    noLyrics: "Keine Songtexte verfügbar.",
+    workflow: "Workflow",
+    apps: "Apps",
+    live: "Live",
+    comingSoon: "Demnächst",
+    productAdMaker: "Produktanzeigen-Generator",
+    productAdMakerText: "Erzeuge kurze Werbevideos aus Produktbildern.",
+    socialReelBuilder: "Social-Reel-Builder",
+    socialReelBuilderText:
+      "Erstelle schnelle vertikale Videos für Reels und TikTok.",
+    aiMusicStudio: "KI-Musikstudio",
+    aiMusicStudioText: "Erzeuge Songs und wandle sie in Videos um.",
+    flow1: "1. Tool auswählen",
+    flow2: "2. Prompt oder Medien hinzufügen",
+    flow3: "3. Vorschau erstellen",
+    flow4: "4. Finales Video erzeugen",
+    flow5: "5. Endergebnis herunterladen",
+    songTitle: "Songtitel",
+    uploadedAudioHint:
+      "Audio erfolgreich hochgeladen. Du kannst es für ein Musikvideo verwenden.",
+    firstGenerateMusic:
+      "Erzeuge zuerst Musik im Musikbereich oder lade eine Audiodatei hoch.",
+    previewErrorNoImage: "Kein Vorschaubild zurückgegeben",
+    noVideoUrl: "Keine Video-URL zurückgegeben",
+  },
+};
+
 export default function Page() {
   return (
     <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
@@ -88,6 +471,8 @@ function PageContent() {
   const { user, isAuthenticated, isLoading, clearSession, refreshSession } =
     useSession();
   const { language, setLanguage, t } = useLanguage();
+
+  const copy = UI_COPY[language as AppLanguage] ?? UI_COPY.en;
 
   const [activeNav, setActiveNav] = useState<NavKey>("tool");
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>("video");
@@ -260,23 +645,23 @@ function PageContent() {
 
   const videoStatusText =
     videoGeneration.status === "idle"
-      ? t.home.statusReady
+      ? copy.ready
       : videoGeneration.status === "loading"
-      ? t.home.statusGenerating
+      ? copy.loading
       : videoGeneration.status === "done"
       ? videoGeneration.preview
-        ? "Preview Ready"
-        : t.home.statusDone
-      : t.home.statusError;
+        ? copy.previewReady
+        : copy.done
+      : copy.error;
 
   const musicStatusText =
     musicGeneration.status === "idle"
-      ? "Ready"
+      ? copy.ready
       : musicGeneration.status === "loading"
-      ? "Generating"
+      ? copy.loading
       : musicGeneration.status === "done"
-      ? "Done"
-      : "Error";
+      ? copy.done
+      : copy.error;
 
   const remainingCreditsText =
     user?.remainingCredits === null
@@ -413,9 +798,7 @@ function PageContent() {
     try {
       setVideoGeneration({
         status: "loading",
-        phase: preview
-          ? "Creating preview storyboard..."
-          : "Submitting final generation request...",
+        phase: preview ? copy.creatingPreview : copy.creatingFinal,
       });
 
       const payload: Record<string, unknown> = {
@@ -423,19 +806,15 @@ function PageContent() {
         style: styleUi,
         ratio: ratioUi,
         preview,
+        prompt,
       };
 
-      if (videoMode === "text_to_video") {
-        payload.prompt = prompt;
-      } else if (videoMode === "url_to_video") {
-        payload.prompt = prompt;
+      if (videoMode === "url_to_video") {
         payload.sourceUrl = sourceUrl;
-      } else if (videoMode === "image_to_video") {
-        payload.prompt = prompt;
-        payload.imageUrl = uploadedImageUrl;
-      } else if (videoMode === "logo_to_video") {
-        payload.prompt =
-          prompt.trim() || "clean premium technology logo reveal";
+      } else if (
+        videoMode === "image_to_video" ||
+        videoMode === "logo_to_video"
+      ) {
         payload.imageUrl = uploadedImageUrl;
       }
 
@@ -461,35 +840,48 @@ function PageContent() {
       }
 
       if (preview) {
-        const previewImage = data.imageUrl ?? data.sceneImages?.[0] ?? null;
-        if (!previewImage) {
-          throw new Error("No preview image returned");
+        const previewImages = Array.isArray(data.sceneImages)
+          ? data.sceneImages.filter(Boolean)
+          : data.imageUrl
+          ? [data.imageUrl]
+          : [];
+
+        if (!previewImages.length) {
+          throw new Error(copy.previewErrorNoImage);
         }
 
-        setScenes([
-          {
-            id: "preview-scene-1",
-            title: "Preview Scene",
+        const previewPrompts = Array.isArray(data.scenePrompts)
+          ? data.scenePrompts
+          : [];
+
+        const previewScenes: SceneCard[] = previewImages.map(
+          (imageUrl: string, index: number) => ({
+            id: `preview-scene-${index + 1}`,
+            title: getSceneTitle(index, language as AppLanguage),
             description:
-              data.scenePrompts?.[0] || prompt || "Storyboard preview",
+              previewPrompts[index] ||
+              prompt ||
+              getSceneTitle(index, language as AppLanguage),
             durationSec: 0,
-            imageUrl: previewImage,
+            imageUrl,
             videoUrl: null,
-          },
-        ]);
+          })
+        );
+
+        setScenes(previewScenes);
         setSelectedSceneId(null);
         setPreviewTarget("final");
 
         setVideoGeneration({
           status: "done",
           preview: true,
-          imageUrl: previewImage,
+          imageUrl: previewImages[0],
           videoUrl: "",
           videoId: null,
           durationSec: 0,
           actualClipDurationSec: 0,
-          sceneImages: [previewImage],
-          scenePrompts: data.scenePrompts ?? [],
+          sceneImages: previewImages,
+          scenePrompts: previewPrompts,
           sceneVideoUrls: [],
           saveWarning: null,
         });
@@ -498,7 +890,7 @@ function PageContent() {
       }
 
       if (!data.videoUrl) {
-        throw new Error("No video URL returned");
+        throw new Error(copy.noVideoUrl);
       }
 
       const scenePrompts = Array.isArray(data.scenePrompts)
@@ -510,21 +902,28 @@ function PageContent() {
       const sceneVideoUrls = Array.isArray(data.sceneVideoUrls)
         ? data.sceneVideoUrls
         : [];
+
+      const count = Math.max(
+        scenePrompts.length,
+        sceneImages.length,
+        sceneVideoUrls.length,
+        0
+      );
+
       const actualClipDurationSec =
         typeof data.actualClipDurationSec === "number"
           ? data.actualClipDurationSec
-          : 7;
+          : getFallbackSceneDuration(
+              typeof data.durationSec === "number" ? data.durationSec : undefined,
+              count
+            );
 
-      const nextScenes: SceneCard[] = scenePrompts.map(
-        (scenePrompt: string, index: number) => ({
+      const nextScenes: SceneCard[] = Array.from({ length: count }).map(
+        (_, index) => ({
           id: `generated-scene-${index + 1}`,
-          title:
-            index === 0
-              ? "Scene 1: NYC Skyline"
-              : index === 1
-              ? "Scene 2: Street Walk"
-              : `Scene ${index + 1}: Times Square`,
-          description: scenePrompt,
+          title: getSceneTitle(index, language as AppLanguage),
+          description:
+            scenePrompts[index] ?? getSceneTitle(index, language as AppLanguage),
           durationSec: actualClipDurationSec,
           imageUrl: sceneImages[index] ?? null,
           videoUrl: sceneVideoUrls[index] ?? null,
@@ -553,7 +952,7 @@ function PageContent() {
     } catch (error) {
       setVideoGeneration({
         status: "error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error.message : copy.error,
       });
     }
   };
@@ -572,7 +971,7 @@ function PageContent() {
     try {
       setMusicGeneration({
         status: "loading",
-        phase: "Generating music track...",
+        phase: copy.createMusicTrack,
       });
 
       const res = await fetch("/api/generate-music", {
@@ -636,7 +1035,7 @@ function PageContent() {
     if (!activeAudioUrl) {
       setVideoGeneration({
         status: "error",
-        message: "Please generate or upload an audio track first.",
+        message: copy.firstGenerateMusic,
       });
       return;
     }
@@ -644,7 +1043,7 @@ function PageContent() {
     try {
       setVideoGeneration({
         status: "loading",
-        phase: "Creating music video from your track...",
+        phase: copy.createMusicVideo,
       });
 
       const res = await fetch("/api/generate-music-video", {
@@ -660,7 +1059,7 @@ function PageContent() {
           title:
             musicTitle ||
             (musicGeneration.status === "done" ? musicGeneration.title : "") ||
-            "Music Video",
+            copy.finalVideo,
           lyrics:
             musicGeneration.status === "done"
               ? musicGeneration.lyrics
@@ -675,7 +1074,7 @@ function PageContent() {
       }
 
       if (!data.videoUrl) {
-        throw new Error("No video URL returned");
+        throw new Error(copy.noVideoUrl);
       }
 
       const scenePrompts = Array.isArray(data.scenePrompts)
@@ -687,21 +1086,28 @@ function PageContent() {
       const sceneVideoUrls = Array.isArray(data.sceneVideoUrls)
         ? data.sceneVideoUrls
         : [];
+
+      const count = Math.max(
+        scenePrompts.length,
+        sceneImages.length,
+        sceneVideoUrls.length,
+        0
+      );
+
       const actualClipDurationSec =
         typeof data.actualClipDurationSec === "number"
           ? data.actualClipDurationSec
-          : 7;
+          : getFallbackSceneDuration(
+              typeof data.durationSec === "number" ? data.durationSec : undefined,
+              count
+            );
 
-      const nextScenes: SceneCard[] = scenePrompts.map(
-        (scenePrompt: string, index: number) => ({
+      const nextScenes: SceneCard[] = Array.from({ length: count }).map(
+        (_, index) => ({
           id: `music-video-scene-${index + 1}`,
-          title:
-            index === 0
-              ? "Scene 1: NYC Skyline"
-              : index === 1
-              ? "Scene 2: Street Walk"
-              : `Scene ${index + 1}: Times Square`,
-          description: scenePrompt,
+          title: getSceneTitle(index, language as AppLanguage),
+          description:
+            scenePrompts[index] ?? getSceneTitle(index, language as AppLanguage),
           durationSec: actualClipDurationSec,
           imageUrl: sceneImages[index] ?? null,
           videoUrl: sceneVideoUrls[index] ?? null,
@@ -782,7 +1188,7 @@ function PageContent() {
 
   const handleSupportSend = () => {
     const subject = encodeURIComponent(
-      supportSubject || `${t.support.title} - Dublesmotion AI`
+      supportSubject || `${copy.supportCenter} - Dublesmotion AI`
     );
     const body = encodeURIComponent(
       `${supportMessage}\n\n---\nUser: ${user?.email ?? "Guest"}\nPlan: ${
@@ -826,7 +1232,7 @@ function PageContent() {
     const items = [
       {
         key: "text_to_video",
-        label: "Text to Video",
+        label: copy.textToVideo,
         active: workspaceTab === "video" && videoMode === "text_to_video",
         onClick: () => {
           setWorkspaceTab("video");
@@ -835,7 +1241,7 @@ function PageContent() {
       },
       {
         key: "image_to_video",
-        label: "Image to Video",
+        label: copy.imageToVideo,
         active: workspaceTab === "video" && videoMode === "image_to_video",
         onClick: () => {
           setWorkspaceTab("video");
@@ -844,7 +1250,7 @@ function PageContent() {
       },
       {
         key: "url_to_video",
-        label: "URL to Video",
+        label: copy.urlToVideo,
         active: workspaceTab === "video" && videoMode === "url_to_video",
         onClick: () => {
           setWorkspaceTab("video");
@@ -852,16 +1258,16 @@ function PageContent() {
         },
       },
       {
-        key: "text_to_ses",
-        label: "Text to Ses",
+        key: "text_to_voice",
+        label: copy.textToVoice,
         active: workspaceTab === "voice",
         onClick: () => {
           setWorkspaceTab("voice");
         },
       },
       {
-        key: "ses_to_video_clip",
-        label: "Ses to Video Clip",
+        key: "audio_to_video",
+        label: copy.audioToVideo,
         active: workspaceTab === "music_video",
         onClick: () => {
           setWorkspaceTab("music_video");
@@ -894,7 +1300,7 @@ function PageContent() {
         return (
           <div style={styles.centerBox}>
             <div style={styles.spinner} />
-            <div style={styles.previewText}>Generating music...</div>
+            <div style={styles.previewText}>{copy.generatingMusic}</div>
             <div style={styles.previewSubtext}>{musicGeneration.phase}</div>
           </div>
         );
@@ -903,7 +1309,7 @@ function PageContent() {
       if (musicGeneration.status === "error") {
         return (
           <div style={styles.centerBox}>
-            <div style={styles.previewText}>Music error</div>
+            <div style={styles.previewText}>{copy.error}</div>
             <div style={styles.previewSubtext}>{musicGeneration.message}</div>
           </div>
         );
@@ -914,13 +1320,13 @@ function PageContent() {
           <div style={styles.audioPreviewCard}>
             <div style={styles.audioPreviewTitle}>
               {musicGeneration.status === "done"
-                ? musicGeneration.title || "Generated Song"
-                : "Uploaded Audio"}
+                ? musicGeneration.title || copy.music
+                : copy.uploadedAudio}
             </div>
             <div style={styles.audioPreviewSub}>
               {musicGeneration.status === "done"
-                ? "Your track is ready. You can continue with music video creation."
-                : "Audio uploaded successfully. You can use it to create a music video."}
+                ? copy.musicReadyHint
+                : copy.uploadedAudioHint}
             </div>
             <audio controls src={activeAudioUrl} style={styles.audioPlayer} />
           </div>
@@ -929,10 +1335,8 @@ function PageContent() {
 
       return (
         <div style={styles.centerBox}>
-          <div style={styles.previewText}>No music yet</div>
-          <div style={styles.previewSubtext}>
-            Generate a new song or upload audio to continue.
-          </div>
+          <div style={styles.previewText}>{copy.noMusicYet}</div>
+          <div style={styles.previewSubtext}>{copy.musicReadyHint}</div>
         </div>
       );
     }
@@ -967,7 +1371,7 @@ function PageContent() {
         return (
           <img
             src={videoGeneration.imageUrl}
-            alt="Preview storyboard"
+            alt={copy.previewStoryboard}
             style={styles.previewImage}
           />
         );
@@ -989,11 +1393,7 @@ function PageContent() {
       return (
         <div style={styles.centerBox}>
           <div style={styles.spinner} />
-          <div style={styles.previewText}>
-            {videoGeneration.phase.includes("preview")
-              ? "Generating preview"
-              : t.home.generatingVideo}
-          </div>
+          <div style={styles.previewText}>{copy.loading}</div>
           <div style={styles.previewSubtext}>{videoGeneration.phase}</div>
         </div>
       );
@@ -1002,7 +1402,7 @@ function PageContent() {
     if (videoGeneration.status === "error") {
       return (
         <div style={styles.centerBox}>
-          <div style={styles.previewText}>{t.home.statusError}</div>
+          <div style={styles.previewText}>{copy.error}</div>
           <div style={styles.previewSubtext}>{videoGeneration.message}</div>
         </div>
       );
@@ -1011,10 +1411,8 @@ function PageContent() {
     if (workspaceTab === "voice") {
       return (
         <div style={styles.centerBox}>
-          <div style={styles.previewText}>Voice Preview</div>
-          <div style={styles.previewSubtext}>
-            Type your text and preview it with the selected voice.
-          </div>
+          <div style={styles.previewText}>{copy.voicePreview}</div>
+          <div style={styles.previewSubtext}>{copy.voiceHint}</div>
         </div>
       );
     }
@@ -1022,22 +1420,16 @@ function PageContent() {
     if (workspaceTab === "support") {
       return (
         <div style={styles.centerBox}>
-          <div style={styles.previewText}>Support Center</div>
-          <div style={styles.previewSubtext}>
-            Send your support request directly from the form.
-          </div>
+          <div style={styles.previewText}>{copy.supportCenter}</div>
+          <div style={styles.previewSubtext}>{copy.supportHint}</div>
         </div>
       );
     }
 
     return (
       <div style={styles.centerBox}>
-        <div style={styles.previewText}>{t.home.noVideoYet}</div>
-        <div style={styles.previewSubtext}>
-          {workspaceTab === "music_video"
-            ? "Generate or upload a song, then create your music video."
-            : t.home.generateHint}
-        </div>
+        <div style={styles.previewText}>{copy.finalPreview}</div>
+        <div style={styles.previewSubtext}>{copy.noScenesYet}</div>
       </div>
     );
   };
@@ -1049,28 +1441,26 @@ function PageContent() {
 
         <div style={styles.formCardInner}>
           <label style={styles.label}>
-            {videoMode === "logo_to_video" ? "Logo Prompt" : "Text Prompt"}
+            {videoMode === "logo_to_video" ? copy.logoPrompt : copy.textPrompt}
           </label>
           <textarea
             style={styles.heroInput}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder={
-              videoMode === "logo_to_video"
-                ? "clean premium technology logo reveal"
-                : "A cinematic traveller walking in New York City"
-            }
+            placeholder={getDefaultPrompt(language)}
           />
 
           {videoMode === "image_to_video" || videoMode === "logo_to_video" ? (
             <div style={styles.inputGroup}>
               <label style={styles.label}>
-                {videoMode === "logo_to_video" ? "Upload Logo" : "Upload Image"}
+                {videoMode === "logo_to_video"
+                  ? copy.uploadLogo
+                  : copy.uploadImage}
               </label>
               <div style={styles.uploadRow}>
                 <label style={styles.uploadFieldLike}>
                   <span style={styles.uploadFieldText}>
-                    {uploadedImageUrl ? "Image selected" : "No image selected."}
+                    {uploadedImageUrl ? copy.imageSelected : copy.noImageSelected}
                   </span>
                   <span style={styles.uploadFieldIcon}>☁</span>
                   <input
@@ -1086,7 +1476,7 @@ function PageContent() {
 
           {videoMode === "url_to_video" ? (
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Source URL</label>
+              <label style={styles.label}>{copy.sourceUrl}</label>
               <input
                 style={styles.selectMetal}
                 value={sourceUrl}
@@ -1097,7 +1487,7 @@ function PageContent() {
           ) : null}
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Style</label>
+            <label style={styles.label}>{copy.style}</label>
             <select
               value={styleUi}
               onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
@@ -1114,7 +1504,7 @@ function PageContent() {
 
           {videoMode !== "logo_to_video" ? (
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Aspect Ratio</label>
+              <label style={styles.label}>{copy.aspectRatio}</label>
               <select
                 value={ratioUi}
                 onChange={(e) => setRatioUi(e.target.value)}
@@ -1134,7 +1524,7 @@ function PageContent() {
               onClick={() => handleGenerateVideo(true)}
               disabled={!canGenerateVideoBase || !isAuthenticated}
             >
-              Preview
+              {copy.preview}
             </button>
 
             {!isAuthenticated ? (
@@ -1143,7 +1533,7 @@ function PageContent() {
                 style={styles.primaryButton}
                 onClick={() => router.push("/login")}
               >
-                Login
+                {t.common.login}
               </button>
             ) : isPlanBlocked ? (
               <button
@@ -1151,7 +1541,7 @@ function PageContent() {
                 style={styles.primaryButton}
                 onClick={() => router.push("/billing")}
               >
-                Upgrade
+                {copy.upgradePlan}
               </button>
             ) : (
               <button
@@ -1160,7 +1550,7 @@ function PageContent() {
                 onClick={() => handleGenerateVideo(false)}
                 disabled={!canGenerateVideo}
               >
-                Generate Final Video
+                {copy.generateFinalVideo}
               </button>
             )}
           </div>
@@ -1171,7 +1561,7 @@ function PageContent() {
               style={styles.resetButton}
               onClick={handleResetVideo}
             >
-              Reset
+              {copy.reset}
             </button>
           </div>
 
@@ -1189,23 +1579,23 @@ function PageContent() {
         {renderCompactToolTabs()}
 
         <div style={styles.formCardInner}>
-          <label style={styles.label}>{t.voice.textLabel}</label>
+          <label style={styles.label}>{copy.textPrompt}</label>
           <textarea
             style={styles.heroInput}
             value={voiceText}
             onChange={(e) => setVoiceText(e.target.value)}
-            placeholder={t.voice.textPlaceholder}
+            placeholder={getDefaultPrompt(language)}
           />
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>{t.voice.voiceLabel}</label>
+            <label style={styles.label}>{copy.textToVoice}</label>
             <select
               value={voiceUri}
               onChange={(e) => setVoiceUri(e.target.value)}
               style={styles.selectMetal}
             >
               {availableVoices.length === 0 ? (
-                <option value="">{t.voice.noVoices}</option>
+                <option value="">{copy.loading}</option>
               ) : (
                 availableVoices.map((voice) => (
                   <option key={voice.voiceURI} value={voice.voiceURI}>
@@ -1222,14 +1612,14 @@ function PageContent() {
               style={styles.resetButton}
               onClick={handleStopSpeaking}
             >
-              {t.voice.stop}
+              {copy.reset}
             </button>
             <button
               type="button"
               style={styles.primaryGenerateButton}
               onClick={handleSpeak}
             >
-              {t.voice.preview}
+              {copy.preview}
             </button>
           </div>
         </div>
@@ -1243,7 +1633,7 @@ function PageContent() {
         {renderCompactToolTabs()}
 
         <div style={styles.formCardInner}>
-          <label style={styles.label}>Song Title</label>
+          <label style={styles.label}>{copy.songTitle}</label>
           <input
             style={styles.selectMetal}
             value={musicTitle}
@@ -1252,7 +1642,7 @@ function PageContent() {
           />
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Music Prompt</label>
+            <label style={styles.label}>{copy.musicPrompt}</label>
             <textarea
               style={styles.promptArea}
               value={musicPrompt}
@@ -1262,7 +1652,7 @@ function PageContent() {
           </div>
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Lyrics / Vocal Idea</label>
+            <label style={styles.label}>{copy.lyricsIdea}</label>
             <textarea
               style={styles.promptArea}
               value={musicLyrics}
@@ -1272,7 +1662,7 @@ function PageContent() {
           </div>
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Duration</label>
+            <label style={styles.label}>{copy.musicDuration}</label>
             <select
               value={musicDurationSec}
               onChange={(e) => setMusicDurationSec(e.target.value)}
@@ -1291,7 +1681,7 @@ function PageContent() {
               style={styles.resetButton}
               onClick={handleResetMusic}
             >
-              Reset
+              {copy.reset}
             </button>
 
             {!isAuthenticated ? (
@@ -1300,7 +1690,7 @@ function PageContent() {
                 style={styles.primaryGenerateButton}
                 onClick={() => router.push("/login")}
               >
-                Login
+                {t.common.login}
               </button>
             ) : isPlanBlocked ? (
               <button
@@ -1308,7 +1698,7 @@ function PageContent() {
                 style={styles.primaryGenerateButton}
                 onClick={() => router.push("/billing")}
               >
-                Upgrade
+                {copy.upgradePlan}
               </button>
             ) : (
               <button
@@ -1320,18 +1710,18 @@ function PageContent() {
                 onClick={canGenerateMusic ? handleGenerateMusic : undefined}
               >
                 {musicGeneration.status === "loading"
-                  ? "Generating Music"
-                  : "Generate Music"}
+                  ? copy.generatingMusic
+                  : copy.generateMusic}
               </button>
             )}
           </div>
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Upload Existing Audio</label>
+            <label style={styles.label}>{copy.uploadExistingAudio}</label>
             <div style={styles.uploadRow}>
               <label style={styles.uploadFieldLike}>
                 <span style={styles.uploadFieldText}>
-                  {uploadedAudioUrl ? "Audio uploaded" : "No audio selected."}
+                  {uploadedAudioUrl ? copy.audioUploaded : copy.noAudioSelected}
                 </span>
                 <span style={styles.uploadFieldIcon}>♫</span>
                 <input
@@ -1358,7 +1748,7 @@ function PageContent() {
         {renderCompactToolTabs()}
 
         <div style={styles.formCardInner}>
-          <label style={styles.label}>Ses to Video Clip Prompt</label>
+          <label style={styles.label}>{copy.musicVideoPrompt}</label>
           <textarea
             style={styles.heroInput}
             value={musicVideoPrompt}
@@ -1367,20 +1757,18 @@ function PageContent() {
           />
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Connected Audio</label>
+            <label style={styles.label}>{copy.connectedAudio}</label>
             {activeAudioUrl ? (
               <div style={styles.audioBox}>
                 <audio controls src={activeAudioUrl} style={styles.audioPlayer} />
               </div>
             ) : (
-              <div style={styles.smallNote}>
-                First generate music in the music section or upload an audio file.
-              </div>
+              <div style={styles.smallNote}>{copy.firstGenerateMusic}</div>
             )}
           </div>
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Style</label>
+            <label style={styles.label}>{copy.style}</label>
             <select
               value={styleUi}
               onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
@@ -1396,7 +1784,7 @@ function PageContent() {
           </div>
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Aspect Ratio</label>
+            <label style={styles.label}>{copy.aspectRatio}</label>
             <select
               value={ratioUi}
               onChange={(e) => setRatioUi(e.target.value)}
@@ -1414,7 +1802,7 @@ function PageContent() {
               style={styles.resetButton}
               onClick={handleResetVideo}
             >
-              Reset
+              {copy.reset}
             </button>
 
             {!isAuthenticated ? (
@@ -1423,7 +1811,7 @@ function PageContent() {
                 style={styles.primaryGenerateButton}
                 onClick={() => router.push("/login")}
               >
-                Login
+                {t.common.login}
               </button>
             ) : isPlanBlocked ? (
               <button
@@ -1431,7 +1819,7 @@ function PageContent() {
                 style={styles.primaryGenerateButton}
                 onClick={() => router.push("/billing")}
               >
-                Upgrade
+                {copy.upgradePlan}
               </button>
             ) : (
               <button
@@ -1445,8 +1833,8 @@ function PageContent() {
                 }
               >
                 {videoGeneration.status === "loading"
-                  ? "Generating Video"
-                  : "Generate Video"}
+                  ? copy.generatingVideo
+                  : copy.generateVideo}
               </button>
             )}
           </div>
@@ -1506,25 +1894,21 @@ function PageContent() {
       case "apps":
         return (
           <section style={styles.secondaryPanel}>
-            <div style={styles.secondaryTitle}>Apps</div>
+            <div style={styles.secondaryTitle}>{copy.apps}</div>
             <div style={styles.appsGrid}>
               <div style={styles.appCard}>
-                <div style={styles.appCardTitle}>Product Ad Maker</div>
+                <div style={styles.appCardTitle}>{copy.productAdMaker}</div>
+                <div style={styles.appCardText}>{copy.productAdMakerText}</div>
+              </div>
+              <div style={styles.appCard}>
+                <div style={styles.appCardTitle}>{copy.socialReelBuilder}</div>
                 <div style={styles.appCardText}>
-                  Ürün görselinden kısa reklam videoları üret.
+                  {copy.socialReelBuilderText}
                 </div>
               </div>
               <div style={styles.appCard}>
-                <div style={styles.appCardTitle}>Social Reel Builder</div>
-                <div style={styles.appCardText}>
-                  Reels ve TikTok için hızlı dikey video üret.
-                </div>
-              </div>
-              <div style={styles.appCard}>
-                <div style={styles.appCardTitle}>AI Music Studio</div>
-                <div style={styles.appCardText}>
-                  Şarkı oluştur, sonra videoya dönüştür.
-                </div>
+                <div style={styles.appCardTitle}>{copy.aiMusicStudio}</div>
+                <div style={styles.appCardText}>{copy.aiMusicStudioText}</div>
               </div>
             </div>
           </section>
@@ -1533,21 +1917,21 @@ function PageContent() {
       case "chat":
         return (
           <section style={styles.secondaryPanel}>
-            <div style={styles.secondaryTitle}>Support</div>
-            <div style={styles.chatBox}>{t.support.subtitle}</div>
+            <div style={styles.secondaryTitle}>{copy.supportCenter}</div>
+            <div style={styles.chatBox}>{copy.supportHint}</div>
           </section>
         );
 
       case "flow":
         return (
           <section style={styles.secondaryPanel}>
-            <div style={styles.secondaryTitle}>Workflow</div>
+            <div style={styles.secondaryTitle}>{copy.workflow}</div>
             <div style={styles.flowList}>
-              <div style={styles.flowItem}>1. Tool seç</div>
-              <div style={styles.flowItem}>2. Prompt veya media ekle</div>
-              <div style={styles.flowItem}>3. Preview al</div>
-              <div style={styles.flowItem}>4. Final video üret</div>
-              <div style={styles.flowItem}>5. Final çıktıyı indir</div>
+              <div style={styles.flowItem}>{copy.flow1}</div>
+              <div style={styles.flowItem}>{copy.flow2}</div>
+              <div style={styles.flowItem}>{copy.flow3}</div>
+              <div style={styles.flowItem}>{copy.flow4}</div>
+              <div style={styles.flowItem}>{copy.flow5}</div>
             </div>
           </section>
         );
@@ -1555,8 +1939,8 @@ function PageContent() {
       case "live":
         return (
           <section style={styles.secondaryPanel}>
-            <div style={styles.secondaryTitle}>Live</div>
-            <div style={styles.chatBox}>{t.common.comingSoon}</div>
+            <div style={styles.secondaryTitle}>{copy.live}</div>
+            <div style={styles.chatBox}>{copy.comingSoon}</div>
           </section>
         );
 
@@ -1578,8 +1962,8 @@ function PageContent() {
                 <div style={styles.previewCardHeader}>
                   <div style={styles.previewCardTitle}>
                     {videoGeneration.status === "done" && videoGeneration.preview
-                      ? "Preview Storyboard"
-                      : "Final Preview"}
+                      ? copy.previewStoryboard
+                      : copy.finalPreview}
                   </div>
                   <div style={styles.previewCardTools}>
                     <span style={styles.previewTool}>▢</span>
@@ -1599,33 +1983,33 @@ function PageContent() {
               </div>
 
               <div style={styles.summaryCard}>
-                <div style={styles.summaryHeader}>Output Summary</div>
+                <div style={styles.summaryHeader}>{copy.outputSummary}</div>
 
                 <div style={styles.summaryList}>
                   <div style={styles.summaryLine}>
-                    <span style={styles.summaryLabel}>Mode:</span>
+                    <span style={styles.summaryLabel}>{copy.mode}:</span>
                     <span style={styles.summaryValue}>
                       {workspaceTab === "music_video"
-                        ? "Ses to Video Clip"
+                        ? copy.audioToVideo
                         : workspaceTab === "voice"
-                        ? "Text to Ses"
+                        ? copy.textToVoice
                         : workspaceTab === "music"
-                        ? "Music"
-                        : getVideoModeLabel(videoMode)}
+                        ? copy.music
+                        : getVideoModeLabel(videoMode, copy)}
                     </span>
                   </div>
 
                   <div style={styles.summaryLine}>
-                    <span style={styles.summaryLabel}>Type:</span>
+                    <span style={styles.summaryLabel}>{copy.type}:</span>
                     <span style={styles.summaryValue}>
                       {videoGeneration.status === "done" && videoGeneration.preview
-                        ? "Preview"
-                        : "Final"}
+                        ? copy.previewType
+                        : copy.final}
                     </span>
                   </div>
 
                   <div style={styles.summaryLine}>
-                    <span style={styles.summaryLabel}>Scenes:</span>
+                    <span style={styles.summaryLabel}>{copy.scenes}:</span>
                     <span style={styles.summaryValue}>
                       {videoGeneration.status === "done"
                         ? displayScenes.length
@@ -1634,7 +2018,7 @@ function PageContent() {
                   </div>
 
                   <div style={styles.summaryLine}>
-                    <span style={styles.summaryLabel}>Duration:</span>
+                    <span style={styles.summaryLabel}>{copy.duration}:</span>
                     <span style={styles.summaryValue}>
                       {videoGeneration.status === "done" &&
                       !videoGeneration.preview &&
@@ -1646,13 +2030,13 @@ function PageContent() {
                         ? `${musicGeneration.durationSec}s`
                         : videoGeneration.status === "done" &&
                           videoGeneration.preview
-                        ? "Preview"
+                        ? copy.previewType
                         : "-"}
                     </span>
                   </div>
 
                   <div style={styles.summaryLine}>
-                    <span style={styles.summaryLabel}>Status:</span>
+                    <span style={styles.summaryLabel}>{copy.status}:</span>
                     <span style={styles.summaryValue}>
                       {workspaceTab === "music"
                         ? musicStatusText
@@ -1663,7 +2047,7 @@ function PageContent() {
 
                 {workspaceTab === "music" && activeAudioUrl ? (
                   <a href={activeAudioUrl} download style={styles.downloadButton}>
-                    Download Audio
+                    {copy.downloadAudio}
                   </a>
                 ) : videoGeneration.status === "done" &&
                   !videoGeneration.preview &&
@@ -1673,7 +2057,7 @@ function PageContent() {
                     download
                     style={styles.downloadButton}
                   >
-                    Download Video
+                    {copy.downloadVideo}
                   </a>
                 ) : null}
               </div>
@@ -1683,14 +2067,12 @@ function PageContent() {
               <div style={styles.sceneOverviewFull}>
                 <div style={styles.sceneOverviewHeader}>
                   {videoGeneration.status === "done" && videoGeneration.preview
-                    ? "Preview Overview"
-                    : "Scene Overview"}
+                    ? copy.previewOverview
+                    : copy.sceneOverview}
                 </div>
 
                 {displayScenes.length === 0 ? (
-                  <div style={styles.emptySceneText}>
-                    Video oluşturulduktan sonra sahneler burada görünecek.
-                  </div>
+                  <div style={styles.emptySceneText}>{copy.noScenesYet}</div>
                 ) : (
                   <div
                     style={{
@@ -1745,14 +2127,14 @@ function PageContent() {
                               style={styles.sceneSelectButton}
                               onClick={() => handleSelectScene(scene.id)}
                             >
-                              Select
+                              {copy.select}
                             </button>
                             <button
                               type="button"
                               style={styles.sceneDeleteButton}
                               onClick={() => handleDeleteScene(scene.id)}
                             >
-                              Delete
+                              {copy.delete}
                             </button>
                           </div>
                         </div>
@@ -1765,9 +2147,11 @@ function PageContent() {
 
             {workspaceTab === "music" && musicGeneration.status === "done" ? (
               <div style={styles.sceneOverviewFull}>
-                <div style={styles.sceneOverviewHeader}>Lyrics Preview</div>
+                <div style={styles.sceneOverviewHeader}>
+                  {copy.lyricsPreview}
+                </div>
                 <div style={styles.lyricsBox}>
-                  {musicGeneration.lyrics || "No lyrics available."}
+                  {musicGeneration.lyrics || copy.noLyrics}
                 </div>
               </div>
             ) : null}
@@ -1787,9 +2171,7 @@ function PageContent() {
 
       <main style={styles.main}>
         <div style={styles.topHeaderBar}>
-          <div style={styles.topHeaderText}>
-            Create and edit AI <strong>videos</strong>, music, and voiceovers
-          </div>
+          <div style={styles.topHeaderText}>{copy.headerHero}</div>
 
           <div
             style={{
@@ -1805,7 +2187,7 @@ function PageContent() {
               }}
               onClick={() => router.push("/billing")}
             >
-              Upgrade Plan
+              {copy.upgradePlan}
             </button>
 
             <button
@@ -1819,7 +2201,7 @@ function PageContent() {
                 setSelectedSceneId(null);
               }}
             >
-              Final Video ▶▶
+              {copy.finalVideo} ▶▶
             </button>
 
             <div
@@ -1940,24 +2322,43 @@ function PageContent() {
   );
 }
 
-function getDefaultPrompt(language: AppLanguage) {
-  if (language === "tr") {
-    return "A cinematic traveller walking in New York City";
-  }
-  if (language === "de") {
-    return "Ein cineastischer Reisender in New York City";
-  }
-  return "A cinematic traveller walking in New York City";
+function getSceneTitle(index: number, language: AppLanguage) {
+  if (language === "tr") return `Sahne ${index + 1}`;
+  if (language === "de") return `Szene ${index + 1}`;
+  return `Scene ${index + 1}`;
 }
 
-function getVideoModeLabel(mode: VideoMode) {
+function getFallbackSceneDuration(totalDurationSec?: number, count?: number) {
+  if (
+    typeof totalDurationSec === "number" &&
+    totalDurationSec > 0 &&
+    typeof count === "number" &&
+    count > 0
+  ) {
+    return Math.max(3, Math.round(totalDurationSec / count));
+  }
+
+  return 5;
+}
+
+function getDefaultPrompt(language: AppLanguage) {
+  if (language === "tr") {
+    return "Berlin sokaklarında yürüyen sinematik bir gezgin";
+  }
+  if (language === "de") {
+    return "Ein cineastischer Reisender in den Straßen Berlins";
+  }
+  return "A cinematic traveler walking through Berlin streets";
+}
+
+function getVideoModeLabel(mode: VideoMode, copy: UiCopy) {
   switch (mode) {
     case "text_to_video":
-      return "Text to Video";
+      return copy.textToVideo;
     case "url_to_video":
-      return "URL to Video";
+      return copy.urlToVideo;
     case "image_to_video":
-      return "Image to Video";
+      return copy.imageToVideo;
     case "logo_to_video":
       return "Logo to Video";
     default:
