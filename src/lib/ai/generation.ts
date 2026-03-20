@@ -107,7 +107,14 @@ function ratioValue(ratio?: string) {
   return "16:9";
 }
 
-function getSceneCount(plan: string, durationSec: number) {
+function getSceneCount(plan: string, durationSec: number, mode: GenerationMode) {
+  // Image/logo mode: fewer scenes = less identity drift
+  if (mode === "image_to_video" || mode === "logo_to_video") {
+    if (plan === "free") return 1;
+    if (durationSec >= 20) return 2;
+    return 1;
+  }
+
   if (plan === "free") return 1;
 
   if (plan === "starter") {
@@ -136,15 +143,6 @@ function getSceneCount(plan: string, durationSec: number) {
 
 function getSceneDurations(totalDurationSec: number, sceneCount: number) {
   if (sceneCount <= 1) return [totalDurationSec];
-
-  if (totalDurationSec <= 10 && sceneCount === 1) return [10];
-  if (totalDurationSec <= 10 && sceneCount === 2) return [5, 5];
-
-  if (totalDurationSec <= 20 && sceneCount === 2) return [10, 10];
-  if (totalDurationSec <= 20 && sceneCount === 3) return [6, 7, 7];
-
-  if (totalDurationSec <= 30 && sceneCount === 3) return [10, 10, 10];
-  if (totalDurationSec <= 30 && sceneCount === 4) return [7, 7, 8, 8];
 
   const base = Math.floor(totalDurationSec / sceneCount);
   const remainder = totalDurationSec % sceneCount;
@@ -253,6 +251,10 @@ function buildNegativePrompt(negativePrompt?: string) {
     "face change",
     "costume change",
     "background collapse",
+    "subject replacement",
+    "different person",
+    "different object",
+    "different logo",
   ].join(", ");
 
   const custom = sanitizePrompt(negativePrompt);
@@ -278,15 +280,15 @@ function buildModeHint(input: {
 
   if (input.mode === "image_to_video") {
     return [
-      "preserve the original reference image identity exactly",
-      "same person, same face, same clothes, same hairstyle, same subject design",
-      "no character redesign",
+      "preserve the original reference image exactly",
+      "same subject identity",
+      "same face, same clothes, same hairstyle, same object design",
+      "no redesign",
       "no face drift",
       "no costume drift",
-      "keep the source composition recognizable",
-      "animate from the still image naturally",
-      "controlled motion only",
-      "cinematic but stable movement",
+      "no background replacement",
+      "animate the uploaded image naturally",
+      "micro-motion and controlled cinematic movement only",
       "reference image fidelity is critical",
     ].join(", ");
   }
@@ -353,6 +355,40 @@ function buildMasterPrompt(input: {
     .join(", ");
 }
 
+function buildDirectImageScenePrompts(input: {
+  mode: GenerationMode;
+  masterPrompt: string;
+  durationSec: number;
+  plan: string;
+  style?: VideoStyle;
+}) {
+  const sceneCount = getSceneCount(input.plan, input.durationSec, input.mode);
+
+  if (input.mode === "logo_to_video") {
+    if (sceneCount === 1) {
+      return [
+        `exact same uploaded logo, preserve shape and brand identity perfectly, subtle premium motion only, elegant reveal, clean polished brand finish, ${input.masterPrompt}`,
+      ];
+    }
+
+    return [
+      `exact same uploaded logo, preserve shape and brand identity perfectly, subtle intro motion only, elegant premium appearance, ${input.masterPrompt}`,
+      `exact same uploaded logo, final crisp lockup, no distortion, refined premium brand ending, ${input.masterPrompt}`,
+    ];
+  }
+
+  if (sceneCount === 1) {
+    return [
+      `exact same uploaded image, preserve subject and background exactly, same identity, same composition, subtle realistic motion only, slight camera push, micro-expression, no redesign, ${input.masterPrompt}`,
+    ];
+  }
+
+  return [
+    `exact same uploaded image, preserve subject and environment exactly, same identity, same face or same object, subtle opening motion only, slight camera push-in, no redesign, ${input.masterPrompt}`,
+    `exact same uploaded image, same subject continuity, same environment, elegant motion continuation, same styling, premium final hero moment, no drift, ${input.masterPrompt}`,
+  ];
+}
+
 async function buildStoryboardScenePrompts(input: {
   mode: GenerationMode;
   masterPrompt: string;
@@ -361,7 +397,12 @@ async function buildStoryboardScenePrompts(input: {
   style?: VideoStyle;
   sourceUrl?: string;
 }) {
-  const sceneCount = getSceneCount(input.plan, input.durationSec);
+  // For image/logo modes, do NOT use LLM storyboard. Keep close to source image.
+  if (input.mode === "image_to_video" || input.mode === "logo_to_video") {
+    return buildDirectImageScenePrompts(input);
+  }
+
+  const sceneCount = getSceneCount(input.plan, input.durationSec, input.mode);
   const sceneDurations = getSceneDurations(input.durationSec, sceneCount);
 
   let storyboardScenes: StoryboardScene[] = [];
@@ -391,29 +432,6 @@ async function buildStoryboardScenePrompts(input: {
   return normalizedStoryboard.map((scene, index) => {
     const durationForScene = sceneDurations[index] ?? scene.durationSec ?? 6;
 
-    const continuityRules =
-      input.mode === "logo_to_video"
-        ? [
-            "same logo identity in every scene",
-            "same brand geometry and colors",
-            "no logo distortion",
-            "premium motion continuity",
-          ]
-        : input.mode === "image_to_video"
-        ? [
-            "same subject identity as the source image",
-            "same face, same clothes, same hairstyle",
-            "same visual world",
-            "no identity drift",
-            "preserve source-image fidelity",
-          ]
-        : [
-            "same main subject across all scenes",
-            "same environment and world logic",
-            "same wardrobe and identity continuity",
-            "same tone, same visual language, same cinematic style",
-          ];
-
     const stageHint =
       index === 0
         ? "opening scene, establish the world and subject clearly"
@@ -424,7 +442,10 @@ async function buildStoryboardScenePrompts(input: {
     return [
       scene.prompt,
       stageHint,
-      ...continuityRules,
+      "same main subject across all scenes",
+      "same environment and world logic",
+      "same wardrobe and identity continuity",
+      "same tone, same visual language, same cinematic style",
       `scene duration target ${durationForScene} seconds`,
       styleDescriptor(input.style),
       input.sourceUrl ? `source context: ${sanitizePrompt(input.sourceUrl)}` : "",
@@ -692,7 +713,10 @@ async function generateVideoWithReplicate(
     videoUrl: finalVideoUrl,
     imageUrl: input.imageUrl ?? null,
     durationSec: input.durationSec,
-    sceneImages: [],
+    sceneImages:
+      input.mode === "image_to_video" || input.mode === "logo_to_video"
+        ? scenePrompts.map(() => input.imageUrl ?? "")
+        : [],
     scenePrompts,
     sceneVideoUrls: uploadedSceneUrls,
     actualClipDurationSec: clipDurationSec,
@@ -702,6 +726,40 @@ async function generateVideoWithReplicate(
 async function generateStoryboardPreviewWithReplicate(
   input: GenerateContentInput
 ): Promise<ImageResult> {
+  // For image/logo modes, preview should show the actual uploaded image, not a generated unrelated image
+  if (
+    (input.mode === "image_to_video" || input.mode === "logo_to_video") &&
+    input.imageUrl
+  ) {
+    const masterPrompt = buildMasterPrompt({
+      mode: input.mode,
+      prompt: input.prompt,
+      sourceUrl: input.sourceUrl,
+      style: input.style,
+    });
+
+    const scenePrompts = await buildStoryboardScenePrompts({
+      mode: input.mode,
+      masterPrompt,
+      durationSec: input.durationSec,
+      plan: input.plan,
+      style: input.style,
+      sourceUrl: input.sourceUrl,
+    });
+
+    return {
+      mode: "text_to_image",
+      provider: "replicate",
+      model: TEXT_IMAGE_MODEL,
+      imageUrl: input.imageUrl,
+      durationSec: input.durationSec,
+      sceneImages: scenePrompts.map(() => input.imageUrl as string),
+      scenePrompts,
+      sceneVideoUrls: [],
+      actualClipDurationSec: 0,
+    };
+  }
+
   const masterPrompt = buildMasterPrompt({
     mode: "text_to_image",
     prompt: input.prompt,
@@ -710,10 +768,7 @@ async function generateStoryboardPreviewWithReplicate(
   });
 
   const scenePrompts = await buildStoryboardScenePrompts({
-    mode:
-      input.mode === "text_to_image"
-        ? "text_to_video"
-        : input.mode,
+    mode: input.mode === "text_to_image" ? "text_to_video" : input.mode,
     masterPrompt,
     durationSec: input.durationSec,
     plan: input.plan,

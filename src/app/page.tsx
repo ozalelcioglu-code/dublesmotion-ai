@@ -1295,6 +1295,20 @@ function PageContent() {
   };
 
   const renderPreviewContent = () => {
+    if (
+  workspaceTab === "video" &&
+  (videoMode === "image_to_video" || videoMode === "logo_to_video") &&
+  uploadedImageUrl &&
+  videoGeneration.status === "idle"
+) {
+  return (
+    <img
+      src={uploadedImageUrl}
+      alt="Uploaded reference"
+      style={styles.previewImage}
+    />
+  );
+}
     if (workspaceTab === "music") {
       if (musicGeneration.status === "loading") {
         return (
@@ -1458,19 +1472,29 @@ function PageContent() {
                   : copy.uploadImage}
               </label>
               <div style={styles.uploadRow}>
-                <label style={styles.uploadFieldLike}>
-                  <span style={styles.uploadFieldText}>
-                    {uploadedImageUrl ? copy.imageSelected : copy.noImageSelected}
-                  </span>
-                  <span style={styles.uploadFieldIcon}>☁</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImagePick}
-                    style={{ display: "none" }}
-                  />
-                </label>
-              </div>
+  <label style={styles.uploadFieldLike}>
+    <span style={styles.uploadFieldText}>
+      {uploadedImageUrl ? copy.imageSelected : copy.noImageSelected}
+    </span>
+    <span style={styles.uploadFieldIcon}>☁</span>
+    <input
+      type="file"
+      accept="image/*"
+      onChange={handleImagePick}
+      style={{ display: "none" }}
+    />
+  </label>
+
+  {uploadedImageUrl ? (
+    <div style={styles.uploadPreviewThumbWrap}>
+      <img
+        src={uploadedImageUrl}
+        alt="Uploaded preview"
+        style={styles.uploadPreviewThumb}
+      />
+    </div>
+  ) : null}
+</div>
             </div>
           ) : null}
 
@@ -1832,6 +1856,7 @@ function PageContent() {
                   canGenerateMusicVideo ? handleGenerateMusicVideo : undefined
                 }
               >
+                
                 {videoGeneration.status === "loading"
                   ? copy.generatingVideo
                   : copy.generateVideo}
@@ -2756,6 +2781,22 @@ const styles: Record<string, CSSProperties> = {
     color: "#6b7280",
     flexShrink: 0,
   },
+  uploadPreviewThumbWrap: {
+  width: "100%",
+  marginTop: 12,
+  borderRadius: 8,
+  overflow: "hidden",
+  border: "1px solid rgba(15,23,42,0.12)",
+  background: "#e5e7eb",
+},
+
+uploadPreviewThumb: {
+  width: "100%",
+  maxHeight: 220,
+  objectFit: "contain",
+  display: "block",
+  background: "#f3f4f6",
+},
 
   previewFinalActions: {
     display: "grid",
