@@ -28,10 +28,11 @@ type GenerateContentInput = {
   ratio?: "1:1" | "16:9" | "9:16";
   plan: string;
   style?: VideoStyle;
+  preview?: boolean;
 };
 
 type BaseResult = {
-  mode: GenerationMode;
+  mode: GenerationMode | "text_to_image";
   provider: "replicate";
   model: string;
   durationSec: number;
@@ -171,7 +172,11 @@ function styleDescriptor(style?: VideoStyle) {
       ].join(", ");
 
     default:
-      return ["premium cinematic quality", "clean motion", "high prompt adherence"].join(", ");
+      return [
+        "premium cinematic quality",
+        "clean motion",
+        "high prompt adherence",
+      ].join(", ");
   }
 }
 
@@ -206,7 +211,7 @@ function buildNegativePrompt(negativePrompt?: string) {
 }
 
 function buildModeHint(input: {
-  mode: GenerationMode;
+  mode: GenerationMode | "text_to_image";
   sourceUrl?: string;
 }) {
   if (input.mode === "logo_to_video") {
@@ -256,6 +261,7 @@ function buildModeHint(input: {
       "premium composition",
       "high visual clarity",
       "strong subject focus",
+      "storyboard preview frame",
     ].join(", ");
   }
 
@@ -268,7 +274,7 @@ function buildModeHint(input: {
 }
 
 function buildMasterPrompt(input: {
-  mode: GenerationMode;
+  mode: GenerationMode | "text_to_image";
   prompt?: string;
   sourceUrl?: string;
   style?: VideoStyle;
@@ -600,7 +606,7 @@ async function generateVideoWithReplicate(
 }
 
 async function generateImageWithReplicate(
-  input: GenerateContentInput
+  input: GenerateContentInput & { mode: GenerationMode | "text_to_image" }
 ): Promise<ImageResult> {
   const masterPrompt = buildMasterPrompt({
     mode: input.mode,
@@ -622,7 +628,7 @@ async function generateImageWithReplicate(
   const imageUrl = pickFirstUrl(finished.output);
 
   return {
-    mode: input.mode,
+    mode: "text_to_image",
     provider: "replicate",
     model: TEXT_IMAGE_MODEL,
     imageUrl,
@@ -635,6 +641,14 @@ async function generateImageWithReplicate(
 }
 
 export async function generateContent(input: GenerateContentInput) {
+  // Preview modunda ucuz storyboard/image üret
+  if (input.preview) {
+    return generateImageWithReplicate({
+      ...input,
+      mode: "text_to_image",
+    });
+  }
+
   if (input.mode === "text_to_image") {
     return generateImageWithReplicate(input);
   }

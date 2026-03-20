@@ -12,6 +12,7 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const RequestSchema = z.object({
   mode: z.enum([
@@ -37,6 +38,7 @@ const RequestSchema = z.object({
       "cartoon",
     ])
     .optional(),
+  preview: z.boolean().optional(),
 });
 
 function createSeed() {
@@ -104,6 +106,7 @@ export async function POST(req: Request) {
 
     const json = await req.json();
     const input = RequestSchema.parse(json);
+    const isPreview = input.preview === true;
 
     if (input.mode === "logo_to_video" && !input.imageUrl && !input.sourceUrl) {
       return NextResponse.json(
@@ -143,6 +146,7 @@ export async function POST(req: Request) {
     const planInfo = await getResolvedUserPlan(session.user.id);
 
     if (
+      !isPreview &&
       planInfo.monthlyVideoLimit !== null &&
       planInfo.usedThisMonth >= planInfo.monthlyVideoLimit
     ) {
@@ -174,7 +178,38 @@ export async function POST(req: Request) {
       ratio: input.ratio ?? "16:9",
       plan: activePlan,
       style: input.style,
+      preview: isPreview,
     });
+
+    if (isPreview) {
+      return NextResponse.json(
+        {
+          ok: true,
+          preview: true,
+          mode: result.mode,
+          provider: result.provider,
+          model: result.model,
+          imageUrl: "imageUrl" in result ? result.imageUrl ?? null : null,
+          videoUrl: null,
+          videoId: null,
+          durationSec: result.durationSec,
+          sceneImages: result.sceneImages,
+          scenePrompts: result.scenePrompts,
+          sceneVideoUrls: [],
+          actualClipDurationSec: 0,
+          saveWarning: null,
+          plan: {
+            code: planInfo.plan,
+            label: planInfo.planLabel,
+            monthlyVideoLimit: planInfo.monthlyVideoLimit,
+            usedThisMonth: planInfo.usedThisMonth,
+            remainingCredits: planInfo.remainingCredits,
+            maxDurationSec: planInfo.maxDurationSec,
+          },
+        },
+        { status: 200 }
+      );
+    }
 
     const sql = getSql();
 
@@ -250,6 +285,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: true,
+        preview: false,
         mode: result.mode,
         provider: result.provider,
         model: result.model,

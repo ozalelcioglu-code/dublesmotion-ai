@@ -57,6 +57,7 @@ type VideoGenerationState =
       scenePrompts?: string[];
       sceneVideoUrls?: string[];
       saveWarning?: string | null;
+      preview?: boolean;
     }
   | { status: "error"; message: string };
 
@@ -132,10 +133,7 @@ function PageContent() {
 
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [mobileWorkspaceMenuOpen, setMobileWorkspaceMenuOpen] =
-    useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
-  const mobileWorkspaceMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -167,13 +165,6 @@ function PageContent() {
         !accountMenuRef.current.contains(event.target as Node)
       ) {
         setAccountMenuOpen(false);
-      }
-
-      if (
-        mobileWorkspaceMenuRef.current &&
-        !mobileWorkspaceMenuRef.current.contains(event.target as Node)
-      ) {
-        setMobileWorkspaceMenuOpen(false);
       }
     };
 
@@ -250,9 +241,12 @@ function PageContent() {
     if (workspaceTab === "voice") return "16 / 9";
     if (workspaceTab === "support") return "16 / 9";
 
-    if (previewTarget !== "final" && selectedScene) {
-      if (selectedScene.videoUrl) return "16 / 9";
-      if (selectedScene.imageUrl) return "16 / 9";
+    if (
+      previewTarget !== "final" &&
+      selectedScene &&
+      (selectedScene.videoUrl || selectedScene.imageUrl)
+    ) {
+      return "16 / 9";
     }
 
     if (videoMode === "logo_to_video") return "16 / 9";
@@ -270,7 +264,9 @@ function PageContent() {
       : videoGeneration.status === "loading"
       ? t.home.statusGenerating
       : videoGeneration.status === "done"
-      ? t.home.statusDone
+      ? videoGeneration.preview
+        ? "Preview Ready"
+        : t.home.statusDone
       : t.home.statusError;
 
   const musicStatusText =
@@ -403,13 +399,13 @@ function PageContent() {
     }
   };
 
-  const handleGenerateVideo = async () => {
+  const handleGenerateVideo = async (preview = false) => {
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
 
-    if (isPlanBlocked) {
+    if (!preview && isPlanBlocked) {
       router.push("/billing");
       return;
     }
@@ -417,13 +413,16 @@ function PageContent() {
     try {
       setVideoGeneration({
         status: "loading",
-        phase: "Submitting generation request...",
+        phase: preview
+          ? "Creating preview storyboard..."
+          : "Submitting final generation request...",
       });
 
       const payload: Record<string, unknown> = {
         mode: videoMode,
         style: styleUi,
         ratio: ratioUi,
+        preview,
       };
 
       if (videoMode === "text_to_video") {
@@ -459,6 +458,43 @@ function PageContent() {
 
       if (!res.ok || !data?.ok) {
         throw new Error(data?.error || "Generation failed");
+      }
+
+      if (preview) {
+        const previewImage = data.imageUrl ?? data.sceneImages?.[0] ?? null;
+        if (!previewImage) {
+          throw new Error("No preview image returned");
+        }
+
+        setScenes([
+          {
+            id: "preview-scene-1",
+            title: "Preview Scene",
+            description:
+              data.scenePrompts?.[0] || prompt || "Storyboard preview",
+            durationSec: 0,
+            imageUrl: previewImage,
+            videoUrl: null,
+          },
+        ]);
+        setSelectedSceneId(null);
+        setPreviewTarget("final");
+
+        setVideoGeneration({
+          status: "done",
+          preview: true,
+          imageUrl: previewImage,
+          videoUrl: "",
+          videoId: null,
+          durationSec: 0,
+          actualClipDurationSec: 0,
+          sceneImages: [previewImage],
+          scenePrompts: data.scenePrompts ?? [],
+          sceneVideoUrls: [],
+          saveWarning: null,
+        });
+
+        return;
       }
 
       if (!data.videoUrl) {
@@ -501,6 +537,7 @@ function PageContent() {
 
       setVideoGeneration({
         status: "done",
+        preview: false,
         videoUrl: data.videoUrl,
         imageUrl: data.imageUrl ?? null,
         videoId: data.videoId ?? null,
@@ -677,6 +714,7 @@ function PageContent() {
 
       setVideoGeneration({
         status: "done",
+        preview: false,
         videoUrl: data.videoUrl,
         imageUrl: data.imageUrl ?? null,
         videoId: data.videoId ?? null,
@@ -784,6 +822,72 @@ function PageContent() {
     setIsSpeaking(false);
   };
 
+  const renderCompactToolTabs = () => {
+    const items = [
+      {
+        key: "text_to_video",
+        label: "Text to Video",
+        active: workspaceTab === "video" && videoMode === "text_to_video",
+        onClick: () => {
+          setWorkspaceTab("video");
+          setVideoMode("text_to_video");
+        },
+      },
+      {
+        key: "image_to_video",
+        label: "Image to Video",
+        active: workspaceTab === "video" && videoMode === "image_to_video",
+        onClick: () => {
+          setWorkspaceTab("video");
+          setVideoMode("image_to_video");
+        },
+      },
+      {
+        key: "url_to_video",
+        label: "URL to Video",
+        active: workspaceTab === "video" && videoMode === "url_to_video",
+        onClick: () => {
+          setWorkspaceTab("video");
+          setVideoMode("url_to_video");
+        },
+      },
+      {
+        key: "text_to_ses",
+        label: "Text to Ses",
+        active: workspaceTab === "voice",
+        onClick: () => {
+          setWorkspaceTab("voice");
+        },
+      },
+      {
+        key: "ses_to_video_clip",
+        label: "Ses to Video Clip",
+        active: workspaceTab === "music_video",
+        onClick: () => {
+          setWorkspaceTab("music_video");
+        },
+      },
+    ];
+
+    return (
+      <div style={styles.compactToolTabs}>
+        {items.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={item.onClick}
+            style={{
+              ...styles.compactToolTab,
+              ...(item.active ? styles.compactToolTabActive : {}),
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   const renderPreviewContent = () => {
     if (workspaceTab === "music") {
       if (musicGeneration.status === "loading") {
@@ -859,21 +963,37 @@ function PageContent() {
     }
 
     if (videoGeneration.status === "done") {
-      return (
-        <video
-          src={videoGeneration.videoUrl}
-          controls
-          playsInline
-          style={styles.video}
-        />
-      );
+      if (videoGeneration.preview && videoGeneration.imageUrl) {
+        return (
+          <img
+            src={videoGeneration.imageUrl}
+            alt="Preview storyboard"
+            style={styles.previewImage}
+          />
+        );
+      }
+
+      if (videoGeneration.videoUrl) {
+        return (
+          <video
+            src={videoGeneration.videoUrl}
+            controls
+            playsInline
+            style={styles.video}
+          />
+        );
+      }
     }
 
     if (videoGeneration.status === "loading") {
       return (
         <div style={styles.centerBox}>
           <div style={styles.spinner} />
-          <div style={styles.previewText}>{t.home.generatingVideo}</div>
+          <div style={styles.previewText}>
+            {videoGeneration.phase.includes("preview")
+              ? "Generating preview"
+              : t.home.generatingVideo}
+          </div>
           <div style={styles.previewSubtext}>{videoGeneration.phase}</div>
         </div>
       );
@@ -925,44 +1045,24 @@ function PageContent() {
   const renderVideoWorkspace = () => {
     return (
       <div style={styles.workspaceCard}>
-        <div style={styles.workspaceTabsHeader}>
-          {(["video", "voice", "music", "support"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() =>
-                setWorkspaceTab(
-                  tab === "support" ? "support" : (tab as WorkspaceTab)
-                )
-              }
-              style={{
-                ...styles.workspaceHeaderTab,
-                ...(workspaceTab === tab
-                  ? styles.workspaceHeaderTabActive
-                  : {}),
-              }}
-            >
-              {tab === "video"
-                ? "Video"
-                : tab === "voice"
-                ? "Voice"
-                : tab === "music"
-                ? "Music"
-                : "Support"}
-            </button>
-          ))}
-        </div>
+        {renderCompactToolTabs()}
 
         <div style={styles.formCardInner}>
-          <label style={styles.label}>Text Prompt</label>
+          <label style={styles.label}>
+            {videoMode === "logo_to_video" ? "Logo Prompt" : "Text Prompt"}
+          </label>
           <textarea
             style={styles.heroInput}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="A cinematic traveller walking in New York City"
+            placeholder={
+              videoMode === "logo_to_video"
+                ? "clean premium technology logo reveal"
+                : "A cinematic traveller walking in New York City"
+            }
           />
 
-          {(videoMode === "image_to_video" || videoMode === "logo_to_video") ? (
+          {videoMode === "image_to_video" || videoMode === "logo_to_video" ? (
             <div style={styles.inputGroup}>
               <label style={styles.label}>
                 {videoMode === "logo_to_video" ? "Upload Logo" : "Upload Image"}
@@ -982,27 +1082,11 @@ function PageContent() {
                 </label>
               </div>
             </div>
-          ) : (
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Upload Image</label>
-              <div style={styles.uploadRow}>
-                <label style={styles.uploadFieldLike}>
-                  <span style={styles.uploadFieldText}>No image selected.</span>
-                  <span style={styles.uploadFieldIcon}>☁</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImagePick}
-                    style={{ display: "none" }}
-                  />
-                </label>
-              </div>
-            </div>
-          )}
+          ) : null}
 
           {videoMode === "url_to_video" ? (
             <div style={styles.inputGroup}>
-              <label style={styles.label}>{t.home.sourceUrlLabel}</label>
+              <label style={styles.label}>Source URL</label>
               <input
                 style={styles.selectMetal}
                 value={sourceUrl}
@@ -1043,15 +1127,20 @@ function PageContent() {
             </div>
           ) : null}
 
-          <div style={styles.actionRow}>
-            <button type="button" style={styles.resetButton} onClick={handleResetVideo}>
-              Reset
+          <div style={styles.previewFinalActions}>
+            <button
+              type="button"
+              style={styles.secondaryButton}
+              onClick={() => handleGenerateVideo(true)}
+              disabled={!canGenerateVideoBase || !isAuthenticated}
+            >
+              Preview
             </button>
 
             {!isAuthenticated ? (
               <button
                 type="button"
-                style={styles.primaryGenerateButton}
+                style={styles.primaryButton}
                 onClick={() => router.push("/login")}
               >
                 Login
@@ -1059,7 +1148,7 @@ function PageContent() {
             ) : isPlanBlocked ? (
               <button
                 type="button"
-                style={styles.primaryGenerateButton}
+                style={styles.primaryButton}
                 onClick={() => router.push("/billing")}
               >
                 Upgrade
@@ -1067,20 +1156,28 @@ function PageContent() {
             ) : (
               <button
                 type="button"
-                style={{
-                  ...styles.primaryGenerateButton,
-                  ...(!canGenerateVideo ? styles.generateDisabled : {}),
-                }}
-                onClick={canGenerateVideo ? handleGenerateVideo : undefined}
+                style={styles.primaryButton}
+                onClick={() => handleGenerateVideo(false)}
+                disabled={!canGenerateVideo}
               >
-                {uploadingImage
-                  ? "Uploading..."
-                  : videoGeneration.status === "loading"
-                  ? "Generating..."
-                  : "Generate Video"}
+                Generate Final Video
               </button>
             )}
           </div>
+
+          <div style={styles.actionRowSingle}>
+            <button
+              type="button"
+              style={styles.resetButton}
+              onClick={handleResetVideo}
+            >
+              Reset
+            </button>
+          </div>
+
+          {isPlanBlocked ? (
+            <div style={styles.limitBox}>{planLimitMessage}</div>
+          ) : null}
         </div>
       </div>
     );
@@ -1089,33 +1186,7 @@ function PageContent() {
   const renderVoiceWorkspace = () => {
     return (
       <div style={styles.workspaceCard}>
-        <div style={styles.workspaceTabsHeader}>
-          {(["video", "voice", "music", "support"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() =>
-                setWorkspaceTab(
-                  tab === "support" ? "support" : (tab as WorkspaceTab)
-                )
-              }
-              style={{
-                ...styles.workspaceHeaderTab,
-                ...(workspaceTab === tab
-                  ? styles.workspaceHeaderTabActive
-                  : {}),
-              }}
-            >
-              {tab === "video"
-                ? "Video"
-                : tab === "voice"
-                ? "Voice"
-                : tab === "music"
-                ? "Music"
-                : "Support"}
-            </button>
-          ))}
-        </div>
+        {renderCompactToolTabs()}
 
         <div style={styles.formCardInner}>
           <label style={styles.label}>{t.voice.textLabel}</label>
@@ -1146,10 +1217,18 @@ function PageContent() {
           </div>
 
           <div style={styles.actionRow}>
-            <button type="button" style={styles.resetButton} onClick={handleStopSpeaking}>
+            <button
+              type="button"
+              style={styles.resetButton}
+              onClick={handleStopSpeaking}
+            >
               {t.voice.stop}
             </button>
-            <button type="button" style={styles.primaryGenerateButton} onClick={handleSpeak}>
+            <button
+              type="button"
+              style={styles.primaryGenerateButton}
+              onClick={handleSpeak}
+            >
               {t.voice.preview}
             </button>
           </div>
@@ -1161,33 +1240,7 @@ function PageContent() {
   const renderMusicWorkspace = () => {
     return (
       <div style={styles.workspaceCard}>
-        <div style={styles.workspaceTabsHeader}>
-          {(["video", "voice", "music", "support"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() =>
-                setWorkspaceTab(
-                  tab === "support" ? "support" : (tab as WorkspaceTab)
-                )
-              }
-              style={{
-                ...styles.workspaceHeaderTab,
-                ...(workspaceTab === tab
-                  ? styles.workspaceHeaderTabActive
-                  : {}),
-              }}
-            >
-              {tab === "video"
-                ? "Video"
-                : tab === "voice"
-                ? "Voice"
-                : tab === "music"
-                ? "Music"
-                : "Support"}
-            </button>
-          ))}
-        </div>
+        {renderCompactToolTabs()}
 
         <div style={styles.formCardInner}>
           <label style={styles.label}>Song Title</label>
@@ -1233,7 +1286,11 @@ function PageContent() {
           </div>
 
           <div style={styles.actionRow}>
-            <button type="button" style={styles.resetButton} onClick={handleResetMusic}>
+            <button
+              type="button"
+              style={styles.resetButton}
+              onClick={handleResetMusic}
+            >
               Reset
             </button>
 
@@ -1286,6 +1343,10 @@ function PageContent() {
               </label>
             </div>
           </div>
+
+          {musicGeneration.status === "done" && musicGeneration.saveWarning ? (
+            <div style={styles.warningBox}>{musicGeneration.saveWarning}</div>
+          ) : null}
         </div>
       </div>
     );
@@ -1294,42 +1355,29 @@ function PageContent() {
   const renderMusicVideoWorkspace = () => {
     return (
       <div style={styles.workspaceCard}>
-        <div style={styles.workspaceTabsHeader}>
-          {(["video", "voice", "music", "support"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() =>
-                setWorkspaceTab(
-                  tab === "support" ? "support" : (tab as WorkspaceTab)
-                )
-              }
-              style={{
-                ...styles.workspaceHeaderTab,
-                ...(workspaceTab === tab
-                  ? styles.workspaceHeaderTabActive
-                  : {}),
-              }}
-            >
-              {tab === "video"
-                ? "Video"
-                : tab === "voice"
-                ? "Voice"
-                : tab === "music"
-                ? "Music"
-                : "Support"}
-            </button>
-          ))}
-        </div>
+        {renderCompactToolTabs()}
 
         <div style={styles.formCardInner}>
-          <label style={styles.label}>Music Video Concept</label>
+          <label style={styles.label}>Ses to Video Clip Prompt</label>
           <textarea
             style={styles.heroInput}
             value={musicVideoPrompt}
             onChange={(e) => setMusicVideoPrompt(e.target.value)}
             placeholder="Futuristic city lights, emotional singer performance..."
           />
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Connected Audio</label>
+            {activeAudioUrl ? (
+              <div style={styles.audioBox}>
+                <audio controls src={activeAudioUrl} style={styles.audioPlayer} />
+              </div>
+            ) : (
+              <div style={styles.smallNote}>
+                First generate music in the music section or upload an audio file.
+              </div>
+            )}
+          </div>
 
           <div style={styles.inputGroup}>
             <label style={styles.label}>Style</label>
@@ -1361,7 +1409,11 @@ function PageContent() {
           </div>
 
           <div style={styles.actionRow}>
-            <button type="button" style={styles.resetButton} onClick={handleResetVideo}>
+            <button
+              type="button"
+              style={styles.resetButton}
+              onClick={handleResetVideo}
+            >
               Reset
             </button>
 
@@ -1406,33 +1458,7 @@ function PageContent() {
   const renderSupportWorkspace = () => {
     return (
       <div style={styles.workspaceCard}>
-        <div style={styles.workspaceTabsHeader}>
-          {(["video", "voice", "music", "support"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() =>
-                setWorkspaceTab(
-                  tab === "support" ? "support" : (tab as WorkspaceTab)
-                )
-              }
-              style={{
-                ...styles.workspaceHeaderTab,
-                ...(workspaceTab === tab
-                  ? styles.workspaceHeaderTabActive
-                  : {}),
-              }}
-            >
-              {tab === "video"
-                ? "Video"
-                : tab === "voice"
-                ? "Voice"
-                : tab === "music"
-                ? "Music"
-                : "Support"}
-            </button>
-          ))}
-        </div>
+        {renderCompactToolTabs()}
 
         <div style={styles.formCardInner}>
           <label style={styles.label}>{t.support.subjectLabel}</label>
@@ -1473,54 +1499,6 @@ function PageContent() {
     if (workspaceTab === "music_video") return renderMusicVideoWorkspace();
     if (workspaceTab === "support") return renderSupportWorkspace();
     return renderVideoWorkspace();
-  };
-
-  const renderTopMiniTabs = () => {
-    const items: Array<{ key: WorkspaceTab; label: string }> = [
-      { key: "video", label: "Video" },
-      { key: "voice", label: "Voice" },
-      { key: "music", label: "Music" },
-      { key: "support", label: "Support" },
-    ];
-
-    if (isMobileViewport) {
-      return (
-        <div style={styles.mobileWorkspaceMenuWrap} ref={mobileWorkspaceMenuRef}>
-          <button
-            type="button"
-            style={styles.mobileMenuButton}
-            onClick={() => setMobileWorkspaceMenuOpen((prev) => !prev)}
-          >
-            ☰ {items.find((item) => item.key === workspaceTab)?.label ?? "Menu"}
-          </button>
-
-          {mobileWorkspaceMenuOpen ? (
-            <div style={styles.mobileWorkspaceDropdown}>
-              {items.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  style={{
-                    ...styles.mobileWorkspaceItem,
-                    ...(workspaceTab === item.key
-                      ? styles.mobileWorkspaceItemActive
-                      : {}),
-                  }}
-                  onClick={() => {
-                    setWorkspaceTab(item.key);
-                    setMobileWorkspaceMenuOpen(false);
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      );
-    }
-
-    return null;
   };
 
   const renderPanel = () => {
@@ -1565,10 +1543,10 @@ function PageContent() {
           <section style={styles.secondaryPanel}>
             <div style={styles.secondaryTitle}>Workflow</div>
             <div style={styles.flowList}>
-              <div style={styles.flowItem}>1. Video / Voice / Music modunu seç</div>
-              <div style={styles.flowItem}>2. Prompt, görsel veya audio hazırla</div>
-              <div style={styles.flowItem}>3. İçerik üret</div>
-              <div style={styles.flowItem}>4. Sahneleri incele / sil</div>
+              <div style={styles.flowItem}>1. Tool seç</div>
+              <div style={styles.flowItem}>2. Prompt veya media ekle</div>
+              <div style={styles.flowItem}>3. Preview al</div>
+              <div style={styles.flowItem}>4. Final video üret</div>
               <div style={styles.flowItem}>5. Final çıktıyı indir</div>
             </div>
           </section>
@@ -1598,7 +1576,11 @@ function PageContent() {
             <div style={styles.rightColumn}>
               <div style={styles.previewCard}>
                 <div style={styles.previewCardHeader}>
-                  <div style={styles.previewCardTitle}>Final Preview</div>
+                  <div style={styles.previewCardTitle}>
+                    {videoGeneration.status === "done" && videoGeneration.preview
+                      ? "Preview Storyboard"
+                      : "Final Preview"}
+                  </div>
                   <div style={styles.previewCardTools}>
                     <span style={styles.previewTool}>▢</span>
                     <span style={styles.previewTool}>⌃</span>
@@ -1624,10 +1606,21 @@ function PageContent() {
                     <span style={styles.summaryLabel}>Mode:</span>
                     <span style={styles.summaryValue}>
                       {workspaceTab === "music_video"
-                        ? "Music Video"
+                        ? "Ses to Video Clip"
+                        : workspaceTab === "voice"
+                        ? "Text to Ses"
                         : workspaceTab === "music"
                         ? "Music"
                         : getVideoModeLabel(videoMode)}
+                    </span>
+                  </div>
+
+                  <div style={styles.summaryLine}>
+                    <span style={styles.summaryLabel}>Type:</span>
+                    <span style={styles.summaryValue}>
+                      {videoGeneration.status === "done" && videoGeneration.preview
+                        ? "Preview"
+                        : "Final"}
                     </span>
                   </div>
 
@@ -1643,12 +1636,17 @@ function PageContent() {
                   <div style={styles.summaryLine}>
                     <span style={styles.summaryLabel}>Duration:</span>
                     <span style={styles.summaryValue}>
-                      {videoGeneration.status === "done" && totalDuration
+                      {videoGeneration.status === "done" &&
+                      !videoGeneration.preview &&
+                      totalDuration
                         ? `${totalDuration}s`
                         : workspaceTab === "music" &&
                           musicGeneration.status === "done" &&
                           musicGeneration.durationSec
                         ? `${musicGeneration.durationSec}s`
+                        : videoGeneration.status === "done" &&
+                          videoGeneration.preview
+                        ? "Preview"
                         : "-"}
                     </span>
                   </div>
@@ -1667,7 +1665,9 @@ function PageContent() {
                   <a href={activeAudioUrl} download style={styles.downloadButton}>
                     Download Audio
                   </a>
-                ) : videoGeneration.status === "done" ? (
+                ) : videoGeneration.status === "done" &&
+                  !videoGeneration.preview &&
+                  videoGeneration.videoUrl ? (
                   <a
                     href={videoGeneration.videoUrl}
                     download
@@ -1681,7 +1681,11 @@ function PageContent() {
 
             {(workspaceTab === "video" || workspaceTab === "music_video") && (
               <div style={styles.sceneOverviewFull}>
-                <div style={styles.sceneOverviewHeader}>Scene Overview</div>
+                <div style={styles.sceneOverviewHeader}>
+                  {videoGeneration.status === "done" && videoGeneration.preview
+                    ? "Preview Overview"
+                    : "Scene Overview"}
+                </div>
 
                 {displayScenes.length === 0 ? (
                   <div style={styles.emptySceneText}>
@@ -1793,8 +1797,6 @@ function PageContent() {
               width: isMobileViewport ? "100%" : "auto",
             }}
           >
-            {renderTopMiniTabs()}
-
             <button
               type="button"
               style={{
@@ -2045,68 +2047,13 @@ const styles: Record<string, CSSProperties> = {
     padding: "0 18px",
     borderRadius: 8,
     border: "1px solid rgba(15,23,42,0.14)",
-    background:
-      "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
+    background: "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
     color: "#ffffff",
     fontWeight: 700,
     fontSize: 15,
     cursor: "pointer",
     boxShadow:
       "inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 10px rgba(15,23,42,0.08)",
-  },
-
-  mobileWorkspaceMenuWrap: {
-    position: "relative",
-    width: "100%",
-  },
-
-  mobileMenuButton: {
-    width: "100%",
-    minHeight: 42,
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid rgba(15,23,42,0.12)",
-    background:
-      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
-    color: "#4b5563",
-    fontWeight: 700,
-    cursor: "pointer",
-    textAlign: "left",
-  },
-
-  mobileWorkspaceDropdown: {
-    position: "absolute",
-    top: "calc(100% + 8px)",
-    left: 0,
-    right: 0,
-    background:
-      "linear-gradient(180deg, rgba(240,243,247,0.98) 0%, rgba(214,220,227,0.98) 100%)",
-    border: "1px solid rgba(15,23,42,0.12)",
-    borderRadius: 10,
-    boxShadow: "0 14px 28px rgba(15,23,42,0.12)",
-    padding: 8,
-    zIndex: 60,
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-  },
-
-  mobileWorkspaceItem: {
-    width: "100%",
-    padding: "12px 12px",
-    borderRadius: 8,
-    border: "1px solid transparent",
-    background: "rgba(255,255,255,0.7)",
-    color: "#4b5563",
-    fontWeight: 700,
-    cursor: "pointer",
-    textAlign: "left",
-  },
-
-  mobileWorkspaceItemActive: {
-    background:
-      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
-    border: "1px solid rgba(15,23,42,0.12)",
   },
 
   accountTopRight: {
@@ -2123,8 +2070,7 @@ const styles: Record<string, CSSProperties> = {
     height: 58,
     borderRadius: 999,
     border: "1px solid rgba(15,23,42,0.14)",
-    background:
-      "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
+    background: "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
     color: "#ffffff",
     cursor: "pointer",
     boxShadow:
@@ -2278,34 +2224,37 @@ const styles: Record<string, CSSProperties> = {
     overflow: "hidden",
   },
 
-  workspaceTabsHeader: {
+  compactToolTabs: {
     display: "flex",
-    alignItems: "flex-end",
-    gap: 4,
+    alignItems: "center",
+    gap: 6,
     padding: "10px 12px 0",
     overflowX: "auto",
+    flexWrap: "nowrap",
   },
 
-  workspaceHeaderTab: {
-    minHeight: 40,
-    padding: "0 22px",
-    borderRadius: "8px 8px 0 0",
+  compactToolTab: {
+    minHeight: 34,
+    padding: "0 12px",
+    borderRadius: 8,
     border: "1px solid rgba(15,23,42,0.12)",
-    borderBottom: "none",
     background:
       "linear-gradient(180deg, rgba(231,236,241,0.96) 0%, rgba(201,209,218,0.96) 100%)",
     color: "#4b5563",
     fontWeight: 700,
-    fontSize: 15,
+    fontSize: 12,
     cursor: "pointer",
+    whiteSpace: "nowrap",
     flexShrink: 0,
   },
 
-  workspaceHeaderTabActive: {
+  compactToolTabActive: {
     background:
-      "linear-gradient(180deg, rgba(248,250,252,0.98) 0%, rgba(222,228,235,0.98) 100%)",
-    color: "#374151",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
+      "linear-gradient(180deg, rgba(245,248,252,0.98) 0%, rgba(214,223,234,0.98) 100%)",
+    color: "#334155",
+    border: "1px solid rgba(126, 154, 196, 0.42)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.8), 0 0 0 1px rgba(146,173,214,0.10)",
   },
 
   formCardInner: {
@@ -2407,6 +2356,41 @@ const styles: Record<string, CSSProperties> = {
     flexShrink: 0,
   },
 
+  previewFinalActions: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 12,
+    marginTop: 22,
+    paddingTop: 16,
+    borderTop: "1px solid rgba(15,23,42,0.10)",
+  },
+
+  secondaryButton: {
+    minHeight: 54,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
+    fontWeight: 700,
+    fontSize: 16,
+    cursor: "pointer",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
+  },
+
+  primaryButton: {
+    minHeight: 54,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.16)",
+    background: "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
+    color: "#ffffff",
+    fontWeight: 700,
+    fontSize: 16,
+    cursor: "pointer",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 10px rgba(15,23,42,0.08)",
+  },
+
   actionRow: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -2420,9 +2404,7 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     gridTemplateColumns: "1fr",
     gap: 16,
-    marginTop: 22,
-    paddingTop: 16,
-    borderTop: "1px solid rgba(15,23,42,0.10)",
+    marginTop: 16,
   },
 
   resetButton: {
@@ -2442,8 +2424,7 @@ const styles: Record<string, CSSProperties> = {
     minHeight: 54,
     borderRadius: 8,
     border: "1px solid rgba(15,23,42,0.16)",
-    background:
-      "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
+    background: "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
     color: "#ffffff",
     fontWeight: 700,
     fontSize: 16,
@@ -2455,6 +2436,33 @@ const styles: Record<string, CSSProperties> = {
   generateDisabled: {
     opacity: 0.55,
     cursor: "not-allowed",
+  },
+
+  limitBox: {
+    marginTop: 14,
+    padding: 12,
+    borderRadius: 8,
+    background: "rgba(254,226,226,0.9)",
+    border: "1px solid rgba(239,68,68,0.16)",
+    color: "#b91c1c",
+    fontWeight: 700,
+    fontSize: 13,
+    lineHeight: 1.5,
+  },
+
+  smallNote: {
+    marginTop: 12,
+    fontSize: 13,
+    color: "#6b7280",
+    lineHeight: 1.5,
+  },
+
+  audioBox: {
+    padding: 14,
+    borderRadius: 8,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(250,251,252,0.98) 0%, rgba(235,239,243,0.98) 100%)",
   },
 
   previewCard: {
@@ -2551,6 +2559,18 @@ const styles: Record<string, CSSProperties> = {
     margin: "0 auto 16px",
   },
 
+  warningBox: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 8,
+    background: "rgba(254,249,195,0.92)",
+    border: "1px solid rgba(250,204,21,0.25)",
+    color: "#854d0e",
+    fontWeight: 700,
+    fontSize: 14,
+    width: "100%",
+  },
+
   summaryCard: {
     borderRadius: 12,
     border: "1px solid rgba(15,23,42,0.12)",
@@ -2604,8 +2624,7 @@ const styles: Record<string, CSSProperties> = {
     minHeight: 50,
     borderRadius: 8,
     border: "1px solid rgba(15,23,42,0.16)",
-    background:
-      "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
+    background: "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
     color: "#ffffff",
     textDecoration: "none",
     fontWeight: 700,
