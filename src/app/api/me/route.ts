@@ -5,6 +5,22 @@ import {
   getResolvedUserPlan,
 } from "../../../lib/user-profile-repository";
 
+function resolveEmailVerified(user: any) {
+  if (typeof user?.emailVerified === "boolean") {
+    return user.emailVerified;
+  }
+
+  if (typeof user?.email_verified === "boolean") {
+    return user.email_verified;
+  }
+
+  if (user?.emailVerifiedAt || user?.email_verified_at) {
+    return true;
+  }
+
+  return false;
+}
+
 export async function GET(req: Request) {
   try {
     const session = await auth.api.getSession({
@@ -35,6 +51,7 @@ export async function GET(req: Request) {
         id: session.user.id,
         name: session.user.name ?? null,
         email: session.user.email ?? null,
+        emailVerified: resolveEmailVerified(session.user),
         plan: planInfo.plan,
         planLabel: planInfo.planLabel,
         remainingCredits: planInfo.remainingCredits,

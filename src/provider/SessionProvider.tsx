@@ -13,6 +13,7 @@ import { authClient } from "../lib/auth-client";
 export type SessionUser = {
   name?: string | null;
   email?: string | null;
+  emailVerified?: boolean | null;
   planCode?: string | null;
   planLabel?: string | null;
   remainingCredits?: number | null;
@@ -29,6 +30,30 @@ type SessionContextValue = {
 };
 
 const SessionContext = createContext<SessionContextValue | null>(null);
+
+function resolveEmailVerified(sessionUser: any, apiUser?: any) {
+  if (typeof apiUser?.emailVerified === "boolean") {
+    return apiUser.emailVerified;
+  }
+
+  if (typeof apiUser?.email_verified === "boolean") {
+    return apiUser.email_verified;
+  }
+
+  if (typeof sessionUser?.emailVerified === "boolean") {
+    return sessionUser.emailVerified;
+  }
+
+  if (typeof sessionUser?.email_verified === "boolean") {
+    return sessionUser.email_verified;
+  }
+
+  if (sessionUser?.emailVerifiedAt || sessionUser?.email_verified_at) {
+    return true;
+  }
+
+  return null;
+}
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -51,6 +76,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setUser({
         name: sessionUser.name ?? null,
         email: sessionUser.email ?? null,
+        emailVerified: resolveEmailVerified(sessionUser),
         planCode: null,
         planLabel: null,
         remainingCredits: null,
@@ -73,7 +99,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           setUser({
             name: data.user.name ?? sessionUser.name ?? null,
             email: data.user.email ?? sessionUser.email ?? null,
-            planCode: data.user.plan ?? null,
+            emailVerified: resolveEmailVerified(sessionUser, data.user),
+            planCode: data.user.plan ?? data.user.planCode ?? null,
             planLabel: data.user.planLabel ?? null,
             remainingCredits:
               typeof data.user.remainingCredits === "number" ||

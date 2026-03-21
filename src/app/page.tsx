@@ -16,7 +16,7 @@ import { useLanguage } from "../provider/LanguageProvider";
 import { LANGUAGE_LABELS, type AppLanguage } from "../lib/i18n";
 import AppSidebar from "../components/AppSidebar";
 import AppFooter from "../components/AppFooter";
-type AppToolMode = "none" | "product_ad_maker" | "social_reel_builder" | "ai_music_studio";
+import AICopilot from "../components/AICopilot";
 
 type VideoMode =
   | "text_to_video"
@@ -477,12 +477,7 @@ function PageContent() {
 
   const [activeNav, setActiveNav] = useState<NavKey>("tool");
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>("video");
-  const [activeAppTool, setActiveAppTool] = useState<AppToolMode>("none");
-  const [productName, setProductName] = useState("");
-  const [productDescription, setProductDescription] = useState("");
-  const [productAudience, setProductAudience] = useState("");
-  const [productPlatform, setProductPlatform] = useState<"instagram" | "tiktok" | "facebook">("instagram");
-  const [productTone, setProductTone] = useState<"premium" | "modern" | "sales">("premium");
+
   const [videoMode, setVideoMode] = useState<VideoMode>("text_to_video");
   const [prompt, setPrompt] = useState(getDefaultPrompt(language));
   const [sourceUrl, setSourceUrl] = useState("");
@@ -526,19 +521,47 @@ function PageContent() {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const [reelTopic, setReelTopic] = useState("");
-const [reelAudience, setReelAudience] = useState("");
-const [reelPlatform, setReelPlatform] = useState<"instagram" | "tiktok" | "youtube_shorts">("instagram");
-const [reelTone, setReelTone] = useState<"viral" | "modern" | "cinematic">("viral");
-const [reelDurationMode, setReelDurationMode] = useState<"short" | "medium">("short");
+  const copilotPage =
+    workspaceTab === "voice"
+      ? "text-to-voice"
+      : workspaceTab === "music"
+      ? "music"
+      : workspaceTab === "music_video"
+      ? "audio-to-video"
+      : workspaceTab === "support"
+      ? "support"
+      : videoMode === "image_to_video"
+      ? "image-to-video"
+      : videoMode === "url_to_video"
+      ? "url-to-video"
+      : videoMode === "logo_to_video"
+      ? "logo-to-video"
+      : "text-to-video";
 
-const [studioSongTitle, setStudioSongTitle] = useState("");
-const [studioSongPrompt, setStudioSongPrompt] = useState("");
-const [studioSongLyrics, setStudioSongLyrics] = useState("");
-const [studioSongDuration, setStudioSongDuration] = useState<"15" | "30" | "45" | "60">("30");
-const [studioSongStyle, setStudioSongStyle] = useState<
-  "pop" | "cinematic" | "electronic" | "ambient" | "ad_jingle"
->("pop");
+  const copilotPlan = user?.planCode ?? "free";
+  const copilotUserName = user?.name || user?.email || "Kullanıcı";
+
+  const copilotLastError =
+    videoGeneration.status === "error"
+      ? videoGeneration.message
+      : musicGeneration.status === "error"
+      ? musicGeneration.message
+      : null;
+
+  const copilotUploadedImage = Boolean(uploadedImageUrl);
+
+  const copilotUploadedVideo =
+    videoGeneration.status === "done" &&
+    !videoGeneration.preview &&
+    Boolean(videoGeneration.videoUrl);
+
+  const copilotAdminMode = Boolean(isAuthenticated && user?.email);
+
+  const isEmailVerificationBlocked =
+    isAuthenticated && !isLoading && user?.emailVerified === false;
+
+  const emailVerificationMessage =
+    "Devam etmek için önce email adresinizi doğrulamanız gerekiyor.";
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -615,6 +638,101 @@ const [studioSongStyle, setStudioSongStyle] = useState<
 
     return () => {
       styleEl.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const onRetryRender = () => {
+      if (workspaceTab === "music_video") {
+        void handleGenerateMusicVideo();
+        return;
+      }
+
+      if (workspaceTab === "music") {
+        void handleGenerateMusic();
+        return;
+      }
+
+      if (workspaceTab === "video") {
+        void handleGenerateVideo(false);
+      }
+    };
+
+    const onFillPrompt = (event: Event) => {
+      const customEvent = event as CustomEvent<{ prompt?: string }>;
+      const nextPrompt = customEvent.detail?.prompt?.trim();
+      if (!nextPrompt) return;
+
+      if (workspaceTab === "music_video") {
+        setMusicVideoPrompt(nextPrompt);
+        return;
+      }
+
+      if (workspaceTab === "music") {
+        setMusicPrompt(nextPrompt);
+        return;
+      }
+
+      if (workspaceTab === "voice") {
+        setVoiceText(nextPrompt);
+        return;
+      }
+
+      setPrompt(nextPrompt);
+    };
+
+    window.addEventListener("ai-retry-render", onRetryRender);
+    window.addEventListener("ai-fill-prompt", onFillPrompt);
+
+    return () => {
+      window.removeEventListener("ai-retry-render", onRetryRender);
+      window.removeEventListener("ai-fill-prompt", onFillPrompt);
+    };
+  }, [
+    workspaceTab,
+    videoMode,
+    prompt,
+    musicPrompt,
+    musicVideoPrompt,
+    voiceText,
+    uploadedImageUrl,
+    isAuthenticated,
+    sourceUrl,
+    styleUi,
+    ratioUi,
+    musicTitle,
+    musicLyrics,
+    musicDurationSec,
+    language,
+  ]);
+
+  useEffect(() => {
+    const onOpenSupport = () => {
+      setActiveNav("tool");
+      setWorkspaceTab("support");
+    };
+
+    window.addEventListener("ai-open-support", onOpenSupport);
+
+    return () => {
+      window.removeEventListener("ai-open-support", onOpenSupport);
+    };
+  }, []);
+
+  useEffect(() => {
+    const onOpenPatchPreview = () => {
+      setActiveNav("tool");
+      setWorkspaceTab("support");
+      setSupportSubject("AI Patch Review");
+      setSupportMessage(
+        "Copilot admin diagnostics üzerinden patch önerisi üretildi. Bu öneriyi teknik inceleme için kullanıyorum."
+      );
+    };
+
+    window.addEventListener("ai-open-patch-preview", onOpenPatchPreview);
+
+    return () => {
+      window.removeEventListener("ai-open-patch-preview", onOpenPatchPreview);
     };
   }, []);
 
@@ -721,11 +839,22 @@ const [studioSongStyle, setStudioSongStyle] = useState<
     musicVideoPrompt.trim().length >= 3;
 
   const canGenerateVideo =
-    canGenerateVideoBase && isAuthenticated && !isPlanBlocked;
+    canGenerateVideoBase &&
+    isAuthenticated &&
+    !isPlanBlocked &&
+    !isEmailVerificationBlocked;
+
   const canGenerateMusic =
-    canGenerateMusicBase && isAuthenticated && !isPlanBlocked;
+    canGenerateMusicBase &&
+    isAuthenticated &&
+    !isPlanBlocked &&
+    !isEmailVerificationBlocked;
+
   const canGenerateMusicVideo =
-    canGenerateMusicVideoBase && isAuthenticated && !isPlanBlocked;
+    canGenerateMusicVideoBase &&
+    isAuthenticated &&
+    !isPlanBlocked &&
+    !isEmailVerificationBlocked;
 
   const handleLogout = async () => {
     try {
@@ -810,6 +939,14 @@ const [studioSongStyle, setStudioSongStyle] = useState<
       return;
     }
 
+    if (isEmailVerificationBlocked) {
+      setVideoGeneration({
+        status: "error",
+        message: emailVerificationMessage,
+      });
+      return;
+    }
+
     if (!preview && isPlanBlocked) {
       router.push("/billing");
       return;
@@ -856,6 +993,9 @@ const [studioSongStyle, setStudioSongStyle] = useState<
       }
 
       if (!res.ok || !data?.ok) {
+        if (data?.error === "EMAIL_VERIFICATION_REQUIRED") {
+          throw new Error(emailVerificationMessage);
+        }
         throw new Error(data?.error || "Generation failed");
       }
 
@@ -983,6 +1123,14 @@ const [studioSongStyle, setStudioSongStyle] = useState<
       return;
     }
 
+    if (isEmailVerificationBlocked) {
+      setMusicGeneration({
+        status: "error",
+        message: emailVerificationMessage,
+      });
+      return;
+    }
+
     if (isPlanBlocked) {
       router.push("/billing");
       return;
@@ -1011,6 +1159,9 @@ const [studioSongStyle, setStudioSongStyle] = useState<
       const data = await res.json();
 
       if (!res.ok || !data?.ok) {
+        if (data?.error === "EMAIL_VERIFICATION_REQUIRED") {
+          throw new Error(emailVerificationMessage);
+        }
         throw new Error(data?.error || "Music generation failed");
       }
 
@@ -1044,6 +1195,14 @@ const [studioSongStyle, setStudioSongStyle] = useState<
   const handleGenerateMusicVideo = async () => {
     if (!isAuthenticated) {
       router.push("/login");
+      return;
+    }
+
+    if (isEmailVerificationBlocked) {
+      setVideoGeneration({
+        status: "error",
+        message: emailVerificationMessage,
+      });
       return;
     }
 
@@ -1090,6 +1249,9 @@ const [studioSongStyle, setStudioSongStyle] = useState<
       const data = await res.json();
 
       if (!res.ok || !data?.ok) {
+        if (data?.error === "EMAIL_VERIFICATION_REQUIRED") {
+          throw new Error(emailVerificationMessage);
+        }
         throw new Error(data?.error || "Music video generation failed");
       }
 
@@ -1247,92 +1409,8 @@ const [studioSongStyle, setStudioSongStyle] = useState<
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
   };
-  const buildProductAdPrompt = () => {
-  const platformText =
-    productPlatform === "instagram"
-      ? "Instagram ad"
-      : productPlatform === "tiktok"
-      ? "TikTok ad"
-      : "Facebook ad";
 
-  const toneText =
-    productTone === "premium"
-      ? "premium, luxurious, high-end"
-      : productTone === "modern"
-      ? "modern, clean, trendy"
-      : "sales-focused, persuasive, conversion-driven";
-
-  return [
-    productName.trim() ? `Product: ${productName.trim()}` : "",
-    productDescription.trim()
-      ? `Description: ${productDescription.trim()}`
-      : "",
-    productAudience.trim() ? `Target audience: ${productAudience.trim()}` : "",
-    `Create a short ${platformText} video`,
-    `Tone: ${toneText}`,
-    "Focus on product appeal, benefits, premium visual presentation, and strong ad storytelling",
-    "Hook in the first scene, clear product showcase, strong final payoff",
-  ]
-    .filter(Boolean)
-    .join(". ");
- };
-  const buildSocialReelPrompt = () => {
-   const platformText =
-    reelPlatform === "instagram"
-      ? "Instagram Reel"
-      : reelPlatform === "tiktok"
-      ? "TikTok short video"
-      : "YouTube Shorts video";
-
-   const toneText =
-    reelTone === "viral"
-      ? "viral, hook-driven, scroll-stopping"
-      : reelTone === "modern"
-      ? "modern, clean, trendy"
-      : "cinematic, emotional, polished";
-
-   const durationText =
-    reelDurationMode === "short"
-      ? "very short, fast pacing, strong hook"
-      : "slightly longer, story-driven, smooth progression";
-
-   return [
-    reelTopic.trim() ? `Topic: ${reelTopic.trim()}` : "",
-    reelAudience.trim() ? `Audience: ${reelAudience.trim()}` : "",
-    `Create a vertical ${platformText}`,
-    `Tone: ${toneText}`,
-    `Pacing: ${durationText}`,
-    "Hook in the first moment",
-    "Strong visual progression",
-    "Short-form social media storytelling",
-    "Premium, engaging, attention-grabbing result",
-   ]
-    .filter(Boolean)
-    .join(". ");
-   };
-   const buildMusicStudioPrompt = () => {
-  const styleText =
-    studioSongStyle === "pop"
-      ? "modern pop song"
-      : studioSongStyle === "cinematic"
-      ? "cinematic soundtrack with vocals"
-      : studioSongStyle === "electronic"
-      ? "electronic vocal track"
-      : studioSongStyle === "ambient"
-      ? "ambient emotional song"
-      : "short catchy advertising jingle";
-
-  return [
-    studioSongPrompt.trim() ? `Song idea: ${studioSongPrompt.trim()}` : "",
-    `Style: ${styleText}`,
-    "Make it memorable, polished, and emotionally clear",
-    "Strong melody and clean vocal direction",
-    "Professional production feel",
-  ]
-    .filter(Boolean)
-    .join(". ");
-};
-   const renderCompactToolTabs = () => {
+  const renderCompactToolTabs = () => {
     const items = [
       {
         key: "text_to_video",
@@ -1399,20 +1477,6 @@ const [studioSongStyle, setStudioSongStyle] = useState<
   };
 
   const renderPreviewContent = () => {
-    if (
-  workspaceTab === "video" &&
-  (videoMode === "image_to_video" || videoMode === "logo_to_video") &&
-  uploadedImageUrl &&
-  videoGeneration.status === "idle"
-) {
-  return (
-    <img
-      src={uploadedImageUrl}
-      alt="Uploaded reference"
-      style={styles.previewImage}
-    />
-  );
-}
     if (workspaceTab === "music") {
       if (musicGeneration.status === "loading") {
         return (
@@ -1576,29 +1640,19 @@ const [studioSongStyle, setStudioSongStyle] = useState<
                   : copy.uploadImage}
               </label>
               <div style={styles.uploadRow}>
-  <label style={styles.uploadFieldLike}>
-    <span style={styles.uploadFieldText}>
-      {uploadedImageUrl ? copy.imageSelected : copy.noImageSelected}
-    </span>
-    <span style={styles.uploadFieldIcon}>☁</span>
-    <input
-      type="file"
-      accept="image/*"
-      onChange={handleImagePick}
-      style={{ display: "none" }}
-    />
-  </label>
-
-  {uploadedImageUrl ? (
-    <div style={styles.uploadPreviewThumbWrap}>
-      <img
-        src={uploadedImageUrl}
-        alt="Uploaded preview"
-        style={styles.uploadPreviewThumb}
-      />
-    </div>
-  ) : null}
-</div>
+                <label style={styles.uploadFieldLike}>
+                  <span style={styles.uploadFieldText}>
+                    {uploadedImageUrl ? copy.imageSelected : copy.noImageSelected}
+                  </span>
+                  <span style={styles.uploadFieldIcon}>☁</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImagePick}
+                    style={{ display: "none" }}
+                  />
+                </label>
+              </div>
             </div>
           ) : null}
 
@@ -1700,521 +1754,7 @@ const [studioSongStyle, setStudioSongStyle] = useState<
       </div>
     );
   };
-  const renderProductAdWorkspace = () => {
-  const canGenerateProductAd =
-    isAuthenticated &&
-    !isPlanBlocked &&
-    !uploadingImage &&
-    uploadedImageUrl.trim().length > 0 &&
-    productName.trim().length >= 2;
 
-   const handleGenerateProductAdPreview = async () => {
-    const generatedPrompt = buildProductAdPrompt();
-    setPrompt(generatedPrompt);
-    setVideoMode("image_to_video");
-    setWorkspaceTab("video");
-    await handleGenerateVideo(true);
-  }; 
-
-  const renderSocialReelWorkspace = () => {
-  const canGenerateReel =
-    isAuthenticated &&
-    !isPlanBlocked &&
-    reelTopic.trim().length >= 3;
-
-  const handleGenerateReelPreview = async () => {
-    const generatedPrompt = buildSocialReelPrompt();
-    setPrompt(generatedPrompt);
-    setVideoMode("text_to_video");
-    setRatioUi("9:16");
-    setWorkspaceTab("video");
-    await handleGenerateVideo(true);
-  };
-  const renderAiMusicStudioWorkspace = () => {
-  const canGenerateStudioMusic =
-    isAuthenticated &&
-    !isPlanBlocked &&
-    (studioSongPrompt.trim().length >= 3 || studioSongLyrics.trim().length >= 8);
-
-  const handleGenerateStudioMusic = async () => {
-    setMusicTitle(studioSongTitle);
-    setMusicPrompt(buildMusicStudioPrompt());
-    setMusicLyrics(studioSongLyrics);
-    setMusicDurationSec(studioSongDuration);
-    setWorkspaceTab("music");
-
-    try {
-      setMusicGeneration({
-        status: "loading",
-        phase: copy.createMusicTrack,
-      });
-
-      const res = await fetch("/api/generate-music", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          title: studioSongTitle,
-          prompt: buildMusicStudioPrompt(),
-          lyrics: studioSongLyrics,
-          durationSec: Number(studioSongDuration),
-          language,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data?.ok) {
-        throw new Error(data?.error || "Music generation failed");
-      }
-
-      if (!data.audioUrl) {
-        throw new Error("No audio URL returned");
-      }
-
-      setUploadedAudioUrl("");
-      setMusicGeneration({
-        status: "done",
-        audioUrl: data.audioUrl,
-        title: data.title ?? studioSongTitle ?? null,
-        durationSec:
-          typeof data.durationSec === "number"
-            ? data.durationSec
-            : Number(studioSongDuration),
-        lyrics: data.lyrics ?? studioSongLyrics ?? null,
-        saveWarning: data.saveWarning ?? null,
-      });
-
-      await refreshSession();
-    } catch (error) {
-      setMusicGeneration({
-        status: "error",
-        message:
-          error instanceof Error ? error.message : "Music generation failed",
-      });
-    }
-  };
-
-  const handleUseForMusicVideo = () => {
-    if (musicGeneration.status !== "done") return;
-
-    setMusicVideoPrompt(
-      `Create a premium music video for this song: ${
-        studioSongPrompt || musicGeneration.title || "AI generated song"
-      }`
-    );
-    setWorkspaceTab("music_video");
-    setActiveNav("tool");
-  };
-
-  return (
-    <div style={styles.workspaceCard}>
-      <div style={styles.formCardInner}>
-        <label style={styles.label}>Şarkı Başlığı</label>
-        <input
-          style={styles.selectMetal}
-          value={studioSongTitle}
-          onChange={(e) => setStudioSongTitle(e.target.value)}
-          placeholder="Örn: Midnight Motion"
-        />
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Şarkı Promptu</label>
-          <textarea
-            style={styles.heroInput}
-            value={studioSongPrompt}
-            onChange={(e) => setStudioSongPrompt(e.target.value)}
-            placeholder="Örn: Türkçe enerjik teknoloji reklam şarkısı, akılda kalıcı nakarat, modern ve premium his"
-          />
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Sözler (opsiyonel)</label>
-          <textarea
-            style={styles.promptArea}
-            value={studioSongLyrics}
-            onChange={(e) => setStudioSongLyrics(e.target.value)}
-            placeholder="İstersen sözleri kendin yaz, boş bırakırsan prompt odaklı üretim yapılır"
-          />
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Müzik Stili</label>
-          <select
-            value={studioSongStyle}
-            onChange={(e) =>
-              setStudioSongStyle(
-                e.target.value as
-                  | "pop"
-                  | "cinematic"
-                  | "electronic"
-                  | "ambient"
-                  | "ad_jingle"
-              )
-            }
-            style={styles.selectMetal}
-          >
-            <option value="pop">Pop</option>
-            <option value="cinematic">Cinematic</option>
-            <option value="electronic">Electronic</option>
-            <option value="ambient">Ambient</option>
-            <option value="ad_jingle">Ad Jingle</option>
-          </select>
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Süre</label>
-          <select
-            value={studioSongDuration}
-            onChange={(e) =>
-              setStudioSongDuration(
-                e.target.value as "15" | "30" | "45" | "60"
-              )
-            }
-            style={styles.selectMetal}
-          >
-            <option value="15">15 sec</option>
-            <option value="30">30 sec</option>
-            <option value="45">45 sec</option>
-            <option value="60">60 sec</option>
-          </select>
-        </div>
-
-        <div style={styles.previewFinalActions}>
-          {!isAuthenticated ? (
-            <button
-              type="button"
-              style={styles.primaryButton}
-              onClick={() => router.push("/login")}
-            >
-              {t.common.login}
-            </button>
-          ) : isPlanBlocked ? (
-            <button
-              type="button"
-              style={styles.primaryButton}
-              onClick={() => router.push("/billing")}
-            >
-              {copy.upgradePlan}
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                style={styles.secondaryButton}
-                onClick={handleGenerateStudioMusic}
-                disabled={!canGenerateStudioMusic}
-              >
-                Şarkı Oluştur
-              </button>
-
-              <button
-                type="button"
-                style={styles.primaryButton}
-                onClick={handleUseForMusicVideo}
-                disabled={musicGeneration.status !== "done"}
-              >
-                Videoya Dönüştür
-              </button>
-            </>
-          )}
-        </div>
-
-        {musicGeneration.status === "loading" ? (
-          <div style={styles.smallNote}>{musicGeneration.phase}</div>
-        ) : null}
-
-        {musicGeneration.status === "done" ? (
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Oluşan Şarkı</label>
-            <div style={styles.audioBox}>
-              <audio
-                controls
-                src={musicGeneration.audioUrl}
-                style={styles.audioPlayer}
-              />
-            </div>
-            {musicGeneration.lyrics ? (
-              <div style={styles.smallNote}>{musicGeneration.lyrics}</div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {musicGeneration.status === "error" ? (
-          <div style={styles.limitBox}>{musicGeneration.message}</div>
-        ) : null}
-      </div>
-    </div>
-  );
-};
-
-  const handleGenerateReelFinal = async () => {
-    const generatedPrompt = buildSocialReelPrompt();
-    setPrompt(generatedPrompt);
-    setVideoMode("text_to_video");
-    setRatioUi("9:16");
-    setWorkspaceTab("video");
-    await handleGenerateVideo(false);
-  };
-
-  return (
-    <div style={styles.workspaceCard}>
-      <div style={styles.formCardInner}>
-        <label style={styles.label}>Reel Konusu</label>
-        <textarea
-          style={styles.heroInput}
-          value={reelTopic}
-          onChange={(e) => setReelTopic(e.target.value)}
-          placeholder="Örn: Yapay zeka ile dakikalar içinde reklam videosu üret"
-        />
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Hedef Kitle</label>
-          <input
-            style={styles.selectMetal}
-            value={reelAudience}
-            onChange={(e) => setReelAudience(e.target.value)}
-            placeholder="Örn: içerik üreticileri, küçük işletmeler, startup kurucuları"
-          />
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Platform</label>
-          <select
-            value={reelPlatform}
-            onChange={(e) =>
-              setReelPlatform(
-                e.target.value as "instagram" | "tiktok" | "youtube_shorts"
-              )
-            }
-            style={styles.selectMetal}
-          >
-            <option value="instagram">Instagram Reels</option>
-            <option value="tiktok">TikTok</option>
-            <option value="youtube_shorts">YouTube Shorts</option>
-          </select>
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Ton</label>
-          <select
-            value={reelTone}
-            onChange={(e) =>
-              setReelTone(
-                e.target.value as "viral" | "modern" | "cinematic"
-              )
-            }
-            style={styles.selectMetal}
-          >
-            <option value="viral">Viral</option>
-            <option value="modern">Modern</option>
-            <option value="cinematic">Cinematic</option>
-          </select>
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Akış</label>
-          <select
-            value={reelDurationMode}
-            onChange={(e) =>
-              setReelDurationMode(e.target.value as "short" | "medium")
-            }
-            style={styles.selectMetal}
-          >
-            <option value="short">Short / Fast</option>
-            <option value="medium">Medium / Story</option>
-          </select>
-        </div>
-
-        <div style={styles.smallNote}>
-          Bu araç otomatik olarak dikey formatta (9:16) kısa sosyal video üretir.
-        </div>
-
-        <div style={styles.previewFinalActions}>
-          <button
-            type="button"
-            style={styles.secondaryButton}
-            onClick={handleGenerateReelPreview}
-            disabled={!reelTopic.trim()}
-          >
-            {copy.preview}
-          </button>
-
-          {!isAuthenticated ? (
-            <button
-              type="button"
-              style={styles.primaryButton}
-              onClick={() => router.push("/login")}
-            >
-              {t.common.login}
-            </button>
-          ) : isPlanBlocked ? (
-            <button
-              type="button"
-              style={styles.primaryButton}
-              onClick={() => router.push("/billing")}
-            >
-              {copy.upgradePlan}
-            </button>
-          ) : (
-            <button
-              type="button"
-              style={styles.primaryButton}
-              onClick={handleGenerateReelFinal}
-              disabled={!canGenerateReel}
-            >
-              Sosyal Reel Oluştur
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-  const handleGenerateProductAdFinal = async () => {
-    const generatedPrompt = buildProductAdPrompt();
-    setPrompt(generatedPrompt);
-    setVideoMode("image_to_video");
-    setWorkspaceTab("video");
-    await handleGenerateVideo(false);
-  };
-
-  return (
-    <div style={styles.workspaceCard}>
-      <div style={styles.formCardInner}>
-        <label style={styles.label}>Ürün Adı</label>
-        <input
-          style={styles.selectMetal}
-          value={productName}
-          onChange={(e) => setProductName(e.target.value)}
-          placeholder="Örn: DublesMotion AI"
-        />
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Ürün Açıklaması</label>
-          <textarea
-            style={styles.promptArea}
-            value={productDescription}
-            onChange={(e) => setProductDescription(e.target.value)}
-            placeholder="Ürünün ne yaptığını kısa ve net yaz..."
-          />
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Hedef Kitle</label>
-          <input
-            style={styles.selectMetal}
-            value={productAudience}
-            onChange={(e) => setProductAudience(e.target.value)}
-            placeholder="Örn: küçük işletmeler, içerik üreticileri, e-ticaret markaları"
-          />
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Platform</label>
-          <select
-            value={productPlatform}
-            onChange={(e) =>
-              setProductPlatform(
-                e.target.value as "instagram" | "tiktok" | "facebook"
-              )
-            }
-            style={styles.selectMetal}
-          >
-            <option value="instagram">Instagram</option>
-            <option value="tiktok">TikTok</option>
-            <option value="facebook">Facebook</option>
-          </select>
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Ton</label>
-          <select
-            value={productTone}
-            onChange={(e) =>
-              setProductTone(
-                e.target.value as "premium" | "modern" | "sales"
-              )
-            }
-            style={styles.selectMetal}
-          >
-            <option value="premium">Premium</option>
-            <option value="modern">Modern</option>
-            <option value="sales">Sales Focused</option>
-          </select>
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>{copy.uploadImage}</label>
-          <div style={styles.uploadRow}>
-            <label style={styles.uploadFieldLike}>
-              <span style={styles.uploadFieldText}>
-                {uploadedImageUrl ? copy.imageSelected : copy.noImageSelected}
-              </span>
-              <span style={styles.uploadFieldIcon}>☁</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImagePick}
-                style={{ display: "none" }}
-              />
-            </label>
-
-            {uploadedImageUrl ? (
-              <div style={styles.uploadPreviewThumbWrap}>
-                <img
-                  src={uploadedImageUrl}
-                  alt="Uploaded product"
-                  style={styles.uploadPreviewThumb}
-                />
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <div style={styles.previewFinalActions}>
-          <button
-            type="button"
-            style={styles.secondaryButton}
-            onClick={handleGenerateProductAdPreview}
-            disabled={!uploadedImageUrl || !productName.trim()}
-          >
-            {copy.preview}
-          </button>
-
-          {!isAuthenticated ? (
-            <button
-              type="button"
-              style={styles.primaryButton}
-              onClick={() => router.push("/login")}
-            >
-              {t.common.login}
-            </button>
-          ) : isPlanBlocked ? (
-            <button
-              type="button"
-              style={styles.primaryButton}
-              onClick={() => router.push("/billing")}
-            >
-              {copy.upgradePlan}
-            </button>
-          ) : (
-            <button
-              type="button"
-              style={styles.primaryButton}
-              onClick={handleGenerateProductAdFinal}
-              disabled={!canGenerateProductAd}
-            >
-              Reklam Videosu Oluştur
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
   const renderVoiceWorkspace = () => {
     return (
       <div style={styles.workspaceCard}>
@@ -2474,7 +2014,6 @@ const [studioSongStyle, setStudioSongStyle] = useState<
                   canGenerateMusicVideo ? handleGenerateMusicVideo : undefined
                 }
               >
-                
                 {videoGeneration.status === "loading"
                   ? copy.generatingVideo
                   : copy.generateVideo}
@@ -2534,62 +2073,29 @@ const [studioSongStyle, setStudioSongStyle] = useState<
 
   const renderPanel = () => {
     switch (activeNav) {
-     case "apps":
-  return (
-    <section style={styles.secondaryPanel}>
-      <div style={styles.secondaryTitle}>{copy.apps}</div>
+      case "apps":
+        return (
+          <section style={styles.secondaryPanel}>
+            <div style={styles.secondaryTitle}>{copy.apps}</div>
+            <div style={styles.appsGrid}>
+              <div style={styles.appCard}>
+                <div style={styles.appCardTitle}>{copy.productAdMaker}</div>
+                <div style={styles.appCardText}>{copy.productAdMakerText}</div>
+              </div>
+              <div style={styles.appCard}>
+                <div style={styles.appCardTitle}>{copy.socialReelBuilder}</div>
+                <div style={styles.appCardText}>
+                  {copy.socialReelBuilderText}
+                </div>
+              </div>
+              <div style={styles.appCard}>
+                <div style={styles.appCardTitle}>{copy.aiMusicStudio}</div>
+                <div style={styles.appCardText}>{copy.aiMusicStudioText}</div>
+              </div>
+            </div>
+          </section>
+        );
 
-      <div style={styles.appsGrid}>
-        <button
-          type="button"
-          style={{
-            ...styles.appCard,
-            ...(activeAppTool === "product_ad_maker" ? styles.appCardActive : {}),
-          }}
-          onClick={() => setActiveAppTool("product_ad_maker")}
-        >
-          <div style={styles.appCardTitle}>{copy.productAdMaker}</div>
-          <div style={styles.appCardText}>{copy.productAdMakerText}</div>
-        </button>
-
-        <button
-          type="button"
-          style={{
-            ...styles.appCard,
-            ...(activeAppTool === "social_reel_builder" ? styles.appCardActive : {}),
-          }}
-          onClick={() => setActiveAppTool("social_reel_builder")}
-        >
-          <div style={styles.appCardTitle}>{copy.socialReelBuilder}</div>
-          <div style={styles.appCardText}>{copy.socialReelBuilderText}</div>
-        </button>
-
-        <button
-          type="button"
-          style={{
-            ...styles.appCard,
-            ...(activeAppTool === "ai_music_studio" ? styles.appCardActive : {}),
-          }}
-          onClick={() => setActiveAppTool("ai_music_studio")}
-        >
-          <div style={styles.appCardTitle}>{copy.aiMusicStudio}</div>
-          <div style={styles.appCardText}>{copy.aiMusicStudioText}</div>
-        </button>
-      </div>
-
-      <div style={{ marginTop: 18 }}>
-        {activeAppTool === "product_ad_maker" ? (
-  renderProductAdWorkspace()
-) : activeAppTool === "social_reel_builder" ? (
-  renderVoiceWorkspace()
-) : activeAppTool === "ai_music_studio" ? (
-  renderMusicWorkspace()
-) : (
-  <div style={styles.chatBox}>Bir uygulama seçerek başlayın.</div>
-)}
-      </div>
-    </section>
-  );
       case "chat":
         return (
           <section style={styles.secondaryPanel}>
@@ -2631,7 +2137,12 @@ const [studioSongStyle, setStudioSongStyle] = useState<
                 : "minmax(360px, 1.02fr) minmax(420px, 0.82fr)",
             }}
           >
-            <div style={styles.leftColumn}>{renderWorkspaceBody()}</div>
+            <div style={styles.leftColumn}>
+              {isEmailVerificationBlocked ? (
+                <div style={styles.limitBox}>{emailVerificationMessage}</div>
+              ) : null}
+              {renderWorkspaceBody()}
+            </div>
 
             <div style={styles.rightColumn}>
               <div style={styles.previewCard}>
@@ -2993,6 +2504,17 @@ const [studioSongStyle, setStudioSongStyle] = useState<
 
         {renderPanel()}
         <AppFooter />
+
+        <AICopilot
+          page={copilotPage}
+          plan={copilotPlan}
+          userName={copilotUserName}
+          language={language}
+          lastError={copilotLastError}
+          uploadedImage={copilotUploadedImage}
+          uploadedVideo={copilotUploadedVideo}
+          adminMode={copilotAdminMode}
+        />
       </main>
     </div>
   );
@@ -3063,11 +2585,7 @@ const styles: Record<string, CSSProperties> = {
     color: "#0f172a",
     overflowX: "hidden",
   },
-  appCardActive: {
-  boxShadow:
-    "inset 0 1px 0 rgba(255,255,255,0.75), 0 0 0 2px rgba(137,170,215,0.35)",
-  border: "1px solid rgba(137,170,215,0.45)",
-},
+
   main: {
     flex: 1,
     display: "flex",
@@ -3286,6 +2804,7 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     minWidth: 0,
+    gap: 12,
   },
 
   rightColumn: {
@@ -3436,22 +2955,6 @@ const styles: Record<string, CSSProperties> = {
     color: "#6b7280",
     flexShrink: 0,
   },
-  uploadPreviewThumbWrap: {
-  width: "100%",
-  marginTop: 12,
-  borderRadius: 8,
-  overflow: "hidden",
-  border: "1px solid rgba(15,23,42,0.12)",
-  background: "#e5e7eb",
-},
-
-uploadPreviewThumb: {
-  width: "100%",
-  maxHeight: 220,
-  objectFit: "contain",
-  display: "block",
-  background: "#f3f4f6",
-},
 
   previewFinalActions: {
     display: "grid",
@@ -3862,14 +3365,12 @@ uploadPreviewThumb: {
   },
 
   appCard: {
-  padding: 18,
-  borderRadius: 8,
-  background:
-    "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
-  border: "1px solid rgba(15,23,42,0.12)",
-  cursor: "pointer",
-  textAlign: "left",
-},
+    padding: 18,
+    borderRadius: 8,
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    border: "1px solid rgba(15,23,42,0.12)",
+  },
 
   appCardTitle: {
     fontSize: 16,
