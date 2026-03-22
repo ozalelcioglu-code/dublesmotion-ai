@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   getInitialLanguage,
   persistLanguage,
@@ -8,10 +14,13 @@ import {
   type AppLanguage,
 } from "../lib/i18n";
 
+type TranslationMap = typeof translations;
+type TranslationValue = TranslationMap[keyof TranslationMap];
+
 type LanguageContextValue = {
   language: AppLanguage;
   setLanguage: (language: AppLanguage) => void;
-  t: (typeof translations)[AppLanguage];
+  t: TranslationValue;
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
@@ -30,17 +39,26 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     persistLanguage(next);
   };
 
-  const value = useMemo(
+  const safeTranslations = useMemo<TranslationValue>(() => {
+    return (
+      translations[language as keyof typeof translations] ??
+      translations.en
+    );
+  }, [language]);
+
+  const value = useMemo<LanguageContextValue>(
     () => ({
       language,
       setLanguage,
-      t: translations[language],
+      t: safeTranslations,
     }),
-    [language]
+    [language, safeTranslations]
   );
 
   return (
-    <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
+    <LanguageContext.Provider value={value}>
+      {children}
+    </LanguageContext.Provider>
   );
 }
 

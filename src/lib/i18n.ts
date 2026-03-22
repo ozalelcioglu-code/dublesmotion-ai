@@ -1,9 +1,9 @@
-export type AppLanguage = "tr" | "en" | "de";
-
+export type AppLanguage = "tr" | "en" | "de" | "ku";
 export const LANGUAGE_LABELS: Record<AppLanguage, string> = {
   tr: "Türkçe",
   en: "English",
   de: "Deutsch",
+  ku: "Kürtçe",
 };
 
 export const DEFAULT_LANGUAGE: AppLanguage = "en";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "../lib/auth-client";
 import { useSession } from "../provider/SessionProvider";
@@ -20,15 +20,17 @@ const LANGUAGE_FLAGS: Record<AppLanguage, string> = {
   tr: "🇹🇷",
   en: "🇬🇧",
   de: "🇩🇪",
+  ku: "ku-flag",
 };
 
 const LANGUAGE_LABELS: Record<AppLanguage, string> = {
   tr: "Türkçe",
   en: "English",
   de: "Deutsch",
+  ku: "Kürtçe",
 };
 
-const LANGUAGE_OPTIONS: AppLanguage[] = ["tr", "en", "de"];
+const LANGUAGE_OPTIONS: AppLanguage[] = ["tr", "en", "de", "ku"];
 
 function getSidebarText(language: string) {
   const tr = {
@@ -97,6 +99,46 @@ function getSidebarText(language: string) {
   if (language === "tr") return tr;
   if (language === "de") return de;
   return en;
+}
+
+function LanguageFlag({
+  language,
+  size = 22,
+}: {
+  language: AppLanguage;
+  size?: number;
+}) {
+  if (language === "ku") {
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          width: Math.round(size * 1.2),
+          height: Math.round(size * 0.72),
+          borderRadius: 3,
+          overflow: "hidden",
+          boxShadow: "0 0 0 1px rgba(15,23,42,0.12)",
+          flexShrink: 0,
+        }}
+      >
+        <span style={{ flex: 1, background: "#e31b23" }} />
+        <span style={{ flex: 1, background: "#fcdd09" }} />
+        <span style={{ flex: 1, background: "#007a3d" }} />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      style={{
+        fontSize: size,
+        lineHeight: 1,
+        flexShrink: 0,
+      }}
+    >
+      {LANGUAGE_FLAGS[language]}
+    </span>
+  );
 }
 
 export default function AppSidebar({
@@ -281,9 +323,9 @@ export default function AppSidebar({
           aria-haspopup="menu"
           aria-expanded={languageMenuOpen}
         >
-          <span style={styles.flag}>{LANGUAGE_FLAGS[language]}</span>
+          <LanguageFlag language={language as AppLanguage} />
           <span style={styles.languageSelectText}>
-            {LANGUAGE_LABELS[language]}
+            {LANGUAGE_LABELS[language as AppLanguage]}
           </span>
           <span style={styles.languageCaret}>{languageMenuOpen ? "⌃" : "⌄"}</span>
         </button>
@@ -303,7 +345,7 @@ export default function AppSidebar({
                     ...(selected ? styles.languageOptionActive : {}),
                   }}
                 >
-                  <span style={styles.flag}>{LANGUAGE_FLAGS[option]}</span>
+                  <LanguageFlag language={option} />
                   <span style={styles.languageOptionText}>
                     {LANGUAGE_LABELS[option]}
                   </span>
@@ -405,11 +447,12 @@ export default function AppSidebar({
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   sidebar: {
     width: 280,
     minWidth: 280,
     height: "100vh",
+    minHeight: "100vh",
     position: "sticky",
     top: 0,
     display: "flex",
@@ -420,7 +463,9 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow:
       "inset 0 1px 0 rgba(255,255,255,0.7), 4px 0 18px rgba(15,23,42,0.06)",
     zIndex: 40,
-    overflow: "hidden",
+    overflowY: "auto",
+    overflowX: "hidden",
+    paddingBottom: 20,
   },
 
   topBrandArea: {
@@ -508,6 +553,7 @@ const styles: Record<string, React.CSSProperties> = {
   userPanelWrap: {
     marginTop: "auto",
     paddingTop: 12,
+    paddingBottom: 18,
     borderTop: "1px solid rgba(15,23,42,0.12)",
     background:
       "linear-gradient(180deg, rgba(214,220,227,0.98) 0%, rgba(191,199,208,0.98) 100%)",
@@ -665,11 +711,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "0 14px",
     cursor: "pointer",
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
-  },
-
-  flag: {
-    fontSize: 22,
-    flexShrink: 0,
   },
 
   languageSelectText: {

@@ -126,44 +126,75 @@ export async function POST(req: Request) {
 
     let saveWarning: string | null = null;
 
-    if (result.videoUrl) {
+    if (result.videoUrl || result.sceneVideoUrls?.length) {
       try {
-        await sql`
-          insert into videos (
-            id,
-            user_id,
-            project_id,
-            title,
-            mode,
-            prompt,
-            model,
-            seed,
-            status,
-            video_url,
-            thumbnail_url,
-            file_size,
-            duration_sec,
-            expires_at,
-            created_at
-          )
-          values (
-            ${videoId},
-            ${session.user.id},
-            ${input.projectId ?? null},
-            ${title},
-            ${"music"},
-            ${input.prompt},
-            ${result.model},
-            ${seed},
-            ${"ready"},
-            ${result.videoUrl},
-            ${null},
-            ${0},
-            ${result.durationSec},
-            now() + interval '30 days',
-            now()
-          )
-        `;
+        await sql.begin(async (tx: any) => {
+          await tx`
+            insert into videos (
+              id,
+              user_id,
+              project_id,
+              title,
+              mode,
+              prompt,
+              model,
+              seed,
+              status,
+              video_url,
+              thumbnail_url,
+              file_size,
+              duration_sec,
+              expires_at,
+              created_at,
+              updated_at
+            )
+            values (
+              ${videoId},
+              ${session.user.id},
+              ${input.projectId ?? null},
+              ${title},
+              ${"music"},
+              ${input.prompt},
+              ${result.model},
+              ${seed},
+              ${"ready"},
+              ${result.videoUrl ?? result.sceneVideoUrls?.[0] ?? null},
+              ${null},
+              ${0},
+              ${result.durationSec},
+              now() + interval '30 days',
+              now(),
+              now()
+            )
+          `;
+
+          for (let i = 0; i < result.scenePrompts.length; i++) {
+            await tx`
+              insert into scenes (
+                id,
+                video_id,
+                order_index,
+                prompt,
+                duration_sec,
+                image_url,
+                video_url,
+                status,
+                created_at
+              )
+              values (
+                ${crypto.randomUUID()},
+                ${videoId},
+                ${i},
+                ${result.scenePrompts[i]},
+                ${result.actualClipDurationSec},
+                ${result.sceneImages?.[i] ?? null},
+                ${result.sceneVideoUrls?.[i] ?? null},
+                ${"done"},
+                now()
+              )
+            `;
+          }
+        });
       } catch (saveErr: any) {
         console.error("Music video generated but DB save failed:", saveErr);
         saveWarning =
@@ -184,8 +215,8 @@ export async function POST(req: Request) {
         provider: result.provider,
         model: result.model,
         imageUrl: result.imageUrl ?? null,
-        videoUrl: result.videoUrl,
-        videoId: result.videoUrl ? videoId : null,
+        videoUrl: result.videoUrl ?? result.sceneVideoUrls?.[0] ?? null,
+        videoId: result.videoUrl || result.sceneVideoUrls?.length ? videoId : null,
         durationSec: result.durationSec,
         sceneImages: result.sceneImages,
         scenePrompts: result.scenePrompts,

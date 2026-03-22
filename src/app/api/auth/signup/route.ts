@@ -201,7 +201,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Better Auth server-side signup
     const result = await auth.api.signUpEmail({
       body: {
         email,
@@ -221,11 +220,12 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-  ok: true,
-  user: result?.user ?? null,
-  requiresEmailVerification: true,
-  message: "Kayıt oluşturuldu. Devam etmek için email adresinizi doğrulayın.",
-});
+      ok: true,
+      user: result?.user ?? null,
+      requiresEmailVerification: true,
+      message:
+        "Kayıt başarılı. Devam etmek için email adresinizi onaylayın. Lütfen gelen kutunuzu ve spam / gereksiz klasörünü kontrol edin.",
+    });
   } catch (error: any) {
     console.error("signup route error:", error);
 

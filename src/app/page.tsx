@@ -18,6 +18,7 @@ import AppSidebar from "../components/AppSidebar";
 import AppFooter from "../components/AppFooter";
 import AICopilot from "../components/AICopilot";
 
+
 type VideoMode =
   | "text_to_video"
   | "url_to_video"
@@ -34,6 +35,8 @@ type VideoStyle =
   | "anime"
   | "pixar"
   | "cartoon";
+
+type VocalType = "ai_male" | "ai_female" | "custom";
 
 type SceneCard = {
   id: string;
@@ -166,6 +169,16 @@ type UiCopy = {
   firstGenerateMusic: string;
   previewErrorNoImage: string;
   noVideoUrl: string;
+  autoLyrics: string;
+  vocalType: string;
+  aiMale: string;
+  aiFemale: string;
+  myVoice: string;
+  uploadVoiceSample: string;
+  noVoiceSampleSelected: string;
+  voiceSampleUploaded: string;
+  voiceStudioTitle: string;
+  voiceStudioHint: string;
 };
 
 const UI_COPY: Record<AppLanguage, UiCopy> = {
@@ -262,6 +275,17 @@ const UI_COPY: Record<AppLanguage, UiCopy> = {
       "First generate music in the music section or upload an audio file.",
     previewErrorNoImage: "No preview image returned",
     noVideoUrl: "No video URL returned",
+    autoLyrics: "Auto-generate lyrics from prompt",
+    vocalType: "Vocal Type",
+    aiMale: "AI Male",
+    aiFemale: "AI Female",
+    myVoice: "My Voice",
+    uploadVoiceSample: "Upload Voice Sample",
+    noVoiceSampleSelected: "No voice sample selected.",
+    voiceSampleUploaded: "Voice sample uploaded",
+    voiceStudioTitle: "Voice Studio",
+    voiceStudioHint:
+      "Preview browser voice, or upload your own voice sample for song generation.",
   },
   tr: {
     topTitle: "Yapay zeka videoları, müzik ve seslendirmeler oluştur ve düzenle",
@@ -358,6 +382,17 @@ const UI_COPY: Record<AppLanguage, UiCopy> = {
       "Önce müzik bölümünde müzik oluştur veya bir ses dosyası yükle.",
     previewErrorNoImage: "Önizleme görseli dönmedi",
     noVideoUrl: "Video URL'si dönmedi",
+    autoLyrics: "Prompttan sözleri otomatik oluştur",
+    vocalType: "Vokal Tipi",
+    aiMale: "AI Erkek",
+    aiFemale: "AI Kadın",
+    myVoice: "Kendi Sesim",
+    uploadVoiceSample: "Ses Örneği Yükle",
+    noVoiceSampleSelected: "Ses örneği seçilmedi.",
+    voiceSampleUploaded: "Ses örneği yüklendi",
+    voiceStudioTitle: "Ses Stüdyosu",
+    voiceStudioHint:
+      "Tarayıcı sesiyle önizleme yapabilir veya şarkı üretimi için kendi ses örneğini yükleyebilirsin.",
   },
   de: {
     topTitle: "KI-Videos, Musik und Sprachaufnahmen erstellen und bearbeiten",
@@ -455,6 +490,122 @@ const UI_COPY: Record<AppLanguage, UiCopy> = {
       "Erzeuge zuerst Musik im Musikbereich oder lade eine Audiodatei hoch.",
     previewErrorNoImage: "Kein Vorschaubild zurückgegeben",
     noVideoUrl: "Keine Video-URL zurückgegeben",
+    autoLyrics: "Songtext automatisch aus Prompt erzeugen",
+    vocalType: "Vokaltyp",
+    aiMale: "KI Männlich",
+    aiFemale: "KI Weiblich",
+    myVoice: "Meine Stimme",
+    uploadVoiceSample: "Sprachprobe hochladen",
+    noVoiceSampleSelected: "Keine Sprachprobe ausgewählt.",
+    voiceSampleUploaded: "Sprachprobe hochgeladen",
+    voiceStudioTitle: "Voice Studio",
+    voiceStudioHint:
+      "Nutze die Browser-Stimme zur Vorschau oder lade deine eigene Stimme für die Song-Erstellung hoch.",
+  },
+    ku: {
+    topTitle: "Vîdyoyên AI, muzîk û dengdanan çêbike û sererast bike",
+    headerHero: "Vîdyoyên AI, muzîk û dengdanan çêbike û sererast bike",
+    upgradePlan: "Planê bilind bike",
+    finalVideo: "Vîdyoya dawî",
+    textToVideo: "Ji nivîsê bo vîdyoyê",
+    imageToVideo: "Ji wêneyê bo vîdyoyê",
+    urlToVideo: "Ji URL bo vîdyoyê",
+    textToVoice: "Ji nivîsê bo deng",
+    audioToVideo: "Ji deng bo klîba vîdyoyê",
+    logoPrompt: "Logo Prompt",
+    textPrompt: "Nivîs Prompt",
+    sourceUrl: "URL çavkanî",
+    uploadLogo: "Logo bar bike",
+    uploadImage: "Wêne bar bike",
+    noImageSelected: "Wêne nehat hilbijartin.",
+    imageSelected: "Wêne hate hilbijartin",
+    style: "Şêwaz",
+    aspectRatio: "Nisbeta ekranê",
+    preview: "Pêşdîtin",
+    generateFinalVideo: "Vîdyoya dawî çêbike",
+    reset: "Ji nû ve",
+    previewStoryboard: "Storyboard pêşdîtin",
+    finalPreview: "Pêşdîtina dawî",
+    outputSummary: "Kurteya encamê",
+    mode: "Mod",
+    type: "Cure",
+    final: "Dawî",
+    previewType: "Pêşdîtin",
+    scenes: "Dîmen",
+    duration: "Dem",
+    status: "Rewş",
+    downloadVideo: "Vîdyoyê daxîne",
+    downloadAudio: "Dengê daxîne",
+    sceneOverview: "Nêrîna giştî ya dîmenan",
+    previewOverview: "Nêrîna giştî ya pêşdîtinê",
+    noScenesYet: "Piştî çêkirinê dîmen li vir xuya dibin.",
+    select: "Hilbijêre",
+    delete: "Jê bibe",
+    supportCenter: "Navenda alîkariyê",
+    supportHint: "Daxwaza alîkariyê rasterast ji formê bişîne.",
+    voicePreview: "Pêşdîtina dengê",
+    voiceHint: "Nivîsê binivîse û bi dengê hilbijartî bibihîze.",
+    music: "Muzîk",
+    musicTitle: "Navê stranê",
+    musicPrompt: "Prompta muzîkê",
+    lyricsIdea: "Fikira gotin / vokal",
+    musicDuration: "Dem",
+    generateMusic: "Muzîk çêbike",
+    generatingMusic: "Muzîk tê çêkirin",
+    uploadExistingAudio: "Dengê heyî bar bike",
+    noAudioSelected: "Deng nehat hilbijartin.",
+    audioUploaded: "Deng hate barkirin",
+    connectedAudio: "Dengê girêdayî",
+    musicVideoPrompt: "Prompta klîba vîdyoyê ya ji dengê",
+    generateVideo: "Vîdyoyê çêbike",
+    generatingVideo: "Vîdyoyê tê çêkirin",
+    previewReady: "Pêşdîtin amade ye",
+    ready: "Amade",
+    done: "Temam",
+    error: "Xeletî",
+    loading: "Tê barkirin",
+    creatingPreview: "Storyboard pêşdîtin tê çêkirin...",
+    creatingFinal: "Daxwaza çêkirina dawî tê şandin...",
+    createMusicTrack: "Parçeya muzîkê tê çêkirin...",
+    createMusicVideo: "Klîba muzîkê ji parçeya te tê çêkirin...",
+    noMusicYet: "Hêj muzîk tune",
+    musicReadyHint: "Ji bo berdewamkirinê stranek nû çêbike an deng bar bike.",
+    uploadedAudio: "Dengê barkirî",
+    lyricsPreview: "Pêşdîtina gotinan",
+    noLyrics: "Gotin nehatin dîtin.",
+    workflow: "Rêça karê",
+    apps: "Apps",
+    live: "Zindî",
+    comingSoon: "Zû tê",
+    productAdMaker: "Amûra çêkirina reklama hilberê",
+    productAdMakerText: "Ji wêneyên hilberê vîdyoyên reklama kurt çêbike.",
+    socialReelBuilder: "Amûra çêkirina Social Reel",
+    socialReelBuilderText: "Ji bo Reels û TikTok vîdyoyên vertîkal ên lez çêbike.",
+    aiMusicStudio: "Studyo muzîka AI",
+    aiMusicStudioText: "Stran çêbike û paşê wê bike vîdyo.",
+    flow1: "1. Amûrek hilbijêre",
+    flow2: "2. Prompt an media zêde bike",
+    flow3: "3. Pêşdîtin çêbike",
+    flow4: "4. Vîdyoya dawî çêbike",
+    flow5: "5. Encama dawî daxîne",
+    songTitle: "Navê stranê",
+    uploadedAudioHint:
+      "Deng bi serkeftî hate barkirin. Tu dikarî ji bo klîba muzîkê bi kar bînî.",
+    firstGenerateMusic:
+      "Berê di beşa muzîkê de muzîk çêbike an pelek dengê bar bike.",
+    previewErrorNoImage: "Wêneya pêşdîtinê nehat vegerandin",
+    noVideoUrl: "URL ya vîdyoyê nehat vegerandin",
+    autoLyrics: "Ji promptê gotinan bixweber çêbike",
+    vocalType: "Cureyê vokalê",
+    aiMale: "AI Nêr",
+    aiFemale: "AI Mê",
+    myVoice: "Dengê min",
+    uploadVoiceSample: "Nimûneya dengê bar bike",
+    noVoiceSampleSelected: "Nimûneya dengê nehat hilbijartin.",
+    voiceSampleUploaded: "Nimûneya dengê hate barkirin",
+    voiceStudioTitle: "Studyo dengê",
+    voiceStudioHint:
+      "Ji bo pêşdîtinê dengê browserê bi kar bîne an nimûneya dengê xwe ji bo çêkirina stranê bar bike.",
   },
 };
 
@@ -508,6 +659,18 @@ function PageContent() {
   const [musicPrompt, setMusicPrompt] = useState("");
   const [musicLyrics, setMusicLyrics] = useState("");
   const [musicDurationSec, setMusicDurationSec] = useState("30");
+  const [autoLyrics, setAutoLyrics] = useState(true);
+  const [vocalType, setVocalType] = useState<VocalType>("ai_female");
+  const [voiceSampleUrl, setVoiceSampleUrl] = useState("");
+  const [uploadingVoiceSample, setUploadingVoiceSample] = useState(false);
+  const [musicOutputMode, setMusicOutputMode] = useState<"song" | "song_video">(
+    "song"
+  );
+  const [showMusicAdvanced, setShowMusicAdvanced] = useState(false);
+  const [musicLanguageUi, setMusicLanguageUi] = useState<AppLanguage>(
+    language as AppLanguage
+  );
+
   const [uploadedAudioUrl, setUploadedAudioUrl] = useState("");
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [musicVideoPrompt, setMusicVideoPrompt] = useState(
@@ -522,12 +685,8 @@ function PageContent() {
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   const copilotPage =
-    workspaceTab === "voice"
-      ? "text-to-voice"
-      : workspaceTab === "music"
+    workspaceTab === "music"
       ? "music"
-      : workspaceTab === "music_video"
-      ? "audio-to-video"
       : workspaceTab === "support"
       ? "support"
       : videoMode === "image_to_video"
@@ -575,6 +734,10 @@ function PageContent() {
       setActiveNav(tab);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    setMusicLanguageUi(language as AppLanguage);
+  }, [language]);
 
   useEffect(() => {
     const updateViewport = () => {
@@ -643,11 +806,6 @@ function PageContent() {
 
   useEffect(() => {
     const onRetryRender = () => {
-      if (workspaceTab === "music_video") {
-        void handleGenerateMusicVideo();
-        return;
-      }
-
       if (workspaceTab === "music") {
         void handleGenerateMusic();
         return;
@@ -663,18 +821,8 @@ function PageContent() {
       const nextPrompt = customEvent.detail?.prompt?.trim();
       if (!nextPrompt) return;
 
-      if (workspaceTab === "music_video") {
-        setMusicVideoPrompt(nextPrompt);
-        return;
-      }
-
       if (workspaceTab === "music") {
         setMusicPrompt(nextPrompt);
-        return;
-      }
-
-      if (workspaceTab === "voice") {
-        setVoiceText(nextPrompt);
         return;
       }
 
@@ -690,11 +838,8 @@ function PageContent() {
     };
   }, [
     workspaceTab,
-    videoMode,
     prompt,
     musicPrompt,
-    musicVideoPrompt,
-    voiceText,
     uploadedImageUrl,
     isAuthenticated,
     sourceUrl,
@@ -703,7 +848,11 @@ function PageContent() {
     musicTitle,
     musicLyrics,
     musicDurationSec,
-    language,
+    musicOutputMode,
+    musicLanguageUi,
+    autoLyrics,
+    vocalType,
+    voiceSampleUrl,
   ]);
 
   useEffect(() => {
@@ -761,7 +910,6 @@ function PageContent() {
 
   const previewAspectRatio = useMemo(() => {
     if (workspaceTab === "music") return "16 / 9";
-    if (workspaceTab === "voice") return "16 / 9";
     if (workspaceTab === "support") return "16 / 9";
 
     if (
@@ -780,26 +928,6 @@ function PageContent() {
     musicGeneration.status === "done"
       ? musicGeneration.audioUrl
       : uploadedAudioUrl || "";
-
-  const videoStatusText =
-    videoGeneration.status === "idle"
-      ? copy.ready
-      : videoGeneration.status === "loading"
-      ? copy.loading
-      : videoGeneration.status === "done"
-      ? videoGeneration.preview
-        ? copy.previewReady
-        : copy.done
-      : copy.error;
-
-  const musicStatusText =
-    musicGeneration.status === "idle"
-      ? copy.ready
-      : musicGeneration.status === "loading"
-      ? copy.loading
-      : musicGeneration.status === "done"
-      ? copy.done
-      : copy.error;
 
   const remainingCreditsText =
     user?.remainingCredits === null
@@ -831,12 +959,9 @@ function PageContent() {
 
   const canGenerateMusicBase =
     musicGeneration.status !== "loading" &&
-    (musicPrompt.trim().length >= 3 || musicLyrics.trim().length >= 8);
-
-  const canGenerateMusicVideoBase =
-    videoGeneration.status !== "loading" &&
-    activeAudioUrl.trim().length > 0 &&
-    musicVideoPrompt.trim().length >= 3;
+    !uploadingVoiceSample &&
+    musicPrompt.trim().length >= 3 &&
+    (vocalType !== "custom" || voiceSampleUrl.trim().length > 0);
 
   const canGenerateVideo =
     canGenerateVideoBase &&
@@ -849,14 +974,7 @@ function PageContent() {
     isAuthenticated &&
     !isPlanBlocked &&
     !isEmailVerificationBlocked;
-
-  const canGenerateMusicVideo =
-    canGenerateMusicVideoBase &&
-    isAuthenticated &&
-    !isPlanBlocked &&
-    !isEmailVerificationBlocked;
-
-  const handleLogout = async () => {
+      const handleLogout = async () => {
     try {
       await authClient.signOut();
     } catch (error) {
@@ -922,7 +1040,8 @@ function PageContent() {
       }
 
       setUploadedAudioUrl(data.audioUrl);
-      setWorkspaceTab("music_video");
+      setWorkspaceTab("music");
+      setMusicOutputMode("song_video");
     } catch (error) {
       setMusicGeneration({
         status: "error",
@@ -930,6 +1049,42 @@ function PageContent() {
       });
     } finally {
       setUploadingAudio(false);
+    }
+  };
+
+  const handleVoiceSamplePick = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingVoiceSample(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload-audio", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok || !data?.audioUrl) {
+        throw new Error(data?.error || "Voice sample upload failed");
+      }
+
+      setVoiceSampleUrl(data.audioUrl);
+      setWorkspaceTab("music");
+    } catch (error) {
+      setMusicGeneration({
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Voice sample upload failed",
+      });
+    } finally {
+      setUploadingVoiceSample(false);
     }
   };
 
@@ -1139,7 +1294,10 @@ function PageContent() {
     try {
       setMusicGeneration({
         status: "loading",
-        phase: copy.createMusicTrack,
+        phase:
+          musicOutputMode === "song_video"
+            ? "Şarkı hazırlanıyor..."
+            : copy.createMusicTrack,
       });
 
       const res = await fetch("/api/generate-music", {
@@ -1150,9 +1308,12 @@ function PageContent() {
         body: JSON.stringify({
           title: musicTitle,
           prompt: musicPrompt,
-          lyrics: musicLyrics,
+          lyrics: autoLyrics ? "" : musicLyrics,
           durationSec: Number(musicDurationSec || 30),
-          language,
+          language: musicLanguageUi,
+          autoLyrics,
+          vocalType,
+          voiceSampleUrl: vocalType === "custom" ? voiceSampleUrl : "",
         }),
       });
 
@@ -1169,104 +1330,78 @@ function PageContent() {
         throw new Error("No audio URL returned");
       }
 
+      const nextAudioUrl = data.audioUrl as string;
+      const nextTitle = (data.title ?? musicTitle ?? "").trim() || "Generated Song";
+      const nextLyrics = (data.lyrics ?? musicLyrics ?? "").trim();
+      const nextDuration =
+        typeof data.durationSec === "number"
+          ? data.durationSec
+          : Number(musicDurationSec || 30);
+
       setUploadedAudioUrl("");
       setMusicGeneration({
         status: "done",
-        audioUrl: data.audioUrl,
-        title: data.title ?? musicTitle ?? null,
-        durationSec:
-          typeof data.durationSec === "number"
-            ? data.durationSec
-            : Number(musicDurationSec || 30),
-        lyrics: data.lyrics ?? musicLyrics ?? null,
+        audioUrl: nextAudioUrl,
+        title: nextTitle,
+        durationSec: nextDuration,
+        lyrics: nextLyrics,
         saveWarning: data.saveWarning ?? null,
       });
 
       await refreshSession();
-    } catch (error) {
-      setMusicGeneration({
-        status: "error",
-        message:
-          error instanceof Error ? error.message : "Music generation failed",
-      });
-    }
-  };
 
-  const handleGenerateMusicVideo = async () => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
+      if (musicOutputMode === "song") {
+        return;
+      }
 
-    if (isEmailVerificationBlocked) {
-      setVideoGeneration({
-        status: "error",
-        message: emailVerificationMessage,
-      });
-      return;
-    }
-
-    if (isPlanBlocked) {
-      router.push("/billing");
-      return;
-    }
-
-    if (!activeAudioUrl) {
-      setVideoGeneration({
-        status: "error",
-        message: copy.firstGenerateMusic,
-      });
-      return;
-    }
-
-    try {
       setVideoGeneration({
         status: "loading",
         phase: copy.createMusicVideo,
       });
 
-      const res = await fetch("/api/generate-music-video", {
+      const autoVideoPrompt =
+        musicVideoPrompt.trim().length >= 3
+          ? musicVideoPrompt
+          : `Music video for "${nextTitle}", based on this song style: ${musicPrompt}. Cinematic performance, emotionally matched scenes, premium lighting, professional music video aesthetic`;
+
+      setMusicVideoPrompt(autoVideoPrompt);
+
+      const videoRes = await fetch("/api/generate-music-video", {
         method: "POST",
         headers: {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          audioUrl: activeAudioUrl,
-          prompt: musicVideoPrompt,
+          audioUrl: nextAudioUrl,
+          prompt: autoVideoPrompt,
           style: styleUi,
           ratio: ratioUi,
-          title:
-            musicTitle ||
-            (musicGeneration.status === "done" ? musicGeneration.title : "") ||
-            copy.finalVideo,
-          lyrics:
-            musicGeneration.status === "done"
-              ? musicGeneration.lyrics
-              : musicLyrics,
+          title: nextTitle,
+          lyrics: nextLyrics,
         }),
       });
 
-      const data = await res.json();
+      const videoData = await videoRes.json();
 
-      if (!res.ok || !data?.ok) {
-        if (data?.error === "EMAIL_VERIFICATION_REQUIRED") {
+      if (!videoRes.ok || !videoData?.ok) {
+        if (videoData?.error === "EMAIL_VERIFICATION_REQUIRED") {
           throw new Error(emailVerificationMessage);
         }
-        throw new Error(data?.error || "Music video generation failed");
+        throw new Error(videoData?.error || "Music video generation failed");
       }
 
-      if (!data.videoUrl) {
+      if (!videoData.videoUrl) {
         throw new Error(copy.noVideoUrl);
       }
 
-      const scenePrompts = Array.isArray(data.scenePrompts)
-        ? data.scenePrompts
+      const scenePrompts = Array.isArray(videoData.scenePrompts)
+        ? videoData.scenePrompts
         : [];
-      const sceneImages = Array.isArray(data.sceneImages)
-        ? data.sceneImages
+      const sceneImages = Array.isArray(videoData.sceneImages)
+        ? videoData.sceneImages
         : [];
-      const sceneVideoUrls = Array.isArray(data.sceneVideoUrls)
-        ? data.sceneVideoUrls
+      const sceneVideoUrls = Array.isArray(videoData.sceneVideoUrls)
+        ? videoData.sceneVideoUrls
         : [];
 
       const count = Math.max(
@@ -1277,10 +1412,12 @@ function PageContent() {
       );
 
       const actualClipDurationSec =
-        typeof data.actualClipDurationSec === "number"
-          ? data.actualClipDurationSec
+        typeof videoData.actualClipDurationSec === "number"
+          ? videoData.actualClipDurationSec
           : getFallbackSceneDuration(
-              typeof data.durationSec === "number" ? data.durationSec : undefined,
+              typeof videoData.durationSec === "number"
+                ? videoData.durationSec
+                : undefined,
               count
             );
 
@@ -1303,31 +1440,37 @@ function PageContent() {
       setVideoGeneration({
         status: "done",
         preview: false,
-        videoUrl: data.videoUrl,
-        imageUrl: data.imageUrl ?? null,
-        videoId: data.videoId ?? null,
-        durationSec:
-          data.durationSec ??
-          (musicGeneration.status === "done"
-            ? musicGeneration.durationSec ?? 30
-            : 30),
+        videoUrl: videoData.videoUrl,
+        imageUrl: videoData.imageUrl ?? null,
+        videoId: videoData.videoId ?? null,
+        durationSec: videoData.durationSec ?? nextDuration,
         actualClipDurationSec,
         sceneImages,
         scenePrompts,
         sceneVideoUrls,
-        saveWarning: data.saveWarning ?? null,
+        saveWarning: videoData.saveWarning ?? null,
       });
 
-      setWorkspaceTab("music_video");
+      setWorkspaceTab("music");
       await refreshSession();
     } catch (error) {
-      setVideoGeneration({
-        status: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Music video generation failed",
-      });
+      const message =
+        error instanceof Error ? error.message : "Music generation failed";
+
+      if (
+        message.toLowerCase().includes("video") ||
+        message.toLowerCase().includes("clip")
+      ) {
+        setVideoGeneration({
+          status: "error",
+          message,
+        });
+      } else {
+        setMusicGeneration({
+          status: "error",
+          message,
+        });
+      }
     }
   };
 
@@ -1345,6 +1488,9 @@ function PageContent() {
     setMusicPrompt("");
     setMusicLyrics("");
     setMusicDurationSec("30");
+    setAutoLyrics(true);
+    setVocalType("ai_female");
+    setVoiceSampleUrl("");
   };
 
   const handleSelectScene = (sceneId: string) => {
@@ -1440,19 +1586,19 @@ function PageContent() {
         },
       },
       {
-        key: "text_to_voice",
-        label: copy.textToVoice,
-        active: workspaceTab === "voice",
+        key: "music",
+        label: "AI Song",
+        active: workspaceTab === "music",
         onClick: () => {
-          setWorkspaceTab("voice");
+          setWorkspaceTab("music");
         },
       },
       {
-        key: "audio_to_video",
-        label: copy.audioToVideo,
-        active: workspaceTab === "music_video",
+        key: "support",
+        label: copy.supportCenter,
+        active: workspaceTab === "support",
         onClick: () => {
-          setWorkspaceTab("music_video");
+          setWorkspaceTab("support");
         },
       },
     ];
@@ -1477,48 +1623,21 @@ function PageContent() {
   };
 
   const renderPreviewContent = () => {
-    if (workspaceTab === "music") {
-      if (musicGeneration.status === "loading") {
-        return (
-          <div style={styles.centerBox}>
-            <div style={styles.spinner} />
-            <div style={styles.previewText}>{copy.generatingMusic}</div>
-            <div style={styles.previewSubtext}>{musicGeneration.phase}</div>
-          </div>
-        );
-      }
-
-      if (musicGeneration.status === "error") {
-        return (
-          <div style={styles.centerBox}>
-            <div style={styles.previewText}>{copy.error}</div>
-            <div style={styles.previewSubtext}>{musicGeneration.message}</div>
-          </div>
-        );
-      }
-
-      if (activeAudioUrl) {
-        return (
-          <div style={styles.audioPreviewCard}>
-            <div style={styles.audioPreviewTitle}>
-              {musicGeneration.status === "done"
-                ? musicGeneration.title || copy.music
-                : copy.uploadedAudio}
-            </div>
-            <div style={styles.audioPreviewSub}>
-              {musicGeneration.status === "done"
-                ? copy.musicReadyHint
-                : copy.uploadedAudioHint}
-            </div>
-            <audio controls src={activeAudioUrl} style={styles.audioPlayer} />
-          </div>
-        );
-      }
-
+    if (videoGeneration.status === "loading") {
       return (
         <div style={styles.centerBox}>
-          <div style={styles.previewText}>{copy.noMusicYet}</div>
-          <div style={styles.previewSubtext}>{copy.musicReadyHint}</div>
+          <div style={styles.spinner} />
+          <div style={styles.previewText}>{copy.loading}</div>
+          <div style={styles.previewSubtext}>{videoGeneration.phase}</div>
+        </div>
+      );
+    }
+
+    if (videoGeneration.status === "error") {
+      return (
+        <div style={styles.centerBox}>
+          <div style={styles.previewText}>{copy.error}</div>
+          <div style={styles.previewSubtext}>{videoGeneration.message}</div>
         </div>
       );
     }
@@ -1548,53 +1667,48 @@ function PageContent() {
       );
     }
 
-    if (videoGeneration.status === "done") {
-      if (videoGeneration.preview && videoGeneration.imageUrl) {
-        return (
-          <img
-            src={videoGeneration.imageUrl}
-            alt={copy.previewStoryboard}
-            style={styles.previewImage}
-          />
-        );
-      }
-
-      if (videoGeneration.videoUrl) {
-        return (
-          <video
-            src={videoGeneration.videoUrl}
-            controls
-            playsInline
-            style={styles.video}
-          />
-        );
-      }
+    if (videoGeneration.status === "done" && videoGeneration.videoUrl) {
+      return (
+        <video
+          src={videoGeneration.videoUrl}
+          controls
+          playsInline
+          style={styles.video}
+        />
+      );
     }
 
-    if (videoGeneration.status === "loading") {
+    if (musicGeneration.status === "loading") {
       return (
         <div style={styles.centerBox}>
           <div style={styles.spinner} />
-          <div style={styles.previewText}>{copy.loading}</div>
-          <div style={styles.previewSubtext}>{videoGeneration.phase}</div>
+          <div style={styles.previewText}>{copy.generatingMusic}</div>
+          <div style={styles.previewSubtext}>{musicGeneration.phase}</div>
         </div>
       );
     }
 
-    if (videoGeneration.status === "error") {
+    if (musicGeneration.status === "error") {
       return (
         <div style={styles.centerBox}>
           <div style={styles.previewText}>{copy.error}</div>
-          <div style={styles.previewSubtext}>{videoGeneration.message}</div>
+          <div style={styles.previewSubtext}>{musicGeneration.message}</div>
         </div>
       );
     }
 
-    if (workspaceTab === "voice") {
+    if (musicGeneration.status === "done" && activeAudioUrl) {
       return (
-        <div style={styles.centerBox}>
-          <div style={styles.previewText}>{copy.voicePreview}</div>
-          <div style={styles.previewSubtext}>{copy.voiceHint}</div>
+        <div style={styles.audioPreviewCard}>
+          <div style={styles.audioPreviewTitle}>
+            {musicGeneration.title || copy.music}
+          </div>
+          <div style={styles.audioPreviewSub}>
+            {musicOutputMode === "song_video"
+              ? "Şarkı üretildi. Video klip çıktısı hazır olduğunda burada gösterilecek."
+              : "Şarkın hazır. Dinleyebilir, sözlerini inceleyebilir veya indirebilirsin."}
+          </div>
+          <audio controls src={activeAudioUrl} style={styles.audioPlayer} />
         </div>
       );
     }
@@ -1604,6 +1718,18 @@ function PageContent() {
         <div style={styles.centerBox}>
           <div style={styles.previewText}>{copy.supportCenter}</div>
           <div style={styles.previewSubtext}>{copy.supportHint}</div>
+        </div>
+      );
+    }
+
+    if (workspaceTab === "music") {
+      return (
+        <div style={styles.centerBox}>
+          <div style={styles.previewText}>AI Song Studio</div>
+          <div style={styles.previewSubtext}>
+            Şarkı fikrini yaz. İstersen sadece şarkı, istersen otomatik klip ile
+            birlikte profesyonel bir sonuç oluştur.
+          </div>
         </div>
       );
     }
@@ -1699,7 +1825,12 @@ function PageContent() {
             </div>
           ) : null}
 
-          <div style={styles.previewFinalActions}>
+          <div
+            style={{
+              ...styles.previewFinalActions,
+              gridTemplateColumns: isMobileViewport ? "1fr" : "1fr 1fr",
+            }}
+          >
             <button
               type="button"
               style={styles.secondaryButton}
@@ -1736,8 +1867,7 @@ function PageContent() {
               </button>
             )}
           </div>
-
-          <div style={styles.actionRowSingle}>
+                    <div style={styles.actionRowSingle}>
             <button
               type="button"
               style={styles.resetButton}
@@ -1755,109 +1885,216 @@ function PageContent() {
     );
   };
 
-  const renderVoiceWorkspace = () => {
-    return (
-      <div style={styles.workspaceCard}>
-        {renderCompactToolTabs()}
-
-        <div style={styles.formCardInner}>
-          <label style={styles.label}>{copy.textPrompt}</label>
-          <textarea
-            style={styles.heroInput}
-            value={voiceText}
-            onChange={(e) => setVoiceText(e.target.value)}
-            placeholder={getDefaultPrompt(language)}
-          />
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>{copy.textToVoice}</label>
-            <select
-              value={voiceUri}
-              onChange={(e) => setVoiceUri(e.target.value)}
-              style={styles.selectMetal}
-            >
-              {availableVoices.length === 0 ? (
-                <option value="">{copy.loading}</option>
-              ) : (
-                availableVoices.map((voice) => (
-                  <option key={voice.voiceURI} value={voice.voiceURI}>
-                    {voice.name} — {voice.lang}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-
-          <div style={styles.actionRow}>
-            <button
-              type="button"
-              style={styles.resetButton}
-              onClick={handleStopSpeaking}
-            >
-              {copy.reset}
-            </button>
-            <button
-              type="button"
-              style={styles.primaryGenerateButton}
-              onClick={handleSpeak}
-            >
-              {copy.preview}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderMusicWorkspace = () => {
     return (
       <div style={styles.workspaceCard}>
         {renderCompactToolTabs()}
 
         <div style={styles.formCardInner}>
-          <label style={styles.label}>{copy.songTitle}</label>
-          <input
-            style={styles.selectMetal}
-            value={musicTitle}
-            onChange={(e) => setMusicTitle(e.target.value)}
-            placeholder="Midnight Neon"
+          <label style={styles.label}>Şarkı fikrini yaz</label>
+          <textarea
+            style={styles.heroInput}
+            value={musicPrompt}
+            onChange={(e) => setMusicPrompt(e.target.value)}
+            placeholder={
+              language === "tr"
+              ? "Örn: Türkçe, duygusal, modern pop tarzında, gece araba sürüşü hissi veren sinematik bir aşk şarkısı oluştur"
+              : language === "de"
+              ? "Z. B.: Erstelle einen emotionalen modernen Popsong auf Deutsch mit cinematichem Night-Drive-Gefühl"
+              : language === "ku"
+              ? "Mînak: Stranekî evîndarî ya hestyar bi Kurdî, bi hestê ajotina şevê û şêwazeke modern çêbike"
+              : "Example: Create an emotional modern pop song in English with a cinematic late-night driving feeling"
+}
           />
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>{copy.musicPrompt}</label>
-            <textarea
-              style={styles.promptArea}
-              value={musicPrompt}
-              onChange={(e) => setMusicPrompt(e.target.value)}
-              placeholder="Emotional synthwave pop, cinematic atmosphere, strong chorus..."
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>{copy.lyricsIdea}</label>
-            <textarea
-              style={styles.promptArea}
-              value={musicLyrics}
-              onChange={(e) => setMusicLyrics(e.target.value)}
-              placeholder="Write the lyrics, chorus, verses, or vocal mood here..."
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>{copy.musicDuration}</label>
+            <label style={styles.label}>Şarkı dili</label>
             <select
-              value={musicDurationSec}
-              onChange={(e) => setMusicDurationSec(e.target.value)}
+              value={musicLanguageUi}
+              onChange={(e) => setMusicLanguageUi(e.target.value as AppLanguage)}
               style={styles.selectMetal}
             >
-              <option value="15">15 sec</option>
-              <option value="30">30 sec</option>
-              <option value="45">45 sec</option>
-              <option value="60">60 sec</option>
+              <option value="tr">Türkçe</option>
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+              <option value="ku">Kürtçe</option>
             </select>
           </div>
 
-          <div style={styles.actionRow}>
+          <div
+            style={{
+              ...styles.actionRow,
+              gridTemplateColumns: isMobileViewport ? "1fr" : "1fr 1fr",
+            }}
+          >
+            <button
+              type="button"
+              style={{
+                ...styles.primaryGenerateButton,
+                ...(!canGenerateMusic ? styles.generateDisabled : {}),
+              }}
+              onClick={() => {
+                setMusicOutputMode("song");
+                if (canGenerateMusic) {
+                  void handleGenerateMusic();
+                }
+              }}
+            >
+              {musicGeneration.status === "loading" && musicOutputMode === "song"
+                ? copy.generatingMusic
+                : "AI Şarkı Oluştur"}
+            </button>
+
+            <button
+              type="button"
+              style={{
+                ...styles.primaryGenerateButton,
+                ...(!canGenerateMusic ? styles.generateDisabled : {}),
+              }}
+              onClick={() => {
+                setMusicOutputMode("song_video");
+                if (canGenerateMusic) {
+                  void handleGenerateMusic();
+                }
+              }}
+            >
+              {musicGeneration.status === "loading" &&
+              musicOutputMode === "song_video"
+                ? "Şarkı hazırlanıyor..."
+                : "AI Şarkı + Klip Oluştur"}
+            </button>
+          </div>
+
+          <div style={styles.actionRowSingle}>
+            <button
+              type="button"
+              style={styles.secondaryButton}
+              onClick={() => setShowMusicAdvanced((prev) => !prev)}
+            >
+              {showMusicAdvanced
+                ? "Gelişmiş seçenekleri gizle"
+                : "Gelişmiş seçenekler"}
+            </button>
+          </div>
+
+          {showMusicAdvanced ? (
+            <>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>{copy.songTitle}</label>
+                <input
+                  style={styles.selectMetal}
+                  value={musicTitle}
+                  onChange={(e) => setMusicTitle(e.target.value)}
+                  placeholder="Midnight Neon"
+                />
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>{copy.autoLyrics}</label>
+                <div style={styles.toggleRow}>
+                  <button
+                    type="button"
+                    onClick={() => setAutoLyrics((prev) => !prev)}
+                    style={{
+                      ...styles.toggleButton,
+                      ...(autoLyrics ? styles.toggleButtonActive : {}),
+                    }}
+                  >
+                    {autoLyrics ? "ON" : "OFF"}
+                  </button>
+                </div>
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>{copy.lyricsIdea}</label>
+                <textarea
+                  style={{
+                    ...styles.promptArea,
+                    ...(autoLyrics ? styles.disabledField : {}),
+                  }}
+                  value={musicLyrics}
+                  onChange={(e) => setMusicLyrics(e.target.value)}
+                  placeholder={
+                    autoLyrics
+                      ? copy.autoLyrics
+                      : "Sözleri kendin yazmak istiyorsan buraya gir..."
+                  }
+                  disabled={autoLyrics}
+                />
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>{copy.vocalType}</label>
+                <select
+                  value={vocalType}
+                  onChange={(e) => setVocalType(e.target.value as VocalType)}
+                  style={styles.selectMetal}
+                >
+                  <option value="ai_male">{copy.aiMale}</option>
+                  <option value="ai_female">{copy.aiFemale}</option>
+                  <option value="custom">{copy.myVoice}</option>
+                </select>
+              </div>
+
+              {vocalType === "custom" ? (
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>{copy.uploadVoiceSample}</label>
+                  <div style={styles.uploadRow}>
+                    <label style={styles.uploadFieldLike}>
+                      <span style={styles.uploadFieldText}>
+                        {voiceSampleUrl
+                          ? copy.voiceSampleUploaded
+                          : copy.noVoiceSampleSelected}
+                      </span>
+                      <span style={styles.uploadFieldIcon}>♫</span>
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={handleVoiceSamplePick}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              ) : null}
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>{copy.musicDuration}</label>
+                <select
+                  value={musicDurationSec}
+                  onChange={(e) => setMusicDurationSec(e.target.value)}
+                  style={styles.selectMetal}
+                >
+                  <option value="15">15 sec</option>
+                  <option value="30">30 sec</option>
+                  <option value="45">45 sec</option>
+                  <option value="60">60 sec</option>
+                </select>
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>{copy.uploadExistingAudio}</label>
+                <div style={styles.uploadRow}>
+                  <label style={styles.uploadFieldLike}>
+                    <span style={styles.uploadFieldText}>
+                      {uploadedAudioUrl
+                        ? copy.audioUploaded
+                        : copy.noAudioSelected}
+                    </span>
+                    <span style={styles.uploadFieldIcon}>♫</span>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleAudioPick}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                </div>
+              </div>
+            </>
+          ) : null}
+
+          <div style={styles.actionRowSingle}>
             <button
               type="button"
               style={styles.resetButton}
@@ -1865,161 +2102,15 @@ function PageContent() {
             >
               {copy.reset}
             </button>
-
-            {!isAuthenticated ? (
-              <button
-                type="button"
-                style={styles.primaryGenerateButton}
-                onClick={() => router.push("/login")}
-              >
-                {t.common.login}
-              </button>
-            ) : isPlanBlocked ? (
-              <button
-                type="button"
-                style={styles.primaryGenerateButton}
-                onClick={() => router.push("/billing")}
-              >
-                {copy.upgradePlan}
-              </button>
-            ) : (
-              <button
-                type="button"
-                style={{
-                  ...styles.primaryGenerateButton,
-                  ...(!canGenerateMusic ? styles.generateDisabled : {}),
-                }}
-                onClick={canGenerateMusic ? handleGenerateMusic : undefined}
-              >
-                {musicGeneration.status === "loading"
-                  ? copy.generatingMusic
-                  : copy.generateMusic}
-              </button>
-            )}
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>{copy.uploadExistingAudio}</label>
-            <div style={styles.uploadRow}>
-              <label style={styles.uploadFieldLike}>
-                <span style={styles.uploadFieldText}>
-                  {uploadedAudioUrl ? copy.audioUploaded : copy.noAudioSelected}
-                </span>
-                <span style={styles.uploadFieldIcon}>♫</span>
-                <input
-                  type="file"
-                  accept="audio/*"
-                  onChange={handleAudioPick}
-                  style={{ display: "none" }}
-                />
-              </label>
-            </div>
           </div>
 
           {musicGeneration.status === "done" && musicGeneration.saveWarning ? (
             <div style={styles.warningBox}>{musicGeneration.saveWarning}</div>
           ) : null}
-        </div>
-      </div>
-    );
-  };
 
-  const renderMusicVideoWorkspace = () => {
-    return (
-      <div style={styles.workspaceCard}>
-        {renderCompactToolTabs()}
-
-        <div style={styles.formCardInner}>
-          <label style={styles.label}>{copy.musicVideoPrompt}</label>
-          <textarea
-            style={styles.heroInput}
-            value={musicVideoPrompt}
-            onChange={(e) => setMusicVideoPrompt(e.target.value)}
-            placeholder="Futuristic city lights, emotional singer performance..."
-          />
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>{copy.connectedAudio}</label>
-            {activeAudioUrl ? (
-              <div style={styles.audioBox}>
-                <audio controls src={activeAudioUrl} style={styles.audioPlayer} />
-              </div>
-            ) : (
-              <div style={styles.smallNote}>{copy.firstGenerateMusic}</div>
-            )}
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>{copy.style}</label>
-            <select
-              value={styleUi}
-              onChange={(e) => setStyleUi(e.target.value as VideoStyle)}
-              style={styles.selectMetal}
-            >
-              <option value="realistic">Realistic</option>
-              <option value="cinematic">Cinematic</option>
-              <option value="3d_animation">3D Animation</option>
-              <option value="anime">Anime</option>
-              <option value="pixar">Pixar</option>
-              <option value="cartoon">Cartoon</option>
-            </select>
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>{copy.aspectRatio}</label>
-            <select
-              value={ratioUi}
-              onChange={(e) => setRatioUi(e.target.value)}
-              style={styles.selectMetal}
-            >
-              <option value="16:9">16:9</option>
-              <option value="1:1">1:1</option>
-              <option value="9:16">9:16</option>
-            </select>
-          </div>
-
-          <div style={styles.actionRow}>
-            <button
-              type="button"
-              style={styles.resetButton}
-              onClick={handleResetVideo}
-            >
-              {copy.reset}
-            </button>
-
-            {!isAuthenticated ? (
-              <button
-                type="button"
-                style={styles.primaryGenerateButton}
-                onClick={() => router.push("/login")}
-              >
-                {t.common.login}
-              </button>
-            ) : isPlanBlocked ? (
-              <button
-                type="button"
-                style={styles.primaryGenerateButton}
-                onClick={() => router.push("/billing")}
-              >
-                {copy.upgradePlan}
-              </button>
-            ) : (
-              <button
-                type="button"
-                style={{
-                  ...styles.primaryGenerateButton,
-                  ...(!canGenerateMusicVideo ? styles.generateDisabled : {}),
-                }}
-                onClick={
-                  canGenerateMusicVideo ? handleGenerateMusicVideo : undefined
-                }
-              >
-                {videoGeneration.status === "loading"
-                  ? copy.generatingVideo
-                  : copy.generateVideo}
-              </button>
-            )}
-          </div>
+          {isPlanBlocked ? (
+            <div style={styles.limitBox}>{planLimitMessage}</div>
+          ) : null}
         </div>
       </div>
     );
@@ -2064,9 +2155,7 @@ function PageContent() {
   };
 
   const renderWorkspaceBody = () => {
-    if (workspaceTab === "voice") return renderVoiceWorkspace();
     if (workspaceTab === "music") return renderMusicWorkspace();
-    if (workspaceTab === "music_video") return renderMusicVideoWorkspace();
     if (workspaceTab === "support") return renderSupportWorkspace();
     return renderVideoWorkspace();
   };
@@ -2148,8 +2237,10 @@ function PageContent() {
               <div style={styles.previewCard}>
                 <div style={styles.previewCardHeader}>
                   <div style={styles.previewCardTitle}>
-                    {videoGeneration.status === "done" && videoGeneration.preview
-                      ? copy.previewStoryboard
+                    {videoGeneration.status === "done" && videoGeneration.videoUrl
+                      ? copy.finalPreview
+                      : musicGeneration.status === "done" && activeAudioUrl
+                      ? copy.music
                       : copy.finalPreview}
                   </div>
                   <div style={styles.previewCardTools}>
@@ -2170,18 +2261,18 @@ function PageContent() {
               </div>
 
               <div style={styles.summaryCard}>
-                <div style={styles.summaryHeader}>{copy.outputSummary}</div>
+                <div style={styles.summaryHeader}>Sonuç Özeti</div>
 
                 <div style={styles.summaryList}>
                   <div style={styles.summaryLine}>
                     <span style={styles.summaryLabel}>{copy.mode}:</span>
                     <span style={styles.summaryValue}>
-                      {workspaceTab === "music_video"
-                        ? copy.audioToVideo
-                        : workspaceTab === "voice"
-                        ? copy.textToVoice
-                        : workspaceTab === "music"
-                        ? copy.music
+                      {workspaceTab === "music"
+                        ? musicOutputMode === "song_video"
+                          ? "AI Şarkı + Klip"
+                          : "AI Şarkı"
+                        : workspaceTab === "support"
+                        ? copy.supportCenter
                         : getVideoModeLabel(videoMode, copy)}
                     </span>
                   </div>
@@ -2189,16 +2280,18 @@ function PageContent() {
                   <div style={styles.summaryLine}>
                     <span style={styles.summaryLabel}>{copy.type}:</span>
                     <span style={styles.summaryValue}>
-                      {videoGeneration.status === "done" && videoGeneration.preview
-                        ? copy.previewType
-                        : copy.final}
+                      {videoGeneration.status === "done" && videoGeneration.videoUrl
+                        ? "Video"
+                        : musicGeneration.status === "done" && activeAudioUrl
+                        ? "Audio"
+                        : "-"}
                     </span>
                   </div>
 
                   <div style={styles.summaryLine}>
                     <span style={styles.summaryLabel}>{copy.scenes}:</span>
                     <span style={styles.summaryValue}>
-                      {videoGeneration.status === "done"
+                      {videoGeneration.status === "done" && displayScenes.length > 0
                         ? displayScenes.length
                         : "-"}
                     </span>
@@ -2207,17 +2300,11 @@ function PageContent() {
                   <div style={styles.summaryLine}>
                     <span style={styles.summaryLabel}>{copy.duration}:</span>
                     <span style={styles.summaryValue}>
-                      {videoGeneration.status === "done" &&
-                      !videoGeneration.preview &&
-                      totalDuration
+                      {videoGeneration.status === "done" && totalDuration
                         ? `${totalDuration}s`
-                        : workspaceTab === "music" &&
-                          musicGeneration.status === "done" &&
+                        : musicGeneration.status === "done" &&
                           musicGeneration.durationSec
                         ? `${musicGeneration.durationSec}s`
-                        : videoGeneration.status === "done" &&
-                          videoGeneration.preview
-                        ? copy.previewType
                         : "-"}
                     </span>
                   </div>
@@ -2225,20 +2312,25 @@ function PageContent() {
                   <div style={styles.summaryLine}>
                     <span style={styles.summaryLabel}>{copy.status}:</span>
                     <span style={styles.summaryValue}>
-                      {workspaceTab === "music"
-                        ? musicStatusText
-                        : videoStatusText}
+                      {videoGeneration.status === "loading"
+                        ? "Klip hazırlanıyor"
+                        : videoGeneration.status === "done" &&
+                          videoGeneration.videoUrl
+                        ? "Klip hazır"
+                        : musicGeneration.status === "loading"
+                        ? "Şarkı hazırlanıyor"
+                        : musicGeneration.status === "done" && activeAudioUrl
+                        ? "Şarkı hazır"
+                        : videoGeneration.status === "error"
+                        ? copy.error
+                        : musicGeneration.status === "error"
+                        ? copy.error
+                        : copy.ready}
                     </span>
                   </div>
                 </div>
 
-                {workspaceTab === "music" && activeAudioUrl ? (
-                  <a href={activeAudioUrl} download style={styles.downloadButton}>
-                    {copy.downloadAudio}
-                  </a>
-                ) : videoGeneration.status === "done" &&
-                  !videoGeneration.preview &&
-                  videoGeneration.videoUrl ? (
+                {videoGeneration.status === "done" && videoGeneration.videoUrl ? (
                   <a
                     href={videoGeneration.videoUrl}
                     download
@@ -2246,97 +2338,92 @@ function PageContent() {
                   >
                     {copy.downloadVideo}
                   </a>
+                ) : musicGeneration.status === "done" && activeAudioUrl ? (
+                  <a href={activeAudioUrl} download style={styles.downloadButton}>
+                    {copy.downloadAudio}
+                  </a>
                 ) : null}
               </div>
             </div>
 
-            {(workspaceTab === "video" || workspaceTab === "music_video") && (
+            {videoGeneration.status === "done" &&
+            videoGeneration.videoUrl &&
+            displayScenes.length > 0 ? (
               <div style={styles.sceneOverviewFull}>
-                <div style={styles.sceneOverviewHeader}>
-                  {videoGeneration.status === "done" && videoGeneration.preview
-                    ? copy.previewOverview
-                    : copy.sceneOverview}
-                </div>
+                <div style={styles.sceneOverviewHeader}>{copy.sceneOverview}</div>
 
-                {displayScenes.length === 0 ? (
-                  <div style={styles.emptySceneText}>{copy.noScenesYet}</div>
-                ) : (
-                  <div
-                    style={{
-                      ...styles.sceneGrid,
-                      gridTemplateColumns: isMobileViewport
-                        ? "1fr"
-                        : "repeat(3, minmax(0, 1fr))",
-                    }}
-                  >
-                    {displayScenes.map((scene) => {
-                      const isSelected =
-                        previewTarget !== "final" &&
-                        selectedSceneId === scene.id;
+                <div
+                  style={{
+                    ...styles.sceneGrid,
+                    gridTemplateColumns: isMobileViewport
+                      ? "1fr"
+                      : "repeat(3, minmax(0, 1fr))",
+                  }}
+                >
+                  {displayScenes.map((scene) => {
+                    const isSelected =
+                      previewTarget !== "final" && selectedSceneId === scene.id;
 
-                      return (
-                        <div
-                          key={scene.id}
-                          style={{
-                            ...styles.sceneOverviewCard,
-                            ...(isSelected ? styles.sceneOverviewCardActive : {}),
-                          }}
-                        >
-                          <div style={styles.sceneOverviewThumbWrap}>
-                            {scene.videoUrl ? (
-                              <video
-                                src={scene.videoUrl}
-                                muted
-                                playsInline
-                                controls
-                                style={styles.sceneOverviewThumb}
-                              />
-                            ) : scene.imageUrl ? (
-                              <img
-                                src={scene.imageUrl}
-                                alt={scene.title}
-                                style={styles.sceneOverviewThumb}
-                              />
-                            ) : (
-                              <div style={styles.sceneOverviewThumbPlaceholder}>
-                                {scene.title}
-                              </div>
-                            )}
-                          </div>
-
-                          <div style={styles.sceneOverviewTitle}>
-                            {scene.title}
-                          </div>
-
-                          <div style={styles.sceneOverviewActions}>
-                            <button
-                              type="button"
-                              style={styles.sceneSelectButton}
-                              onClick={() => handleSelectScene(scene.id)}
-                            >
-                              {copy.select}
-                            </button>
-                            <button
-                              type="button"
-                              style={styles.sceneDeleteButton}
-                              onClick={() => handleDeleteScene(scene.id)}
-                            >
-                              {copy.delete}
-                            </button>
-                          </div>
+                    return (
+                      <div
+                        key={scene.id}
+                        style={{
+                          ...styles.sceneOverviewCard,
+                          ...(isSelected ? styles.sceneOverviewCardActive : {}),
+                        }}
+                      >
+                        <div style={styles.sceneOverviewThumbWrap}>
+                          {scene.videoUrl ? (
+                            <video
+                              src={scene.videoUrl}
+                              muted
+                              playsInline
+                              controls
+                              style={styles.sceneOverviewThumb}
+                            />
+                          ) : scene.imageUrl ? (
+                            <img
+                              src={scene.imageUrl}
+                              alt={scene.title}
+                              style={styles.sceneOverviewThumb}
+                            />
+                          ) : (
+                            <div style={styles.sceneOverviewThumbPlaceholder}>
+                              {scene.title}
+                            </div>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
 
-            {workspaceTab === "music" && musicGeneration.status === "done" ? (
-              <div style={styles.sceneOverviewFull}>
-                <div style={styles.sceneOverviewHeader}>
-                  {copy.lyricsPreview}
+                        <div style={styles.sceneOverviewTitle}>{scene.title}</div>
+
+                        <div style={styles.sceneOverviewActions}>
+                          <button
+                            type="button"
+                            style={styles.sceneSelectButton}
+                            onClick={() => handleSelectScene(scene.id)}
+                          >
+                            {copy.select}
+                          </button>
+                          <button
+                            type="button"
+                            style={styles.sceneDeleteButton}
+                            onClick={() => handleDeleteScene(scene.id)}
+                          >
+                            {copy.delete}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
+              </div>
+            ) : null}
+
+            {workspaceTab === "music" &&
+            musicGeneration.status === "done" &&
+            Boolean(musicGeneration.lyrics?.trim()) ? (
+              <div style={styles.sceneOverviewFull}>
+                <div style={styles.sceneOverviewHeader}>{copy.lyricsPreview}</div>
                 <div style={styles.lyricsBox}>
                   {musicGeneration.lyrics || copy.noLyrics}
                 </div>
@@ -2831,6 +2918,7 @@ const styles: Record<string, CSSProperties> = {
     padding: "10px 12px 0",
     overflowX: "auto",
     flexWrap: "nowrap",
+    scrollbarWidth: "none",
   },
 
   compactToolTab: {
@@ -2880,7 +2968,7 @@ const styles: Record<string, CSSProperties> = {
 
   heroInput: {
     width: "100%",
-    minHeight: 62,
+    minHeight: 120,
     borderRadius: 8,
     border: "1px solid rgba(15,23,42,0.14)",
     padding: "14px 16px",
@@ -2903,7 +2991,7 @@ const styles: Record<string, CSSProperties> = {
       "linear-gradient(180deg, rgba(250,251,252,0.98) 0%, rgba(235,239,243,0.98) 100%)",
     color: "#374151",
     resize: "vertical",
-    fontSize: 15,
+    fontSize: 16,
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
     minWidth: 0,
   },
@@ -3073,6 +3161,7 @@ const styles: Record<string, CSSProperties> = {
     boxShadow:
       "inset 0 1px 0 rgba(255,255,255,0.75), 0 5px 16px rgba(15,23,42,0.05)",
     padding: 14,
+    maxWidth: "100%",
   },
 
   previewCardHeader: {
@@ -3084,7 +3173,7 @@ const styles: Record<string, CSSProperties> = {
   },
 
   previewCardTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 800,
     color: "#4b5563",
   },
@@ -3187,7 +3276,7 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "center",
     padding: "0 18px",
     borderBottom: "1px solid rgba(15,23,42,0.10)",
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 800,
     color: "#4b5563",
   },
@@ -3443,5 +3532,36 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 14,
     lineHeight: 1.7,
     color: "#4b5563",
+  },
+
+  toggleRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  toggleButton: {
+    minHeight: 40,
+    minWidth: 84,
+    borderRadius: 999,
+    border: "1px solid rgba(15,23,42,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(244,246,249,0.98) 0%, rgba(211,217,225,0.98) 100%)",
+    color: "#374151",
+    fontWeight: 800,
+    cursor: "pointer",
+    padding: "0 16px",
+  },
+
+  toggleButtonActive: {
+    background: "linear-gradient(180deg, #7a818a 0%, #5f6670 100%)",
+    color: "#ffffff",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 10px rgba(15,23,42,0.08)",
+  },
+
+  disabledField: {
+    opacity: 0.6,
+    cursor: "not-allowed",
   },
 };

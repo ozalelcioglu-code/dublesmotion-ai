@@ -323,7 +323,7 @@ function pickFirstUrl(output: unknown): string {
 function buildMusicVideoInput(params: {
   prompt: string;
   negativePrompt: string;
-  durationSec: number;
+  clipDurationSec: number;
   ratio?: string;
   audioUrl: string;
 }) {
@@ -331,9 +331,30 @@ function buildMusicVideoInput(params: {
     prompt: params.prompt,
     negative_prompt: params.negativePrompt,
     aspect_ratio: ratioValue(params.ratio),
-    duration: getClipDuration(params.durationSec),
+    duration: params.clipDurationSec,
     audio: params.audioUrl,
   };
+}
+
+async function generateMusicVideoClip(params: {
+  audioUrl: string;
+  scenePrompt: string;
+  clipDurationSec: number;
+  ratio?: "1:1" | "16:9" | "9:16";
+}) {
+  const prediction = await createPrediction(
+    MUSIC_VIDEO_MODEL,
+    buildMusicVideoInput({
+      prompt: params.scenePrompt,
+      negativePrompt: buildNegativePrompt(),
+      clipDurationSec: params.clipDurationSec,
+      ratio: params.ratio,
+      audioUrl: params.audioUrl,
+    })
+  );
+
+  const finished = await waitForPrediction(prediction.id);
+  return pickFirstUrl(finished.output);
 }
 
 export async function generateMusicVideo(
@@ -351,35 +372,37 @@ export async function generateMusicVideo(
     durationSec: input.durationSec,
   });
 
-  const finalPrompt = scenePrompts.join(
-    " Then transition smoothly to the next scene while preserving continuity. "
-  );
+  const sceneCount = scenePrompts.length;
+  const actualClipDurationSec = getClipDuration(input.durationSec);
 
-  const prediction = await createPrediction(
-    MUSIC_VIDEO_MODEL,
-    buildMusicVideoInput({
-      prompt: finalPrompt,
-      negativePrompt: buildNegativePrompt(),
-      durationSec: input.durationSec,
-      ratio: input.ratio,
+  const sceneVideoUrls: string[] = [];
+
+  for (const scenePrompt of scenePrompts) {
+    const sceneVideoUrl = await generateMusicVideoClip({
       audioUrl: input.audioUrl,
-    })
-  );
+      scenePrompt,
+      clipDurationSec: actualClipDurationSec,
+      ratio: input.ratio,
+    });
 
-  const finished = await waitForPrediction(prediction.id);
-  const videoUrl = pickFirstUrl(finished.output);
-  const clipDuration = getClipDuration(input.durationSec);
+    sceneVideoUrls.push(sceneVideoUrl);
+  }
+
+  const primaryVideoUrl = sceneVideoUrls[0];
+  if (!primaryVideoUrl) {
+    throw new Error("No video URL returned for generated music video scenes.");
+  }
 
   return {
     mode: "music_video",
     provider: "replicate",
     model: MUSIC_VIDEO_MODEL,
-    videoUrl,
+    videoUrl: primaryVideoUrl,
     imageUrl: null,
     durationSec: input.durationSec,
     sceneImages: [],
     scenePrompts,
-    sceneVideoUrls: scenePrompts.map(() => videoUrl),
-    actualClipDurationSec: clipDuration,
+    sceneVideoUrls,
+    actualClipDurationSec,
   };
 }

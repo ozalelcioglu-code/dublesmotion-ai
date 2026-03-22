@@ -11,55 +11,67 @@ export default function AppFooter() {
             <div style={styles.companyName}>DUBLE-S TECHNOLOGY</div>
             <div style={styles.platformName}>Dublesmotion AI</div>
             <div style={styles.description}>
-              Advanced AI platform for video, voice, music, and creative media generation.
+              Advanced AI platform for video, voice, music, and creative media
+              generation.
+            </div>
+            <div style={styles.companyMeta}>
+              <div>LangStrasse 12053 Berlin</div>
+              <div>Authorized Representative: Duble-S Technology</div>
+              
             </div>
           </div>
 
           <div style={styles.linkGroup}>
             <div style={styles.groupTitle}>Platform</div>
-            <a href="#" style={styles.link}>
+            <a href="/about" style={styles.link}>
               About
             </a>
-            <a href="#" style={styles.link}>
+            <a href="/pricing" style={styles.link}>
               Pricing
             </a>
-            <a href="#" style={styles.link}>
+            <a href="/faqs" style={styles.link}>
               FAQs
             </a>
-            <a href="#" style={styles.link}>
-              Blog
+            <a href="/contact" style={styles.link}>
+              Contact
             </a>
           </div>
 
           <div style={styles.linkGroup}>
             <div style={styles.groupTitle}>Legal</div>
-            <a href="#" style={styles.link}>
+            <a href="/impressum" style={styles.link}>
+              Impressum
+            </a>
+            <a href="/privacy-policy" style={styles.link}>
               Privacy Policy
             </a>
-            <a href="#" style={styles.link}>
+            <a href="/terms-of-service" style={styles.link}>
               Terms of Service
             </a>
-            <a href="#" style={styles.link}>
-              Contact
+            <a href="/refund-policy" style={styles.link}>
+              Refund Policy
+            </a>
+            <a href="/cookie-policy" style={styles.link}>
+              Cookie Policy
             </a>
           </div>
 
           <div style={styles.contactBlock}>
             <div style={styles.groupTitle}>Contact</div>
-            <div style={styles.contactText}>support@dublesmotion.com</div>
             <div style={styles.contactText}>info@dublestechnology.com</div>
+            
 
             <div style={styles.socials}>
-              <a href="#" style={styles.social}>
+              <a href="#" style={styles.social} aria-label="Facebook">
                 f
               </a>
-              <a href="#" style={styles.social}>
+              <a href="#" style={styles.social} aria-label="X">
                 𝕏
               </a>
-              <a href="#" style={styles.social}>
+              <a href="#" style={styles.social} aria-label="YouTube">
                 ▶
               </a>
-              <a href="#" style={styles.social}>
+              <a href="#" style={styles.social} aria-label="LinkedIn">
                 in
               </a>
             </div>
@@ -68,7 +80,8 @@ export default function AppFooter() {
 
         <div style={styles.bottomRow}>
           <div style={styles.bottomLeft}>
-            © {new Date().getFullYear()} Duble-S Technology. All rights reserved.
+            © {new Date().getFullYear()} Duble-S Technology. All rights
+            reserved.
           </div>
           <div style={styles.bottomRight}>
             Dublesmotion AI is a platform product by Duble-S Technology.
@@ -100,7 +113,8 @@ const styles: Record<string, CSSProperties> = {
 
   topRow: {
     display: "grid",
-    gridTemplateColumns: "minmax(260px, 1.5fr) repeat(2, minmax(140px, 0.8fr)) minmax(220px, 1fr)",
+    gridTemplateColumns:
+      "minmax(280px, 1.6fr) minmax(160px, 0.9fr) minmax(180px, 1fr) minmax(240px, 1fr)",
     gap: 24,
     alignItems: "start",
   },
@@ -131,6 +145,13 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.6,
     color: "#64748b",
     maxWidth: 420,
+  },
+
+  companyMeta: {
+    marginTop: 6,
+    fontSize: 12,
+    lineHeight: 1.7,
+    color: "#475569",
   },
 
   linkGroup: {

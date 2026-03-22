@@ -4,22 +4,7 @@ import {
   ensureUserProfile,
   getResolvedUserPlan,
 } from "../../../lib/user-profile-repository";
-
-function resolveEmailVerified(user: any) {
-  if (typeof user?.emailVerified === "boolean") {
-    return user.emailVerified;
-  }
-
-  if (typeof user?.email_verified === "boolean") {
-    return user.email_verified;
-  }
-
-  if (user?.emailVerifiedAt || user?.email_verified_at) {
-    return true;
-  }
-
-  return false;
-}
+import { resolveEffectiveEmailVerified } from "../../../lib/email-verification";
 
 export async function GET(req: Request) {
   try {
@@ -51,7 +36,7 @@ export async function GET(req: Request) {
         id: session.user.id,
         name: session.user.name ?? null,
         email: session.user.email ?? null,
-        emailVerified: resolveEmailVerified(session.user),
+        emailVerified: resolveEffectiveEmailVerified(session.user),
         plan: planInfo.plan,
         planLabel: planInfo.planLabel,
         remainingCredits: planInfo.remainingCredits,

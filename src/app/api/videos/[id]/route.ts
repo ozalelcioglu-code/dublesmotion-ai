@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { deleteVideoById } from "../../../../lib/video-repository";
-
+import { NextRequest } from "next/server";
+import { createVideoPipeline } from "@/lib/video/createVideoPipeline";
 type RouteContext = {
   params: Promise<{
     id: string;
@@ -54,6 +55,38 @@ export async function DELETE(req: Request, context: RouteContext) {
       {
         ok: false,
         error: err?.message ?? "Delete failed",
+      },
+      { status: 500 }
+    );
+  }
+}
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { prompt, userId, userPlan } = body;
+
+    if (!prompt || !userId || !userPlan) {
+      return NextResponse.json(
+        { error: "Eksik veri gönderildi." },
+        { status: 400 }
+      );
+    }
+
+    const video = await createVideoPipeline({
+      prompt,
+      userId,
+      userPlan,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      video,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: error instanceof Error ? error.message : "Bilinmeyen hata",
       },
       { status: 500 }
     );
