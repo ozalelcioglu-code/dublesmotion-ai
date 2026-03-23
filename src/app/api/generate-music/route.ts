@@ -245,10 +245,12 @@ async function callSelfHostedMusicProvider(args: {
   vocalType: VocalType;
   voiceSampleUrl: string;
 }): Promise<SelfHostedMusicResponse> {
-  const providerUrl = process.env.MUSIC_INFERENCE_URL;
+  const providerBaseUrl = (process.env.MUSIC_INFERENCE_URL || "")
+    .trim()
+    .replace(/\/+$/, "");
   const providerToken = process.env.MUSIC_INFERENCE_TOKEN;
 
-  if (!providerUrl) {
+  if (!providerBaseUrl) {
     throw new Error("MUSIC_INFERENCE_URL is not configured.");
   }
 
@@ -260,7 +262,9 @@ async function callSelfHostedMusicProvider(args: {
     };
   }
 
-  const res = await fetch(providerUrl, {
+  const endpoint = `${providerBaseUrl}/generate-song`;
+
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: {
       "content-type": "application/json",
