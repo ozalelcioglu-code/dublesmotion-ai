@@ -297,9 +297,12 @@ async function callSelfHostedMusicProvider(args: {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: req.headers,
-    });
+   const session = await auth.api.getSession({
+  headers: new Headers({
+    cookie: req.headers.get("cookie") ?? "",
+    authorization: req.headers.get("authorization") ?? "",
+  }),
+});
 
     if (!session?.user?.id || !session?.user?.email) {
       return NextResponse.json(
