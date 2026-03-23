@@ -283,12 +283,25 @@ async function callSelfHostedMusicProvider(args: {
     }),
   });
 
-  const data = (await res.json().catch(() => null)) as SelfHostedMusicResponse | null;
+  const rawText = await res.text();
+let data: SelfHostedMusicResponse | null = null;
 
-  if (!res.ok) {
-    throw new Error(data?.error || "Self-hosted music inference request failed");
-  }
+try {
+  data = rawText ? (JSON.parse(rawText) as SelfHostedMusicResponse) : null;
+} catch {
+  data = null;
+}
+console.log("SELF HOSTED ENDPOINT:", endpoint);
+console.log("SELF HOSTED TOKEN EXISTS:", Boolean(providerToken));
+console.log("SELF HOSTED STATUS:", res.status);
+console.log("SELF HOSTED BODY:", rawText);
 
+if (!res.ok) {
+  throw new Error(
+    data?.error ||
+      `Self-hosted music inference request failed (${res.status}): ${rawText || "empty response"}`
+  );
+}
   if (!data?.ok || !data.audioUrl) {
     throw new Error(data?.error || "Self-hosted music inference did not return audioUrl");
   }
