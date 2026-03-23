@@ -66,12 +66,13 @@ async function generateLyricsFromProvider(
   const providerToken = process.env.LYRICS_PROVIDER_TOKEN;
 
   if (!providerUrl) return null;
-
+console.log("TOKEN RAW:", providerToken);
+console.log("TOKEN CLEAN:", String(providerToken).trim());
   const res = await fetch(providerUrl, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      ...(providerToken ? { authorization: `Bearer ${providerToken}` } : {}),
+      ...(providerToken ? { authorization: `Bearer ${String(providerToken).trim()}` } : {}),
     },
     body: JSON.stringify({
       prompt,
