@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { sql } from "@/lib/db";
+import { PLAN_CONFIG, type PlanCode } from "@/lib/plans";
 import { ensureUserProfile } from "@/lib/user-profile-repository";
 
 export const runtime = "nodejs";
@@ -15,16 +16,13 @@ if (!stripeSecretKey) {
 
 const stripe = new Stripe(stripeSecretKey);
 
-const PRICE_MAP = {
-  starter_monthly: process.env.STRIPE_PRICE_STARTER_MONTHLY || "",
-  starter_yearly: process.env.STRIPE_PRICE_STARTER_YEARLY || "",
-  pro_monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || "",
-  pro_yearly: process.env.STRIPE_PRICE_PRO_YEARLY || "",
-  agency_monthly: process.env.STRIPE_PRICE_AGENCY_MONTHLY || "",
-  agency_yearly: process.env.STRIPE_PRICE_AGENCY_YEARLY || "",
-} as const;
-
-type CheckoutPlan = keyof typeof PRICE_MAP;
+type CheckoutPlan =
+  | "starter_monthly"
+  | "starter_yearly"
+  | "pro_monthly"
+  | "pro_yearly"
+  | "agency_monthly"
+  | "agency_yearly";
 
 type AppSession = {
   userId: string;
@@ -91,6 +89,18 @@ function isCheckoutPlan(value: unknown): value is CheckoutPlan {
   );
 }
 
+function getPlanCheckoutPrice(plan: CheckoutPlan) {
+  const [planCode, cycle] = plan.split("_") as [PlanCode, "monthly" | "yearly"];
+  const planConfig = PLAN_CONFIG[planCode];
+  const amount = cycle === "monthly" ? planConfig.priceMonthly : planConfig.priceYearly;
+
+  return {
+    planConfig,
+    interval: cycle === "monthly" ? "month" : "year",
+    unitAmount: Math.round(amount * 100),
+  } as const;
+}
+
 export async function POST(req: Request) {
   try {
     const appSession = await getAppSessionFromCookie();
@@ -124,17 +134,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const priceId = PRICE_MAP[plan];
-
-    if (!priceId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Stripe price ID eksik.",
-        },
-        { status: 400 }
-      );
-    }
+    const checkoutPrice = getPlanCheckoutPrice(plan);
 
     const existingRows = (await sql`
       select
@@ -194,7 +194,19 @@ export async function POST(req: Request) {
       customer: stripeCustomerId,
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: "usd",
+            unit_amount: checkoutPrice.unitAmount,
+            recurring: {
+              interval: checkoutPrice.interval,
+            },
+            product_data: {
+              name: `Duble-S Motion AI ${checkoutPrice.planConfig.label}`,
+              metadata: {
+                planCode: checkoutPrice.planConfig.code,
+              },
+            },
+          },
           quantity: 1,
         },
       ],

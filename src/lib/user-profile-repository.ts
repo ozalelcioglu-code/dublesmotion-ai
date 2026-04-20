@@ -29,12 +29,16 @@ function resolvePlanLabel(planCode: PlanCode): string {
   return PLAN_CONFIG[planCode].label;
 }
 
+export function getNormalizedPlanCode(value?: string | null): PlanCode {
+  return normalizePlanCode(value);
+}
+
 export async function ensureUserProfile(input: {
   userId: string;
   email: string;
   fullName?: string | null;
 }) {
-  const existingByUserId: any[] = await sql`
+  const existingByUserId = (await sql`
     select
       user_id,
       email,
@@ -53,10 +57,10 @@ export async function ensureUserProfile(input: {
     from user_profiles
     where user_id = ${input.userId}::text
     limit 1
-  `;
+  `) as UserProfileRow[];
 
   if (existingByUserId[0]) {
-    const updatedRows: any[] = await sql`
+    const updatedRows = (await sql`
       update user_profiles
       set
         email = ${input.email},
@@ -78,12 +82,12 @@ export async function ensureUserProfile(input: {
         monthly_video_reset_at,
         created_at,
         updated_at
-    `;
+    `) as UserProfileRow[];
 
     return (updatedRows[0] ?? null) as UserProfileRow | null;
   }
 
-  const existingByEmail: any[] = await sql`
+  const existingByEmail = (await sql`
     select
       user_id,
       email,
@@ -102,10 +106,10 @@ export async function ensureUserProfile(input: {
     from user_profiles
     where email = ${input.email}
     limit 1
-  `;
+  `) as UserProfileRow[];
 
   if (existingByEmail[0]) {
-    const updatedRows: any[] = await sql`
+    const updatedRows = (await sql`
       update user_profiles
       set
         user_id = ${input.userId}::text,
@@ -127,12 +131,12 @@ export async function ensureUserProfile(input: {
         monthly_video_reset_at,
         created_at,
         updated_at
-    `;
+    `) as UserProfileRow[];
 
     return (updatedRows[0] ?? null) as UserProfileRow | null;
   }
 
-  const insertedRows: any[] = await sql`
+  const insertedRows = (await sql`
     insert into user_profiles (
       user_id,
       email,
@@ -174,13 +178,13 @@ export async function ensureUserProfile(input: {
       monthly_video_reset_at,
       created_at,
       updated_at
-  `;
+  `) as UserProfileRow[];
 
   return (insertedRows[0] ?? null) as UserProfileRow | null;
 }
 
 export async function getUserProfileByUserId(userId: string) {
-  const rows: any[] = await sql`
+  const rows = (await sql`
     select
       user_id,
       email,
@@ -199,13 +203,13 @@ export async function getUserProfileByUserId(userId: string) {
     from user_profiles
     where user_id = ${userId}::text
     limit 1
-  `;
+  `) as UserProfileRow[];
 
   return (rows[0] ?? null) as UserProfileRow | null;
 }
 
 export async function getUserProfileByEmail(email: string) {
-  const rows: any[] = await sql`
+  const rows = (await sql`
     select
       user_id,
       email,
@@ -224,7 +228,7 @@ export async function getUserProfileByEmail(email: string) {
     from user_profiles
     where email = ${email}
     limit 1
-  `;
+  `) as UserProfileRow[];
 
   return (rows[0] ?? null) as UserProfileRow | null;
 }
@@ -233,7 +237,7 @@ export async function updateUserStripeCustomerId(input: {
   userId: string;
   stripeCustomerId: string;
 }) {
-  const rows: any[] = await sql`
+  const rows = (await sql`
     update user_profiles
     set
       stripe_customer_id = ${input.stripeCustomerId},
@@ -254,13 +258,13 @@ export async function updateUserStripeCustomerId(input: {
       monthly_video_reset_at,
       created_at,
       updated_at
-  `;
+  `) as UserProfileRow[];
 
   return (rows[0] ?? null) as UserProfileRow | null;
 }
 
 export async function incrementMonthlyVideoCount(userId: string) {
-  const rows: any[] = await sql`
+  const rows = (await sql`
     update user_profiles
     set
       monthly_video_count = coalesce(monthly_video_count, 0) + 1,
@@ -281,13 +285,13 @@ export async function incrementMonthlyVideoCount(userId: string) {
       monthly_video_reset_at,
       created_at,
       updated_at
-  `;
+  `) as UserProfileRow[];
 
   return (rows[0] ?? null) as UserProfileRow | null;
 }
 
 export async function resetMonthlyVideoCount(userId: string) {
-  const rows: any[] = await sql`
+  const rows = (await sql`
     update user_profiles
     set
       monthly_video_count = 0,
@@ -309,7 +313,62 @@ export async function resetMonthlyVideoCount(userId: string) {
       monthly_video_reset_at,
       created_at,
       updated_at
-  `;
+  `) as UserProfileRow[];
+
+  return (rows[0] ?? null) as UserProfileRow | null;
+}
+
+export async function manuallyUpdateUserPlan(input: {
+  userId?: string | null;
+  email?: string | null;
+  planCode: PlanCode;
+  paymentStatus?: string | null;
+  resetMonthlyUsage?: boolean;
+}) {
+  const planLabel = resolvePlanLabel(input.planCode);
+  const paymentStatus =
+    input.paymentStatus ||
+    (input.planCode === "free" ? "manual_free" : "manual_paid");
+  const email = input.email?.trim().toLowerCase() || null;
+  const userId = input.userId?.trim() || null;
+
+  const rows = (await sql`
+    update user_profiles
+    set
+      plan_code = ${input.planCode},
+      plan_label = ${planLabel},
+      pending_plan_code = null,
+      payment_status = ${paymentStatus},
+      monthly_video_count = case
+        when ${Boolean(input.resetMonthlyUsage)}
+          then 0
+        else coalesce(monthly_video_count, 0)
+      end,
+      monthly_video_reset_at = case
+        when ${Boolean(input.resetMonthlyUsage)}
+          then now()
+        else monthly_video_reset_at
+      end,
+      updated_at = now()
+    where
+      (${userId}::text is not null and user_id = ${userId}::text)
+      or (${email}::text is not null and lower(email) = ${email})
+    returning
+      user_id,
+      email,
+      full_name,
+      plan_code,
+      plan_label,
+      pending_plan_code,
+      payment_status,
+      stripe_customer_id,
+      stripe_subscription_id,
+      stripe_checkout_session_id,
+      monthly_video_count,
+      monthly_video_reset_at,
+      created_at,
+      updated_at
+  `) as UserProfileRow[];
 
   return (rows[0] ?? null) as UserProfileRow | null;
 }

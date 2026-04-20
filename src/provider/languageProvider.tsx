@@ -34,22 +34,26 @@ export function LanguageProvider({
   const [language, setLanguageState] = useState<AppLanguage>(defaultLanguage);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-      if (stored) {
-        setLanguageState(getSafeLanguage(stored));
-        return;
+    const timer = window.setTimeout(() => {
+      try {
+        const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+        if (stored) {
+          setLanguageState(getSafeLanguage(stored));
+          return;
+        }
+
+        const browserLanguage =
+          typeof navigator !== "undefined"
+            ? navigator.language?.slice(0, 2).toLowerCase()
+            : defaultLanguage;
+
+        setLanguageState(getSafeLanguage(browserLanguage));
+      } catch {
+        setLanguageState(defaultLanguage);
       }
+    }, 0);
 
-      const browserLanguage =
-        typeof navigator !== "undefined"
-          ? navigator.language?.slice(0, 2).toLowerCase()
-          : defaultLanguage;
-
-      setLanguageState(getSafeLanguage(browserLanguage));
-    } catch {
-      setLanguageState(defaultLanguage);
-    }
+    return () => window.clearTimeout(timer);
   }, [defaultLanguage]);
 
   useEffect(() => {

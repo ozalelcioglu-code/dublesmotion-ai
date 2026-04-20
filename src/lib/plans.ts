@@ -15,22 +15,22 @@ export const PLAN_CONFIG: Record<PlanCode, Plan> = {
     label: "Free",
     priceMonthly: 0,
     priceYearly: 0,
-    creditsMonthly: 40,
+    creditsMonthly: 100,
   },
 
   starter: {
     code: "starter",
     label: "Starter",
-    priceMonthly: 29,
-    priceYearly: 290, // 2 ay indirim
+    priceMonthly: 39,
+    priceYearly: 390,
     creditsMonthly: 450,
   },
 
   pro: {
     code: "pro",
     label: "Pro",
-    priceMonthly: 59,
-    priceYearly: 590,
+    priceMonthly: 89,
+    priceYearly: 890,
     creditsMonthly: 1600,
     highlight: true, // UI'da "most popular"
   },

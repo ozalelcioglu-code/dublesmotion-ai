@@ -13,6 +13,14 @@ type StoryboardResult = {
   scenes: StoryboardScene[];
 };
 
+type StoryboardInput = {
+  mode?: unknown;
+  prompt?: unknown;
+  ratio?: unknown;
+  style?: unknown;
+  durationSec?: unknown;
+};
+
 function toSafeNumber(value: unknown, fallback: number) {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -24,7 +32,9 @@ function toSafeString(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
 
-export async function generateStoryboard(input: any): Promise<StoryboardResult> {
+export async function generateStoryboard(
+  input: StoryboardInput
+): Promise<StoryboardResult> {
   const prompt = toSafeString(
     input?.prompt,
     "Create a polished cinematic sequence."

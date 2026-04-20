@@ -136,13 +136,13 @@ export async function POST(req: Request) {
         Connection: "keep-alive",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Deep research route failed:", error);
 
     return NextResponse.json(
       {
         ok: false,
-        error: error?.message || "Deep research failed",
+        error: error instanceof Error ? error.message : "Deep research failed",
       },
       { status: 500 }
     );

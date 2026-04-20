@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
@@ -12,9 +13,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-const FAL_KEY = process.env.FAL_KEY || process.env.FAL_API_KEY || "";
-const FAL_TALKING_AVATAR_MODEL =
-  process.env.FAL_TALKING_AVATAR_MODEL || "fal-ai/ai-avatar/single-text";
+const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || "";
+const REPLICATE_TALKING_AVATAR_MODEL =
+  process.env.REPLICATE_TALKING_AVATAR_MODEL ||
+  "lucataco/sadtalker:6872f221926b27ee9b41d6de4e486c098acf7d33c55467698bb3a30fb69ecae8";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
+const OPENAI_TTS_MODEL = process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts";
 const REAL_AVATAR_CREDIT_COST = Number(
   process.env.REAL_AVATAR_CREDIT_COST || "8"
 );
@@ -22,24 +26,26 @@ const FREE_REAL_AVATAR_DAILY_LIMIT = Number(
   process.env.FREE_REAL_AVATAR_DAILY_LIMIT || "3"
 );
 
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "";
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || "";
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || "";
+const SADTALKER_VERSION_ID =
+  "6872f221926b27ee9b41d6de4e486c098acf7d33c55467698bb3a30fb69ecae8";
+
 type VoiceAvatarId = "child" | "adult";
 
-type FalSubmitResponse = {
-  request_id?: string;
-  status_url?: string;
-  response_url?: string;
-};
+type ReplicatePredictionStatus =
+  | "starting"
+  | "processing"
+  | "succeeded"
+  | "failed"
+  | "canceled";
 
-type FalStatusResponse = {
-  status?: "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED";
-  error?: string;
-  response_url?: string;
-};
-
-type FalResultResponse = {
-  video?: {
-    url?: string;
-  };
+type ReplicatePrediction = {
+  id: string;
+  status: ReplicatePredictionStatus;
+  error?: string | null;
+  output?: unknown;
 };
 
 function cleanTextForVideo(value: unknown) {
@@ -51,21 +57,87 @@ function normalizeAvatar(value: unknown): VoiceAvatarId {
   return value === "adult" ? "adult" : "child";
 }
 
-function getFalVoice(avatar: VoiceAvatarId) {
-  return avatar === "child" ? "Liam" : "Daniel";
+function getAvatarFileName(avatar: VoiceAvatarId) {
+  return avatar === "adult" ? "adult-robot-avatar.png" : "child-robot-avatar.png";
 }
 
-function getAvatarPrompt(avatar: VoiceAvatarId) {
+function getTtsVoice(avatar: VoiceAvatarId) {
+  return avatar === "child" ? "echo" : "onyx";
+}
+
+function getTtsInstructions(avatar: VoiceAvatarId) {
   if (avatar === "child") {
-    return "A friendly young male robot avatar in a video call, natural lip sync, expressive eyes, subtle head movement, realistic upper body motion, clean studio lighting.";
+    return "Speak naturally with a warm young male voice. Keep the rhythm smooth and conversational.";
   }
 
-  return "A confident adult male robot avatar in a video call, natural lip sync, expressive face, subtle head movement, realistic upper body motion, clean studio lighting.";
+  return "Speak naturally with a calm adult male voice. Keep the rhythm smooth, confident, and conversational.";
 }
 
-async function getAvatarDataUri(avatar: VoiceAvatarId) {
-  const fileName =
-    avatar === "adult" ? "adult-robot-avatar.png" : "child-robot-avatar.png";
+function ensureCloudinaryEnv() {
+  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+    throw new Error("Missing Cloudinary configuration");
+  }
+}
+
+function sha1(message: string) {
+  return crypto.createHash("sha1").update(message).digest("hex");
+}
+
+async function uploadBufferToCloudinary(input: {
+  buffer: Buffer;
+  fileName: string;
+  folder: string;
+  mimeType: string;
+  resourceType: "image" | "video";
+}) {
+  ensureCloudinaryEnv();
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const publicId = `${input.fileName}_${Date.now()}_${Math.random()
+    .toString(36)
+    .slice(2, 8)}`.replace(/[^a-zA-Z0-9-_]/g, "-");
+  const paramsToSign = [
+    `folder=${input.folder}`,
+    `overwrite=true`,
+    `public_id=${publicId}`,
+    `timestamp=${timestamp}`,
+  ].join("&");
+  const signature = sha1(`${paramsToSign}${CLOUDINARY_API_SECRET}`);
+  const form = new FormData();
+  const file = new File([new Uint8Array(input.buffer)], input.fileName, {
+    type: input.mimeType,
+  });
+
+  form.append("file", file);
+  form.append("api_key", CLOUDINARY_API_KEY);
+  form.append("timestamp", String(timestamp));
+  form.append("signature", signature);
+  form.append("folder", input.folder);
+  form.append("public_id", publicId);
+  form.append("overwrite", "true");
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${input.resourceType}/upload`,
+    {
+      method: "POST",
+      body: form,
+    }
+  );
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok || !data?.secure_url) {
+    throw new Error(
+      data?.error?.message ||
+        data?.message ||
+        `Cloudinary ${input.resourceType} upload failed`
+    );
+  }
+
+  return String(data.secure_url);
+}
+
+async function uploadAvatarImageToCloudinary(avatar: VoiceAvatarId) {
+  const fileName = getAvatarFileName(avatar);
   const filePath = path.join(
     process.cwd(),
     "public",
@@ -73,7 +145,77 @@ async function getAvatarDataUri(avatar: VoiceAvatarId) {
     fileName
   );
   const buffer = await readFile(filePath);
-  return `data:image/png;base64,${buffer.toString("base64")}`;
+
+  return uploadBufferToCloudinary({
+    buffer,
+    fileName,
+    folder: "dublesmotion/voice-avatars",
+    mimeType: "image/png",
+    resourceType: "image",
+  });
+}
+
+async function createTtsAudioBuffer(input: {
+  text: string;
+  avatar: VoiceAvatarId;
+}) {
+  if (!OPENAI_API_KEY) {
+    throw new Error("Missing OPENAI_API_KEY");
+  }
+
+  const body = {
+    model: OPENAI_TTS_MODEL,
+    voice: getTtsVoice(input.avatar),
+    input: input.text.slice(0, 900),
+    instructions: getTtsInstructions(input.avatar),
+    response_format: "wav",
+  };
+
+  let response = await fetch("https://api.openai.com/v1/audio/speech", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok && OPENAI_TTS_MODEL !== "tts-1") {
+    response = await fetch("https://api.openai.com/v1/audio/speech", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...body,
+        model: "tts-1",
+        instructions: undefined,
+      }),
+    });
+  }
+
+  if (!response.ok) {
+    const error = await response.text().catch(() => "");
+    throw new Error(error || "TTS generation failed");
+  }
+
+  return Buffer.from(await response.arrayBuffer());
+}
+
+async function uploadSpeechAudioToCloudinary(input: {
+  text: string;
+  avatar: VoiceAvatarId;
+}) {
+  const audioBuffer = await createTtsAudioBuffer(input);
+
+  return uploadBufferToCloudinary({
+    buffer: audioBuffer,
+    fileName: `avatar-speech-${input.avatar}.wav`,
+    folder: "dublesmotion/voice-avatar-audio",
+    mimeType: "audio/wav",
+    resourceType: "video",
+  });
 }
 
 async function ensureRealAvatarUsageTable() {
@@ -123,19 +265,40 @@ async function refundFreeRealAvatarUsage(userId: string) {
   `;
 }
 
-function falHeaders() {
+function parseReplicateModel(model: string) {
+  if (/^[a-f0-9]{64}$/i.test(model)) {
+    return { owner: null, name: null, version: model };
+  }
+
+  const [slug, version] = model.split(":");
+  const [owner, name] = slug.split("/");
+
+  if (!owner || !name) {
+    throw new Error(`Invalid Replicate model: ${model}`);
+  }
+
   return {
-    Authorization: `Key ${FAL_KEY}`,
-    "Content-Type": "application/json",
-    "X-Fal-No-Retry": "1",
+    owner,
+    name,
+    version:
+      version ||
+      (owner === "lucataco" && name === "sadtalker"
+        ? SADTALKER_VERSION_ID
+        : undefined),
   };
 }
 
-async function falRequest<T>(url: string, init?: RequestInit) {
-  const response = await fetch(url, {
+async function replicateRequest<T>(pathName: string, init?: RequestInit) {
+  if (!REPLICATE_API_TOKEN) {
+    throw new Error("Missing REPLICATE_API_TOKEN");
+  }
+
+  const response = await fetch(`https://api.replicate.com/v1${pathName}`, {
     ...init,
     headers: {
-      ...falHeaders(),
+      Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+      "Content-Type": "application/json",
+      Prefer: "wait=5",
       ...(init?.headers || {}),
     },
     cache: "no-store",
@@ -144,96 +307,168 @@ async function falRequest<T>(url: string, init?: RequestInit) {
 
   if (!response.ok || !data) {
     throw new Error(
-      (data as { error?: string; detail?: string } | null)?.error ||
-        (data as { error?: string; detail?: string } | null)?.detail ||
-        `fal request failed with status ${response.status}`
+      (data as { detail?: string; error?: string } | null)?.detail ||
+        (data as { detail?: string; error?: string } | null)?.error ||
+        `Replicate request failed with status ${response.status}`
     );
   }
 
   return data;
 }
 
-async function generateTalkingAvatarVideo(input: {
-  avatar: VoiceAvatarId;
-  text: string;
-}) {
-  if (!FAL_KEY) {
-    throw new Error("Missing FAL_KEY");
-  }
-
-  const modelPath = FAL_TALKING_AVATAR_MODEL.replace(/^\/+/, "");
-  const avatarImage = await getAvatarDataUri(input.avatar);
-  const submit = await falRequest<FalSubmitResponse>(
-    `https://queue.fal.run/${modelPath}`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        image_url: avatarImage,
-        text_input: input.text.slice(0, 320),
-        voice: getFalVoice(input.avatar),
-        prompt: getAvatarPrompt(input.avatar),
-        num_frames: 129,
-        resolution: "480p",
-        acceleration: "regular",
-      }),
-    }
+async function createPrediction(input: Record<string, unknown>) {
+  const { owner, name, version } = parseReplicateModel(
+    REPLICATE_TALKING_AVATAR_MODEL
   );
 
-  let statusUrl = submit.status_url;
-  let responseUrl = submit.response_url;
-
-  if (!statusUrl && submit.request_id) {
-    statusUrl = `https://queue.fal.run/${modelPath}/requests/${submit.request_id}/status`;
+  if (version) {
+    return replicateRequest<ReplicatePrediction>("/predictions", {
+      method: "POST",
+      body: JSON.stringify({ version, input }),
+    });
   }
 
-  if (!responseUrl && submit.request_id) {
-    responseUrl = `https://queue.fal.run/${modelPath}/requests/${submit.request_id}/response`;
+  if (!owner || !name) {
+    throw new Error(`Invalid Replicate model: ${REPLICATE_TALKING_AVATAR_MODEL}`);
   }
 
-  if (!statusUrl || !responseUrl) {
-    throw new Error("fal response did not include queue URLs");
+  return replicateRequest<ReplicatePrediction>(
+    `/models/${owner}/${name}/predictions`,
+    {
+      method: "POST",
+      body: JSON.stringify({ input }),
+    }
+  );
+}
+
+async function copyReplicateOutputVideoToCloudinary(videoUrl: string) {
+  const fetchWithAuth = () =>
+    fetch(videoUrl, {
+      headers: {
+        Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+      },
+      cache: "no-store",
+    });
+
+  let response = await fetchWithAuth();
+
+  if (!response.ok) {
+    response = await fetch(videoUrl, { cache: "no-store" });
   }
 
+  if (!response.ok) {
+    throw new Error(
+      `Replicate video output could not be downloaded (${response.status})`
+    );
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+
+  return uploadBufferToCloudinary({
+    buffer,
+    fileName: "talking-avatar-output.mp4",
+    folder: "dublesmotion/voice-avatar-videos",
+    mimeType: response.headers.get("content-type") || "video/mp4",
+    resourceType: "video",
+  });
+}
+
+async function getPrediction(id: string) {
+  return replicateRequest<ReplicatePrediction>(`/predictions/${id}`, {
+    method: "GET",
+  });
+}
+
+async function waitForPrediction(id: string) {
   const startedAt = Date.now();
   const timeoutMs = 4 * 60 * 1000;
 
   while (true) {
-    const status = await falRequest<FalStatusResponse>(`${statusUrl}?logs=0`, {
-      method: "GET",
-    });
+    const prediction = await getPrediction(id);
 
-    if (status.status === "COMPLETED") {
-      if (status.error) throw new Error(status.error);
-      responseUrl = status.response_url || responseUrl;
-      break;
+    if (prediction.status === "succeeded") {
+      return prediction;
+    }
+
+    if (prediction.status === "failed") {
+      throw new Error(prediction.error || "Replicate avatar generation failed");
+    }
+
+    if (prediction.status === "canceled") {
+      throw new Error("Replicate avatar generation canceled");
     }
 
     if (Date.now() - startedAt > timeoutMs) {
-      throw new Error("Talking avatar generation timed out");
+      throw new Error("Replicate avatar generation timed out");
     }
 
     await new Promise((resolve) => setTimeout(resolve, 2500));
   }
+}
 
-  const result = await falRequest<FalResultResponse>(responseUrl, {
-    method: "GET",
-  });
-  const videoUrl = result.video?.url;
-
-  if (!videoUrl) {
-    throw new Error("Talking avatar output video is empty");
+function pickOutputUrl(output: unknown): string {
+  if (typeof output === "string" && output.trim()) {
+    return output;
   }
 
-  return videoUrl;
+  if (Array.isArray(output)) {
+    for (const item of output) {
+      const url = pickOutputUrl(item);
+      if (url) return url;
+    }
+  }
+
+  if (output && typeof output === "object") {
+    const value = output as Record<string, unknown>;
+
+    for (const key of ["url", "video", "output", "secure_url"]) {
+      if (typeof value[key] === "string" && value[key].trim()) {
+        return value[key];
+      }
+    }
+  }
+
+  return "";
+}
+
+async function generateTalkingAvatarVideo(input: {
+  avatar: VoiceAvatarId;
+  text: string;
+}) {
+  const [sourceImageUrl, drivenAudioUrl] = await Promise.all([
+    uploadAvatarImageToCloudinary(input.avatar),
+    uploadSpeechAudioToCloudinary(input),
+  ]);
+  const prediction = await createPrediction({
+    source_image: sourceImageUrl,
+    driven_audio: drivenAudioUrl,
+    enhancer: "gfpgan",
+    preprocess: "full",
+    still: false,
+  });
+  const done =
+    prediction.status === "succeeded"
+      ? prediction
+      : await waitForPrediction(prediction.id);
+  const videoUrl = pickOutputUrl(done.output);
+
+  if (!videoUrl) {
+    throw new Error("Replicate avatar output video is empty");
+  }
+
+  return copyReplicateOutputVideoToCloudinary(videoUrl);
 }
 
 export async function POST(req: Request) {
   let chargedUserId: string | null = null;
   let consumedFreeUsage = false;
   let freeUsageCount: number | null = null;
+  let usageSessionForRefund: Awaited<ReturnType<typeof resolveUsageSession>> | null =
+    null;
 
   try {
     const usageSession = await resolveUsageSession(req);
+    usageSessionForRefund = usageSession;
 
     if (!usageSession) {
       return NextResponse.json(
@@ -253,11 +488,27 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!FAL_KEY) {
+    if (!REPLICATE_API_TOKEN) {
       return NextResponse.json({
         ok: false,
         fallback: true,
-        code: "MISSING_FAL_KEY",
+        code: "MISSING_REPLICATE_API_TOKEN",
+      });
+    }
+
+    if (!OPENAI_API_KEY) {
+      return NextResponse.json({
+        ok: false,
+        fallback: true,
+        code: "MISSING_OPENAI_API_KEY",
+      });
+    }
+
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+      return NextResponse.json({
+        ok: false,
+        fallback: true,
+        code: "MISSING_CLOUDINARY_CONFIG",
       });
     }
 
@@ -306,8 +557,8 @@ export async function POST(req: Request) {
       ok: true,
       fallback: false,
       videoUrl,
-      provider: "fal",
-      model: FAL_TALKING_AVATAR_MODEL,
+      provider: "replicate",
+      model: REPLICATE_TALKING_AVATAR_MODEL,
       creditCost: REAL_AVATAR_CREDIT_COST,
       usageCount: freeUsageCount,
       usageLimit: isFreePlan ? FREE_REAL_AVATAR_DAILY_LIMIT : null,
@@ -319,16 +570,16 @@ export async function POST(req: Request) {
       await refundUserCredits(chargedUserId, REAL_AVATAR_CREDIT_COST);
     }
 
-    if (consumedFreeUsage) {
-      const usageSession = await resolveUsageSession(req).catch(() => null);
-      if (usageSession) {
-        await refundFreeRealAvatarUsage(usageSession.userId).catch(() => null);
-      }
+    if (consumedFreeUsage && usageSessionForRefund) {
+      await refundFreeRealAvatarUsage(usageSessionForRefund.userId).catch(
+        () => null
+      );
     }
 
     return NextResponse.json({
       ok: false,
       fallback: true,
+      code: "TALKING_AVATAR_GENERATION_FAILED",
       error:
         error instanceof Error
           ? error.message

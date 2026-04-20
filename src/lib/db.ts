@@ -7,11 +7,7 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is not set");
 }
 
-// 🔥 tek pool instance
-let pool: Pool;
-
 declare global {
-  // eslint-disable-next-line no-var
   var __pgPool: Pool | undefined;
 }
 
@@ -22,7 +18,7 @@ if (!global.__pgPool) {
   });
 }
 
-pool = global.__pgPool;
+const pool = global.__pgPool;
 
 // 🔥 neon sql (serverless)
 const sql = neon(databaseUrl);

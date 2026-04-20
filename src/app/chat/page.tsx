@@ -425,11 +425,11 @@ const VOICE_AVATARS: Array<{
 }> = [
   {
     id: "child",
-    image: "/voice-avatars/child-robot-avatar.png",
+    image: "/voice-avatars/child-robot-avatar-approved.png",
   },
   {
     id: "adult",
-    image: "/voice-avatars/adult-robot-avatar.png",
+    image: "/voice-avatars/adult-robot-avatar-approved.png",
   },
 ];
 
@@ -440,11 +440,11 @@ const VOICE_AVATAR_MOTION_CSS = `
   }
 
   .voice-avatar-live.voice-avatar-speaking {
-    animation: dubles-avatar-body-talk 980ms ease-in-out infinite;
+    animation: none;
   }
 
   .voice-avatar-live.voice-avatar-listening {
-    animation: dubles-avatar-body-listen 1800ms ease-in-out infinite;
+    animation: none;
   }
 
   .voice-avatar-image {
@@ -452,33 +452,11 @@ const VOICE_AVATAR_MOTION_CSS = `
   }
 
   .voice-avatar-speaking .voice-avatar-image {
-    animation: dubles-avatar-face-talk 620ms ease-in-out infinite;
     filter: saturate(1.1) contrast(1.05);
   }
 
   .voice-avatar-listening .voice-avatar-image {
-    animation: dubles-avatar-face-listen 1500ms ease-in-out infinite;
-  }
-
-  .voice-avatar-mouth {
-    will-change: width, height, opacity, transform;
-  }
-
-  .voice-avatar-speaking .voice-avatar-mouth {
-    animation: dubles-avatar-mouth-talk 150ms ease-in-out infinite alternate;
-  }
-
-  .voice-avatar-listening .voice-avatar-mouth {
-    animation: dubles-avatar-mouth-listen 1200ms ease-in-out infinite;
-  }
-
-  .voice-avatar-scanner {
-    will-change: transform, opacity;
-  }
-
-  .voice-avatar-speaking .voice-avatar-scanner,
-  .voice-avatar-listening .voice-avatar-scanner {
-    animation: dubles-avatar-scan 1200ms linear infinite;
+    filter: saturate(1.04) contrast(1.02);
   }
 
   .voice-avatar-live-dot {
@@ -488,76 +466,6 @@ const VOICE_AVATAR_MOTION_CSS = `
   .voice-avatar-speaking .voice-avatar-live-dot,
   .voice-avatar-listening .voice-avatar-live-dot {
     animation: dubles-avatar-live-dot 650ms ease-in-out infinite;
-  }
-
-  .voice-avatar-wave-bar {
-    transform-origin: 50% 100%;
-  }
-
-  .voice-avatar-speaking .voice-avatar-wave-bar {
-    animation: dubles-avatar-wave 360ms ease-in-out infinite alternate;
-  }
-
-  .voice-avatar-speaking .voice-avatar-wave-bar:nth-child(2) {
-    animation-delay: 70ms;
-  }
-
-  .voice-avatar-speaking .voice-avatar-wave-bar:nth-child(3) {
-    animation-delay: 130ms;
-  }
-
-  .voice-avatar-speaking .voice-avatar-wave-bar:nth-child(4) {
-    animation-delay: 30ms;
-  }
-
-  .voice-avatar-speaking .voice-avatar-wave-bar:nth-child(5) {
-    animation-delay: 110ms;
-  }
-
-  .voice-avatar-speaking .voice-avatar-wave-bar:nth-child(6) {
-    animation-delay: 170ms;
-  }
-
-  @keyframes dubles-avatar-body-talk {
-    0%, 100% { transform: translate3d(0, 0, 0) rotate(-0.4deg) scale(1); }
-    25% { transform: translate3d(2px, -4px, 0) rotate(0.7deg) scale(1.012); }
-    50% { transform: translate3d(-2px, 2px, 0) rotate(-0.9deg) scale(1.006); }
-    75% { transform: translate3d(1px, -2px, 0) rotate(0.5deg) scale(1.014); }
-  }
-
-  @keyframes dubles-avatar-body-listen {
-    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-    50% { transform: translate3d(0, -5px, 0) scale(1.006); }
-  }
-
-  @keyframes dubles-avatar-face-talk {
-    0%, 100% { transform: scale(1.055) translate3d(0, 0, 0) rotate(0deg); }
-    20% { transform: scale(1.075) translate3d(3px, -4px, 0) rotate(0.9deg); }
-    45% { transform: scale(1.06) translate3d(-3px, 2px, 0) rotate(-0.8deg); }
-    70% { transform: scale(1.078) translate3d(2px, -2px, 0) rotate(0.6deg); }
-  }
-
-  @keyframes dubles-avatar-face-listen {
-    0%, 100% { transform: scale(1.045) translate3d(0, 0, 0); }
-    50% { transform: scale(1.055) translate3d(0, -4px, 0); }
-  }
-
-  @keyframes dubles-avatar-mouth-talk {
-    0% { width: 18%; height: 7px; opacity: 0.88; }
-    35% { width: 34%; height: 23px; opacity: 1; }
-    70% { width: 26%; height: 14px; opacity: 0.95; }
-    100% { width: 39%; height: 28px; opacity: 1; }
-  }
-
-  @keyframes dubles-avatar-mouth-listen {
-    0%, 100% { width: 22%; height: 5px; opacity: 0.74; }
-    50% { width: 28%; height: 8px; opacity: 0.9; }
-  }
-
-  @keyframes dubles-avatar-scan {
-    0% { transform: translateY(-12px); opacity: 0.2; }
-    18% { opacity: 1; }
-    100% { transform: translateY(360px); opacity: 0.32; }
   }
 
   @keyframes dubles-avatar-live-dot {
@@ -570,6 +478,9 @@ const VOICE_AVATAR_MOTION_CSS = `
     100% { transform: scaleY(1.35); opacity: 1; }
   }
 `;
+
+const ENABLE_RENDERED_AVATAR_VIDEO = false;
+const REAL_AVATAR_FAST_WAIT_MS = 12000;
 
 function getChatTexts(language: string): ChatTexts {
   return CHAT_TEXTS[language as keyof typeof CHAT_TEXTS] ?? CHAT_TEXTS.en;
@@ -887,13 +798,14 @@ export default function ChatPage() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceRepliesEnabled, setVoiceRepliesEnabled] = useState(false);
+  const [voiceConversationStarted, setVoiceConversationStarted] =
+    useState(false);
   const [selectedVoiceAvatar, setSelectedVoiceAvatar] =
     useState<VoiceAvatarId>("child");
   const [voiceReplyCount, setVoiceReplyCount] = useState(0);
   const [voiceNotice, setVoiceNotice] = useState("");
   const [realAvatarVideoUrl, setRealAvatarVideoUrl] = useState("");
   const [realAvatarLoading, setRealAvatarLoading] = useState(false);
-  const [avatarMotionTick, setAvatarMotionTick] = useState(0);
   const [liveWebRequested, setLiveWebRequested] = useState(false);
   const [deepResearchRequested, setDeepResearchRequested] = useState(false);
   const [projectAgentRequested, setProjectAgentRequested] = useState(false);
@@ -914,6 +826,7 @@ export default function ChatPage() {
   const realAvatarVideoRef = useRef<HTMLVideoElement | null>(null);
   const voiceRestartTimerRef = useRef<number | null>(null);
   const voiceRepliesEnabledRef = useRef(false);
+  const voiceConversationStartedRef = useRef(false);
   const loadingRef = useRef(false);
   const isSpeakingRef = useRef(false);
   const isListeningRef = useRef(false);
@@ -929,6 +842,10 @@ export default function ChatPage() {
   useEffect(() => {
     voiceRepliesEnabledRef.current = voiceRepliesEnabled;
   }, [voiceRepliesEnabled]);
+
+  useEffect(() => {
+    voiceConversationStartedRef.current = voiceConversationStarted;
+  }, [voiceConversationStarted]);
 
   useEffect(() => {
     loadingRef.current = loading;
@@ -949,17 +866,6 @@ export default function ChatPage() {
   useEffect(() => {
     isFreePlanRef.current = isFreePlan;
   }, [isFreePlan]);
-
-  useEffect(() => {
-    if (!voiceRepliesEnabled || realAvatarVideoUrl) return;
-
-    const interval = window.setInterval(
-      () => setAvatarMotionTick((prev) => (prev + 1) % 1000),
-      isSpeaking ? 115 : isListening ? 170 : 260
-    );
-
-    return () => window.clearInterval(interval);
-  }, [voiceRepliesEnabled, isListening, isSpeaking, realAvatarVideoUrl]);
 
   useEffect(() => {
     const realAvatarVideo = realAvatarVideoRef.current;
@@ -1339,7 +1245,10 @@ export default function ChatPage() {
     await audio.play();
   }
 
-  async function speakWithRealAvatarVideo(cleanText: string) {
+  async function speakWithRealAvatarVideo(
+    cleanText: string,
+    signal?: AbortSignal
+  ) {
     setRealAvatarLoading(true);
     setVoiceNotice("");
 
@@ -1347,6 +1256,7 @@ export default function ChatPage() {
       const response = await fetch("/api/ai/avatar-video", {
         method: "POST",
         headers: sessionHeaders,
+        signal,
         body: JSON.stringify({
           text: cleanText,
           language,
@@ -1373,9 +1283,17 @@ export default function ChatPage() {
       if (!response.ok || !data?.ok || data.fallback || !data.videoUrl) {
         if (data?.code === "FREE_REAL_AVATAR_LIMIT") {
           setVoiceNotice(t.voiceFreeLimit);
-        } else if (data?.code === "MISSING_FAL_KEY") {
+        } else if (data?.code === "MISSING_REPLICATE_API_TOKEN") {
           setVoiceNotice(
-            "Gerçek avatar video servisi için FAL_KEY tanımlı değil. Şimdilik sahte canlı avatarla devam ediyorum."
+            "Gerçek avatar video servisi için REPLICATE_API_TOKEN tanımlı değil. Şimdilik sahte canlı avatarla devam ediyorum."
+          );
+        } else if (data?.code === "MISSING_OPENAI_API_KEY") {
+          setVoiceNotice(
+            "Gerçek avatar videosu için ses üretimi yapılamadı. OPENAI_API_KEY ayarını kontrol et."
+          );
+        } else if (data?.code === "MISSING_CLOUDINARY_CONFIG") {
+          setVoiceNotice(
+            "Gerçek avatar videosu için Cloudinary ayarları eksik. CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY ve CLOUDINARY_API_SECRET değerlerini kontrol et."
           );
         } else if (data?.error) {
           setVoiceNotice(data.error);
@@ -1384,13 +1302,44 @@ export default function ChatPage() {
         return false;
       }
 
-      window.speechSynthesis.cancel();
-      ttsAudioRef.current?.pause();
-      setRealAvatarVideoUrl(data.videoUrl);
-      return true;
+    window.speechSynthesis.cancel();
+    ttsAudioRef.current?.pause();
+    setRealAvatarVideoUrl(data.videoUrl);
+    return true;
+    } catch (error) {
+      if (signal?.aborted) {
+        return false;
+      }
+      throw error;
     } finally {
       setRealAvatarLoading(false);
     }
+  }
+
+  function speakWithRealAvatarVideoFast(cleanText: string) {
+    const controller = new AbortController();
+    let timeoutId: number | null = null;
+
+    const avatarPromise = speakWithRealAvatarVideo(
+      cleanText,
+      controller.signal
+    ).catch(() => false);
+
+    const timeoutPromise = new Promise<boolean>((resolve) => {
+      timeoutId = window.setTimeout(() => {
+        controller.abort();
+        setVoiceNotice(
+          "Gerçek avatar beklenenden uzun sürdü. Bu cevapta sesi hemen oynatıyorum; sonraki cevapta tekrar deneyeceğim."
+        );
+        resolve(false);
+      }, REAL_AVATAR_FAST_WAIT_MS);
+    });
+
+    return Promise.race([avatarPromise, timeoutPromise]).finally(() => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    });
   }
 
   function scheduleNextVoiceListen(delay = 650) {
@@ -1401,6 +1350,7 @@ export default function ChatPage() {
     voiceRestartTimerRef.current = window.setTimeout(() => {
       if (
         voiceRepliesEnabledRef.current &&
+        voiceConversationStartedRef.current &&
         !loadingRef.current &&
         !isSpeakingRef.current &&
         !isListeningRef.current
@@ -1414,17 +1364,25 @@ export default function ChatPage() {
     text: string,
     options?: { countUsage?: boolean }
   ) {
-    if (!voiceRepliesEnabledRef.current || !access.canUseVoiceMode) return;
+    if (
+      !voiceRepliesEnabledRef.current ||
+      !voiceConversationStartedRef.current ||
+      !access.canUseVoiceMode
+    ) {
+      return;
+    }
     if (typeof window === "undefined" || !window.speechSynthesis) return;
-    const shouldUseRealAvatar = options?.countUsage ?? true;
+    const shouldUseRealAvatar =
+      ENABLE_RENDERED_AVATAR_VIDEO && (options?.countUsage ?? true);
 
     const cleanText = text.replace(/```[\s\S]*?```/g, "").trim();
     if (!cleanText) return;
 
     setIsSpeaking(true);
     setRealAvatarVideoUrl("");
+    setRealAvatarLoading(false);
     void (shouldUseRealAvatar
-      ? speakWithRealAvatarVideo(cleanText)
+      ? speakWithRealAvatarVideoFast(cleanText)
       : Promise.resolve(false)
     )
       .then((usedRealAvatar) => {
@@ -1721,6 +1679,7 @@ export default function ChatPage() {
     ttsAudioRef.current = null;
     setIsListening(false);
     setIsSpeaking(false);
+    setVoiceConversationStarted(false);
     setVoiceRepliesEnabled(false);
   }
 
@@ -1745,16 +1704,36 @@ export default function ChatPage() {
       return;
     }
 
+    setVoiceRepliesEnabled(true);
+    setVoiceConversationStarted(false);
+    setVoiceNotice("");
+  }
+
+  async function startVoiceConversation() {
+    if (!access.canUseVoiceMode || typeof window === "undefined") return;
+
+    if (!voiceRepliesEnabled) {
+      setVoiceRepliesEnabled(true);
+    }
+
+    if (voiceConversationStarted) {
+      stopVoiceConversation();
+      return;
+    }
+
     const hasMicrophoneAccess = await requestMicrophoneAccess();
     if (!hasMicrophoneAccess) return;
 
-    setVoiceRepliesEnabled(true);
+    setVoiceConversationStarted(true);
     setVoiceNotice("");
     window.setTimeout(() => startVoiceListening(), 120);
   }
 
   function startVoiceListening() {
     if (!access.canUseVoiceMode || typeof window === "undefined") return;
+    if (!voiceRepliesEnabledRef.current || !voiceConversationStartedRef.current) {
+      return;
+    }
     if (isListeningRef.current || loadingRef.current || isSpeakingRef.current) {
       return;
     }
@@ -2194,6 +2173,9 @@ export default function ChatPage() {
     if (!voiceRepliesEnabled) return null;
 
     const isImmersive = Boolean(options?.immersive);
+    const activeAvatar =
+      VOICE_AVATARS.find((avatar) => avatar.id === selectedVoiceAvatar) ??
+      VOICE_AVATARS[0];
     const avatarStateClass = isSpeaking
       ? "voice-avatar-speaking"
       : isListening
@@ -2201,9 +2183,6 @@ export default function ChatPage() {
       : loading
       ? "voice-avatar-thinking"
       : "voice-avatar-idle";
-    const activeAvatar =
-      VOICE_AVATARS.find((avatar) => avatar.id === selectedVoiceAvatar) ||
-      VOICE_AVATARS[0];
     const statusText = realAvatarLoading
       ? "Gerçek avatar hazırlanıyor"
       : isListening
@@ -2213,45 +2192,9 @@ export default function ChatPage() {
       : isSpeaking
       ? t.voiceSpeaking
       : t.voiceReady;
-    const motionStrength = isSpeaking ? 1 : isListening ? 0.62 : 0.32;
-    const motionX =
-      Math.sin(avatarMotionTick * 0.52) * 2.4 * motionStrength;
-    const motionY =
-      Math.cos(avatarMotionTick * 0.38) * 3.2 * motionStrength;
-    const motionTilt =
-      Math.sin(avatarMotionTick * 0.24) * 0.9 * motionStrength;
-    const mouthLevel = isSpeaking
-      ? 8 + Math.abs(Math.sin(avatarMotionTick * 1.35)) * 20
-      : isListening
-      ? 7
-      : 5;
-    const mouthWidth = isSpeaking
-      ? 24 + Math.abs(Math.cos(avatarMotionTick * 0.9)) * 12
-      : 28;
-    const blink = avatarMotionTick % 34 === 0 || avatarMotionTick % 34 === 1;
-    const waveBars = [0, 1, 2, 3, 4, 5];
-    const robotImageStyle: CSSProperties = {
-      ...styles.robotAvatarImage,
-      transform:
-        isSpeaking || isListening
-          ? undefined
-          : `scale(1.045) translate3d(${motionX}px, ${motionY}px, 0) rotate(${motionTilt}deg)`,
-    };
-    const robotScannerStyle: CSSProperties = {
-      ...styles.robotScanner,
-      top: `${8 + ((avatarMotionTick * 7) % 76)}%`,
-      opacity: isListening || isSpeaking ? 1 : 0.58,
-    };
-    const robotEyeStyle: CSSProperties = {
-      ...styles.robotEye,
-      opacity: blink ? 0.18 : 1,
-      transform: blink ? "scaleY(0.35)" : "scaleY(1)",
-    };
-    const robotMouthStyle: CSSProperties = {
-      ...styles.robotMouth,
-      ...(isSpeaking ? styles.robotMouthSpeaking : null),
-      height: mouthLevel,
-      width: `${mouthWidth}%`,
+    const portraitMotionStyle: CSSProperties = {
+      ...styles.robotAvatarPortrait,
+      transform: "translate3d(-50%, 0, 0)",
     };
 
     return (
@@ -2302,50 +2245,31 @@ export default function ChatPage() {
               }}
             />
           ) : (
-            <img
+            <div
               className="voice-avatar-image"
-              src={activeAvatar.image}
-              alt={getVoiceAvatarLabel(activeAvatar.id, t)}
-              style={robotImageStyle}
-            />
+              role="img"
+              aria-label={getVoiceAvatarLabel(selectedVoiceAvatar, t)}
+              style={styles.robotAvatarPortraitScene}
+            >
+              <div style={styles.robotAvatarBackGlow} />
+              <div
+                className="voice-avatar-portrait-core"
+                style={portraitMotionStyle}
+              >
+                <img
+                  src={activeAvatar.image}
+                  alt={getVoiceAvatarLabel(selectedVoiceAvatar, t)}
+                  style={styles.robotAvatarImage}
+                  draggable={false}
+                />
+              </div>
+            </div>
           )}
           <div style={styles.robotChrome} />
-          {!realAvatarVideoUrl ? (
-            <div className="voice-avatar-scanner" style={robotScannerStyle} />
-          ) : null}
           <div style={styles.robotLiveBadge}>
             <span className="voice-avatar-live-dot" style={styles.robotLiveDot} />
             {t.active}
           </div>
-          {!realAvatarVideoUrl ? (
-            <>
-              <div style={styles.robotFaceBadge}>
-                <span style={robotEyeStyle} />
-                <span style={robotEyeStyle} />
-              </div>
-              <div className="voice-avatar-mouth" style={robotMouthStyle} />
-              <div style={styles.robotWaveform}>
-                {waveBars.map((bar) => (
-                  <span
-                    className="voice-avatar-wave-bar"
-                    key={bar}
-                    style={{
-                      ...styles.robotWaveBar,
-                      height:
-                        isSpeaking || isListening
-                          ? 8 +
-                            Math.abs(
-                              Math.sin(avatarMotionTick * 0.65 + bar * 0.9)
-                            ) *
-                              24
-                          : 8 + (bar % 3) * 4,
-                      opacity: isSpeaking || isListening ? 0.95 : 0.46,
-                    }}
-                  />
-                ))}
-              </div>
-            </>
-          ) : null}
         </div>
 
         <div
@@ -2405,7 +2329,11 @@ export default function ChatPage() {
 
         <button
           type="button"
-          onClick={handleVoiceInput}
+          onClick={
+            voiceConversationStarted
+              ? stopVoiceConversation
+              : startVoiceConversation
+          }
           style={{
             ...styles.voiceCompanionButton,
             ...(isImmersive ? styles.voiceCompanionButtonImmersive : null),
@@ -2413,7 +2341,7 @@ export default function ChatPage() {
             ...(isMobile ? styles.voiceCompanionButtonMobile : null),
           }}
         >
-          {t.voiceSessionEnd}
+          {voiceConversationStarted ? t.voiceSessionEnd : t.voiceStart}
         </button>
       </div>
     );
@@ -3350,6 +3278,137 @@ const styles: Record<string, CSSProperties> = {
     display: "block",
     transformOrigin: "50% 38%",
     transition: "transform 160ms ease-out",
+  },
+
+  robotAvatarPortraitScene: {
+    position: "absolute",
+    inset: 0,
+    perspective: 900,
+    background:
+      "radial-gradient(circle at 50% 24%, rgba(125,211,252,0.28), transparent 38%), #08111f",
+    overflow: "hidden",
+  },
+
+  robotAvatarBackGlow: {
+    position: "absolute",
+    left: "50%",
+    top: "18%",
+    width: "72%",
+    height: "54%",
+    transform: "translateX(-50%)",
+    borderRadius: 999,
+    background:
+      "radial-gradient(circle, rgba(14,165,233,0.24) 0%, rgba(14,165,233,0.08) 44%, transparent 74%)",
+    filter: "blur(6px)",
+    pointerEvents: "none",
+  },
+
+  robotAvatarPortrait: {
+    position: "absolute",
+    left: "50%",
+    bottom: 0,
+    width: "100%",
+    height: "100%",
+    transformStyle: "preserve-3d",
+    transformOrigin: "50% 38%",
+    transition: "transform 90ms linear",
+  },
+
+  robotAvatarMouthSlice: {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+    opacity: 0,
+    pointerEvents: "none",
+    transformOrigin: "50% 37%",
+  },
+
+  robotAvatarMouthSliceChild: {
+    clipPath: "inset(34.6% 36.5% 56.8% 36.5%)",
+    transformOrigin: "50% 38.8%",
+  },
+
+  robotAvatarMouthSliceAdult: {
+    clipPath: "inset(34% 37.5% 56.8% 37.5%)",
+    transformOrigin: "50% 37.8%",
+  },
+
+  robotAvatarMouthShadow: {
+    position: "absolute",
+    left: "50%",
+    width: "16%",
+    height: "3.4%",
+    borderRadius: "999px 999px 60% 60%",
+    background:
+      "radial-gradient(ellipse at 50% 55%, rgba(17,24,39,0.82) 0%, rgba(30,41,59,0.54) 54%, rgba(30,41,59,0) 78%)",
+    filter: "blur(0.2px)",
+    pointerEvents: "none",
+    transform: "translateX(-50%) scaleY(0.5)",
+    transformOrigin: "50% 50%",
+  },
+
+  robotAvatarMouthShadowChild: {
+    top: "38.5%",
+    width: "17%",
+  },
+
+  robotAvatarMouthShadowAdult: {
+    top: "37.2%",
+    width: "14%",
+  },
+
+  robotAvatarEyebrow: {
+    position: "absolute",
+    top: "30%",
+    width: "12%",
+    height: 3,
+    borderRadius: 999,
+    background: "rgba(14,165,233,0.58)",
+    boxShadow: "0 0 10px rgba(14,165,233,0.42)",
+    pointerEvents: "none",
+    transition: "transform 90ms ease-out, opacity 120ms ease-out",
+  },
+
+  robotAvatarEye: {
+    position: "absolute",
+    top: "34%",
+    width: 12,
+    height: 12,
+    marginLeft: -6,
+    marginRight: -6,
+    borderRadius: 999,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "rgba(14,165,233,0.08)",
+    boxShadow: "0 0 12px rgba(14,165,233,0.20)",
+    pointerEvents: "none",
+  },
+
+  robotAvatarMouth: {
+    position: "absolute",
+    left: "50%",
+    top: "44%",
+    transform: "translateX(-50%)",
+    width: "28%",
+    height: 5,
+    borderRadius: 999,
+    background:
+      "linear-gradient(180deg, rgba(56,189,248,0.90), rgba(14,116,144,0.96))",
+    border: "1px solid rgba(186,230,253,0.52)",
+    boxShadow:
+      "0 0 10px rgba(14,165,233,0.58), inset 0 -3px 6px rgba(15,23,42,0.45)",
+    pointerEvents: "none",
+    transition: "width 90ms ease-out, height 90ms ease-out, opacity 120ms ease-out",
+  },
+
+  robotAvatarMouthAdult: {
+    top: "43%",
+    width: "24%",
+    opacity: 0.84,
   },
 
   robotAvatarVideo: {

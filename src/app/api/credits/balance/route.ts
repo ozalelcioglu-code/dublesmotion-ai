@@ -66,13 +66,14 @@ export async function GET() {
       planCode: resolved.plan,
       planLabel: resolved.planLabel,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Credit balance read failed:", error);
 
     return NextResponse.json(
       {
         ok: false,
-        error: error?.message || "Credit balance read failed",
+        error:
+          error instanceof Error ? error.message : "Credit balance read failed",
       },
       { status: 500 }
     );

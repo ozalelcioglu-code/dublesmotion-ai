@@ -46,11 +46,11 @@ export async function POST(req: Request) {
     );
 
     return res;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         ok: false,
-        error: error?.message || "Session creation failed",
+        error: error instanceof Error ? error.message : "Session creation failed",
       },
       { status: 500 }
     );

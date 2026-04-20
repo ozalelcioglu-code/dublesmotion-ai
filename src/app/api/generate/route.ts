@@ -262,7 +262,7 @@ async function tryConsumeCredits(userId: string, amount: number) {
             when coalesce(plan_code, 'free') = 'agency' then 14000 - coalesce(monthly_video_count, 0)
             when coalesce(plan_code, 'free') = 'pro' then 1600 - coalesce(monthly_video_count, 0)
             when coalesce(plan_code, 'free') = 'starter' then 450 - coalesce(monthly_video_count, 0)
-            else 40 - coalesce(monthly_video_count, 0)
+            else 100 - coalesce(monthly_video_count, 0)
           end
         )
       )
@@ -1121,6 +1121,36 @@ export async function POST(req: Request) {
               vocalMode: input.vocalMode,
             });
 
+      const audioUrl = musicResult.audioUrl || "";
+      const generationRecord =
+        !isPreview && audioUrl
+          ? await saveGenerationOutput({
+              userId: session.userId,
+              type: "music",
+              title: input.title || "Generated Song",
+              prompt,
+              lyrics: musicResult.lyrics || input.lyrics || "",
+              url: audioUrl,
+              thumbnailUrl: musicResult.coverImageUrl || null,
+              durationSec: duration,
+              provider: musicResult.provider,
+              model: musicResult.model,
+              metadata: {
+                mode: "music",
+                taskId: musicResult.taskId ?? null,
+                providerGenerationId: musicResult.generationId ?? null,
+                status: musicResult.status ?? null,
+                previewReady: musicResult.previewReady ?? false,
+                songLanguage,
+                voiceGender,
+                instrumental: Boolean(input.instrumental),
+                style: input.style ?? null,
+                vocalType: input.vocalType ?? null,
+                vocalMode: input.vocalMode ?? "preset",
+              },
+            })
+          : null;
+
       const updatedPlan = await getResolvedUserPlan(session.userId);
 
       return NextResponse.json(
@@ -1135,7 +1165,7 @@ export async function POST(req: Request) {
           lyrics: musicResult.lyrics || input.lyrics || null,
           provider: musicResult.provider,
           model: musicResult.model,
-          generationId: musicResult.generationId ?? null,
+          generationId: generationRecord?.id ?? musicResult.generationId ?? null,
           taskId: musicResult.taskId ?? null,
           previewReady: musicResult.previewReady ?? false,
           status: musicResult.status ?? "succeeded",
@@ -1196,6 +1226,29 @@ if (input.mode === "video_clone") {
   const finished = await waitClonePrediction(prediction.id);
   const rawVideoUrl = pickFirstUrl(finished.output);
   const videoUrl = await normalizeCloneVideoUrl(rawVideoUrl);
+  const title = input.title || "Cloned Video";
+  const generationRecord =
+    !isPreview && videoUrl
+      ? await saveGenerationOutput({
+          userId: session.userId,
+          type: "video_clone",
+          title,
+          prompt,
+          url: videoUrl,
+          thumbnailUrl: referenceImageUrl,
+          provider: "replicate",
+          model: CHARACTER_REPLACE_MODEL,
+          metadata: {
+            mode: "video_clone",
+            finalPrompt,
+            sourceVideoUrl,
+            referenceImageUrl,
+            predictionId: prediction.id,
+            replicateGenerationId: finished.id,
+            preserveAudio: input.preserveAudio !== false,
+          },
+        })
+      : null;
 
   const updatedPlan = await getResolvedUserPlan(session.userId);
 
@@ -1203,7 +1256,7 @@ if (input.mode === "video_clone") {
     {
       ok: true,
       mode: "video_clone",
-      title: input.title || "Cloned Video",
+      title,
       videoUrl,
       imageUrl: referenceImageUrl,
       audioUrl: null,
@@ -1212,7 +1265,7 @@ if (input.mode === "video_clone") {
       referenceImageUrl,
       prompt: finalPrompt,
       preserveAudio: input.preserveAudio !== false,
-      generationId: finished.id,
+      generationId: generationRecord?.id ?? finished.id,
       remainingCredits: updatedPlan.remainingCredits,
       usedThisMonth: updatedPlan.usedThisMonth,
       monthlyCredits: updatedPlan.monthlyCredits,
