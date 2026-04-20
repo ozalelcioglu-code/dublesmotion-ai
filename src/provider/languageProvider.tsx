@@ -26,12 +26,24 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({
   children,
-  defaultLanguage = "en",
+  defaultLanguage = "tr",
 }: {
   children: ReactNode;
   defaultLanguage?: AppLanguage;
 }) {
-  const [language, setLanguageState] = useState<AppLanguage>(defaultLanguage);
+  const [language, setLanguageState] = useState<AppLanguage>(() => {
+    if (typeof window === "undefined") return defaultLanguage;
+
+    try {
+      const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      if (stored) return getSafeLanguage(stored);
+
+      const browserLanguage = navigator.language?.slice(0, 2).toLowerCase();
+      return getSafeLanguage(browserLanguage || defaultLanguage);
+    } catch {
+      return defaultLanguage;
+    }
+  });
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

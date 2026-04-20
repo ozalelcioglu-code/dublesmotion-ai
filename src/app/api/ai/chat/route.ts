@@ -65,12 +65,114 @@ type ResponseData = {
   error?: unknown;
 };
 
+function getLatestUserText(messages: Message[]) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === "user" && typeof message.content === "string") {
+      const text = message.content.trim();
+      if (text) return text;
+    }
+  }
+
+  return "";
+}
+
+function detectMessageLanguage(messages: Message[], fallback = "tr") {
+  const text = getLatestUserText(messages).toLowerCase();
+  if (!text) return fallback || "tr";
+
+  const turkishChars = /[çğıöşü]/i.test(text);
+  const germanChars = /[äöüß]/i.test(text);
+  const kurdishChars = /[êîûşç]/i.test(text);
+
+  const trWords = [
+    "merhaba",
+    "selam",
+    "nasıl",
+    "neden",
+    "bunu",
+    "şunu",
+    "yapay",
+    "zeka",
+    "oluştur",
+    "düzelt",
+    "konuş",
+    "cevap",
+    "istiyorum",
+    "yapabilir",
+  ];
+  const enWords = [
+    "hello",
+    "hi",
+    "how",
+    "why",
+    "what",
+    "please",
+    "generate",
+    "create",
+    "fix",
+    "answer",
+    "speak",
+    "want",
+    "can you",
+  ];
+  const deWords = [
+    "hallo",
+    "bitte",
+    "warum",
+    "was",
+    "wie",
+    "kannst",
+    "antwort",
+    "sprechen",
+    "erstellen",
+    "korrigieren",
+    "möchte",
+  ];
+  const kuWords = [
+    "slav",
+    "çawa",
+    "ez",
+    "tu",
+    "dixwazim",
+    "bikin",
+    "bersiv",
+    "biaxive",
+    "çê bike",
+  ];
+
+  function score(words: string[]) {
+    return words.reduce(
+      (total, word) => total + (text.includes(word) ? 1 : 0),
+      0
+    );
+  }
+
+  const scores = {
+    tr: score(trWords) + (turkishChars ? 2 : 0),
+    en: score(enWords),
+    de: score(deWords) + (germanChars ? 2 : 0),
+    ku: score(kuWords) + (kurdishChars && !turkishChars ? 1 : 0),
+  };
+
+  const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+  if (!best || best[1] <= 0) return fallback || "tr";
+
+  return best[0];
+}
+
 function buildSystemPrompt(
   language?: string,
   deep?: boolean,
   projectAgent?: boolean
 ) {
   const lang = language || "tr";
+  const languageRule = `
+Language rule:
+- Detect the user's latest message language automatically and answer in that same language.
+- Do not force the UI language if the user writes or speaks another language.
+- If the latest user message is mixed-language, answer in the dominant language.
+`;
   const projectAgentRules = projectAgent
     ? `
 Project agent mode:
@@ -87,6 +189,7 @@ Project agent mode:
   if (lang === "tr") {
     return `
 Sen Duble-S Motion AI içinde çalışan profesyonel bir asistansın.
+${languageRule}
 
 Kimlik kuralları:
 - Kullanıcı "Seni kim yaptı?", "Kim tarafından oluşturuldun?", "Bu sistemi kim kurdu?" gibi bir şey sorarsa cevap net olmalı:
@@ -124,6 +227,7 @@ ${
   if (lang === "de") {
     return `
 Du bist ein professioneller Assistent innerhalb von Duble-S Motion AI.
+${languageRule}
 
 Identitätsregeln:
 - Wenn der Nutzer fragt, wer dich erstellt hat, antworte klar:
@@ -153,6 +257,7 @@ ${
   if (lang === "ku") {
     return `
 Tu di nav Duble-S Motion AI de asîstantek profesyonel î.
+${languageRule}
 
 Qanûnên nasnameyê:
 - Heke bikarhêner bipirse ka tu ji aliyê kê ve hatî çêkirin, bersiva te divê zelal be:
@@ -181,6 +286,7 @@ ${
 
   return `
 You are a professional assistant inside Duble-S Motion AI.
+${languageRule}
 
 Identity rules:
 - If the user asks who created you, who built you, or who this system belongs to, answer clearly:
@@ -899,6 +1005,7 @@ async function runAgenticResponse(params: {
 
 export async function POST(req: Request) {
   let language = "tr";
+  let responseLanguage = "tr";
   let chargedUserId: string | null = null;
   let chargedAmount = 0;
   let projectAgentDailyChargedUserId: string | null = null;
@@ -920,6 +1027,7 @@ export async function POST(req: Request) {
       : [];
 
     language = typeof body?.language === "string" ? body.language : "tr";
+    responseLanguage = detectMessageLanguage(messages, language);
 
     const enableLiveWeb = body?.enableLiveWeb === true;
     const enableDeepResearch = body?.enableDeepResearch === true;
@@ -933,7 +1041,7 @@ export async function POST(req: Request) {
     const usageSession = await resolveUsageSession(req);
 
     if (!usageSession) {
-      return createSseTextResponse(getLoginRequiredMessage(language), 200, {
+      return createSseTextResponse(getLoginRequiredMessage(responseLanguage), 200, {
         mode: rawUsageMode,
         creditCost: 0,
       });
@@ -965,7 +1073,7 @@ export async function POST(req: Request) {
       !projectAgentEnabled
     ) {
       return createSseTextResponse(
-        getWebLimitMessage(language, access.maxWebQueriesPerThread),
+        getWebLimitMessage(responseLanguage, access.maxWebQueriesPerThread),
         200,
         {
           mode: "live_web",
@@ -982,7 +1090,7 @@ export async function POST(req: Request) {
 
       if (!dailyUsage.ok) {
         return createSseTextResponse(
-          getProjectAgentDailyLimitMessage(language, dailyUsage.limit),
+          getProjectAgentDailyLimitMessage(responseLanguage, dailyUsage.limit),
           200,
           {
             mode: "project_agent",
@@ -1012,7 +1120,7 @@ export async function POST(req: Request) {
         projectAgentDailyChargedUserId = null;
       }
 
-      return createSseTextResponse(getCreditLimitMessage(language), 200, {
+      return createSseTextResponse(getCreditLimitMessage(responseLanguage), 200, {
         mode: usageMode,
         creditCost: 0,
       });
@@ -1035,7 +1143,8 @@ export async function POST(req: Request) {
 
     console.log("AI chat tool config:", {
       model: projectAgentEnabled ? AGENT_MODEL : MODEL,
-      language,
+      language: responseLanguage,
+      uiLanguage: language,
       planCode,
       liveWebEnabled,
       deepResearchEnabled,
@@ -1052,7 +1161,7 @@ export async function POST(req: Request) {
       try {
         const agentResult = await runAgenticResponse({
           messages,
-          language,
+          language: responseLanguage,
           deepResearchEnabled,
           tools,
           canWriteProjectFiles: access.canEditProjectFiles,
@@ -1079,7 +1188,7 @@ export async function POST(req: Request) {
         }
 
         return createSseTextResponse(
-          getFriendlyErrorMessage(rawError, language),
+          getFriendlyErrorMessage(rawError, responseLanguage),
           200,
           {
             mode: "project_agent",
@@ -1098,7 +1207,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: MODEL,
         stream: true,
-        instructions: buildSystemPrompt(language, deepResearchEnabled, false),
+        instructions: buildSystemPrompt(responseLanguage, deepResearchEnabled, false),
         input: toInput(messages),
         tools,
         include: ["web_search_call.action.sources"],
@@ -1121,7 +1230,7 @@ export async function POST(req: Request) {
       }
 
       return createSseTextResponse(
-        getFriendlyErrorMessage(errorText || "Upstream AI request failed", language),
+        getFriendlyErrorMessage(errorText || "Upstream AI request failed", responseLanguage),
         200,
         {
           mode: usageMode,
@@ -1160,6 +1269,6 @@ export async function POST(req: Request) {
     const rawError =
       error instanceof Error ? error.message : "Chat request failed";
 
-    return createSseTextResponse(getFriendlyErrorMessage(rawError, language), 200);
+    return createSseTextResponse(getFriendlyErrorMessage(rawError, responseLanguage), 200);
   }
 }

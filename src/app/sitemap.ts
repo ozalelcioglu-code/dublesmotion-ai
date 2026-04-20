@@ -10,11 +10,7 @@ const routes = [
   "/image-to-video",
   "/music",
   "/video-clone",
-  "/editor",
   "/billing",
-  "/login",
-  "/register",
-  "/history",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -23,7 +19,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return routes.map((route) => ({
     url: `${siteUrl}${route}`,
     lastModified: now,
-    changeFrequency: route === "" ? "daily" : "weekly",
-    priority: route === "" ? 1 : route === "/chat" ? 0.9 : 0.8,
+    changeFrequency: route === "" || route === "/chat" ? "daily" : "weekly",
+    priority:
+      route === ""
+        ? 1
+        : route === "/chat"
+        ? 0.95
+        : route === "/text-to-video" || route === "/text-to-image"
+        ? 0.9
+        : 0.85,
   }));
 }

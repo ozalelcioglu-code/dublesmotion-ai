@@ -14,11 +14,21 @@ const inter = Inter({
 const siteName = "Duble-S Motion AI";
 const siteUrl = "https://www.dublesmotion.com";
 const siteDescription =
-  "Duble-S Motion AI is an advanced AI platform for AI video generation, AI image creation, image-to-video, AI music, AI voice, avatar video, video cloning, and deep AI research workflows for creators, teams, marketers, and businesses.";
+  "Duble-S Motion AI is an all-in-one artificial intelligence platform for AI video generation, image creation, image-to-video, AI music, voice, talking avatars, video cloning, live chat, deep research, and project agent workflows.";
+const siteDescriptionTr =
+  "Duble-S Motion AI; yapay zeka video üretimi, görsel oluşturma, resimden video, AI müzik, ses, konuşan avatar, video klonlama, canlı sohbet, derin araştırma ve proje ajanı araçlarını tek platformda sunar.";
 const seoTitle =
-  "Duble-S Motion AI | AI Video Generator, AI Image, AI Music & Deep Research Platform";
+  "Duble-S Motion AI | Yapay Zeka Video, Görsel, Müzik, Avatar ve Derin Araştırma Platformu";
 const seoKeywords = [
   "AI",
+  "yapay zeka",
+  "yapay zeka platformu",
+  "yapay zeka araçları",
+  "yapay zeka araştırma",
+  "yapay zeka video oluşturma",
+  "yapay zeka görsel oluşturma",
+  "yapay zeka müzik oluşturma",
+  "AI araştırma",
   "artificial intelligence",
   "AI platform",
   "AI tools",
@@ -49,14 +59,16 @@ const jsonLd = {
       "@type": "Organization",
       name: "Dubles Technology",
       url: siteUrl,
-      logo: `${siteUrl}/favicon.ico`,
+      logo: `${siteUrl}/icon-512.png`,
       sameAs: [siteUrl],
     },
     {
       "@type": "WebSite",
       name: siteName,
+      alternateName: ["Dublesmotion", "Duble-S Motion", "Dubles Technology AI"],
       url: siteUrl,
       description: siteDescription,
+      inLanguage: ["tr", "en", "de", "ku"],
       publisher: {
         "@type": "Organization",
         name: "Dubles Technology",
@@ -85,13 +97,15 @@ const jsonLd = {
       },
       featureList: [
         "AI video generation",
+        "Text to video AI",
         "AI image generation",
         "Image to video",
         "AI music generation",
         "AI voice workflows",
-        "Avatar video",
-        "Video clone",
+        "Talking avatar video",
+        "AI video clone",
         "Deep AI research",
+        "Project agent for code and file workflows",
       ],
     },
   ],
@@ -112,19 +126,35 @@ export const metadata: Metadata = {
   category: "technology",
   alternates: {
     canonical: "/",
+    languages: {
+      tr: "/",
+      en: "/",
+      de: "/",
+      ku: "/",
+    },
   },
   openGraph: {
     type: "website",
     url: siteUrl,
     siteName,
     title: seoTitle,
-    description: siteDescription,
-    locale: "en_US",
+    description: siteDescriptionTr,
+    locale: "tr_TR",
+    alternateLocale: ["en_US", "de_DE"],
+    images: [
+      {
+        url: "/icon-512.png",
+        width: 512,
+        height: 512,
+        alt: `${siteName} logo`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: seoTitle,
-    description: siteDescription,
+    description: siteDescriptionTr,
+    images: ["/icon-512.png"],
   },
   robots: {
     index: true,
@@ -139,9 +169,17 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
   },
 };
 
@@ -151,7 +189,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="tr">
       <body className={inter.className}>
         <Script
           id="website-structured-data"
@@ -159,7 +197,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <SessionProvider>
-          <LanguageProvider defaultLanguage="en">
+          <LanguageProvider defaultLanguage="tr">
             {children}
           </LanguageProvider>
         </SessionProvider>
