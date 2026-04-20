@@ -12,7 +12,7 @@ import {
 } from "react";
 import AppShell from "@/components/layout/AppShell";
 import { getCommonI18n } from "@/lib/i18n";
-import { getChatAccess } from "@/lib/plan-access";
+import { getChatAccess, UNLIMITED_CHAT_QUERIES } from "@/lib/plan-access";
 import {
   compactTitle,
   uploadGenerationAsset,
@@ -81,6 +81,25 @@ type ChatTexts = {
   usageCredit: string;
   usageSteps: string;
   usageTools: string;
+  unlimited: string;
+  welcomeMessage: string;
+  voiceReady: string;
+  voiceListening: string;
+  voiceThinking: string;
+  voiceSpeaking: string;
+  voiceStart: string;
+  voiceStop: string;
+  voiceSessionEnd: string;
+  voiceAutoHint: string;
+  voiceFreeLimit: string;
+  voiceUnsupported: string;
+  voiceMicDenied: string;
+  voiceNoSpeech: string;
+  voiceRecognitionError: string;
+  voiceStartError: string;
+  voiceAvatarLabel: string;
+  childRobot: string;
+  adultRobot: string;
   plusMenu: {
     image: string;
     file: string;
@@ -124,6 +143,31 @@ const CHAT_TEXTS = {
     usageCredit: "Kredi",
     usageSteps: "Step",
     usageTools: "Araç",
+    unlimited: "sınırsız",
+    welcomeMessage:
+      "Merhaba, ben Duble-S Motion AI sohbet asistanın. Benimle doğal şekilde konuşabilir, üretim başlatabilir, dosya analiz ettirebilir ve proje fikirlerini geliştirebilirsin.",
+    voiceReady: "Sesli sohbet hazır",
+    voiceListening: "Seni dinliyorum",
+    voiceThinking: "Cevabı hazırlıyorum",
+    voiceSpeaking: "Sesli cevap veriyorum",
+    voiceStart: "Sesli sohbete başla",
+    voiceStop: "Dinlemeyi durdur",
+    voiceSessionEnd: "Sesli sohbeti kapat",
+    voiceAutoHint: "Cevabım bitince otomatik olarak tekrar seni dinlerim.",
+    voiceFreeLimit:
+      "Free planda sesli sohbet bugün 3 cevapla sınırlı. Yazılı sohbeti kullanabilir veya planını yükseltebilirsin.",
+    voiceUnsupported:
+      "Bu tarayıcı sesli komutu desteklemiyor. Chrome veya Safari ile deneyebilirsin.",
+    voiceMicDenied:
+      "Mikrofon izni kapalı görünüyor. Tarayıcı izinlerinden mikrofonu açmalısın.",
+    voiceNoSpeech: "Sesini alamadım. Tekrar dinlemeye geçiyorum.",
+    voiceRecognitionError:
+      "Ses algılama sırasında sorun oldu. Birkaç saniye içinde tekrar dinleyeceğim.",
+    voiceStartError:
+      "Sesli dinleme başlatılamadı. Mikrofon iznini ve tarayıcı desteğini kontrol et.",
+    voiceAvatarLabel: "Robot seçimi",
+    childRobot: "Çocuk robot",
+    adultRobot: "Yetişkin robot",
     plusMenu: {
       image: "Resim ekle",
       file: "Dosya ekle",
@@ -165,6 +209,31 @@ const CHAT_TEXTS = {
     usageCredit: "Credits",
     usageSteps: "Steps",
     usageTools: "Tools",
+    unlimited: "unlimited",
+    welcomeMessage:
+      "Hello, I’m your Duble-S Motion AI chat assistant. You can talk naturally, start generations, analyze files, and develop project ideas here.",
+    voiceReady: "Voice chat is ready",
+    voiceListening: "I’m listening",
+    voiceThinking: "Preparing the answer",
+    voiceSpeaking: "Speaking the answer",
+    voiceStart: "Start voice chat",
+    voiceStop: "Stop listening",
+    voiceSessionEnd: "End voice chat",
+    voiceAutoHint: "After I finish speaking, I listen again automatically.",
+    voiceFreeLimit:
+      "Voice chat on the Free plan is limited to 3 spoken answers today. You can keep using written chat or upgrade your plan.",
+    voiceUnsupported:
+      "This browser does not support voice commands. Try Chrome or Safari.",
+    voiceMicDenied:
+      "Microphone permission seems blocked. Enable microphone access in the browser.",
+    voiceNoSpeech: "I could not hear you. I will listen again.",
+    voiceRecognitionError:
+      "Voice recognition had a problem. I will try listening again in a few seconds.",
+    voiceStartError:
+      "Voice listening could not start. Check microphone permission and browser support.",
+    voiceAvatarLabel: "Robot choice",
+    childRobot: "Child robot",
+    adultRobot: "Adult robot",
     plusMenu: {
       image: "Add image",
       file: "Add file",
@@ -206,6 +275,31 @@ const CHAT_TEXTS = {
     usageCredit: "Credits",
     usageSteps: "Steps",
     usageTools: "Tools",
+    unlimited: "unbegrenzt",
+    welcomeMessage:
+      "Hallo, ich bin dein Duble-S Motion AI Chat-Assistent. Du kannst natürlich mit mir sprechen, Generierungen starten, Dateien analysieren und Projektideen entwickeln.",
+    voiceReady: "Sprachchat ist bereit",
+    voiceListening: "Ich höre zu",
+    voiceThinking: "Antwort wird vorbereitet",
+    voiceSpeaking: "Antwort wird gesprochen",
+    voiceStart: "Sprachchat starten",
+    voiceStop: "Zuhören stoppen",
+    voiceSessionEnd: "Sprachchat beenden",
+    voiceAutoHint: "Nachdem ich gesprochen habe, höre ich automatisch wieder zu.",
+    voiceFreeLimit:
+      "Der Sprachchat im Free-Plan ist heute auf 3 gesprochene Antworten begrenzt. Du kannst den Textchat weiter nutzen oder den Plan erhöhen.",
+    voiceUnsupported:
+      "Dieser Browser unterstützt keine Sprachbefehle. Versuche es mit Chrome oder Safari.",
+    voiceMicDenied:
+      "Das Mikrofon scheint blockiert zu sein. Erlaube den Mikrofonzugriff im Browser.",
+    voiceNoSpeech: "Ich konnte dich nicht hören. Ich höre gleich wieder zu.",
+    voiceRecognitionError:
+      "Bei der Spracherkennung gab es ein Problem. Ich versuche es gleich erneut.",
+    voiceStartError:
+      "Das Zuhören konnte nicht gestartet werden. Prüfe Mikrofonrechte und Browser.",
+    voiceAvatarLabel: "Roboter-Auswahl",
+    childRobot: "Kinder-Roboter",
+    adultRobot: "Erwachsenen-Roboter",
     plusMenu: {
       image: "Bild hinzufügen",
       file: "Datei hinzufügen",
@@ -247,6 +341,31 @@ const CHAT_TEXTS = {
     usageCredit: "Kredî",
     usageSteps: "Step",
     usageTools: "Amûr",
+    unlimited: "bêsînor",
+    welcomeMessage:
+      "Silav, ez asîstantê sohbetê yê Duble-S Motion AI me. Tu dikarî bi min re bi awayekî xwezayî biaxivî, hilberandinê dest pê bikî, pelan analîz bikî û ramanên projeyê pêş bixî.",
+    voiceReady: "Sohbeta dengî amade ye",
+    voiceListening: "Ez li te guhdar dikim",
+    voiceThinking: "Bersiv tê amadekirin",
+    voiceSpeaking: "Ez bi deng bersiv didim",
+    voiceStart: "Sohbeta dengî dest pê bike",
+    voiceStop: "Guhdarkirinê rawestîne",
+    voiceSessionEnd: "Sohbeta dengî bigire",
+    voiceAutoHint: "Piştî ku ez biqedînim, ez bixwe dîsa li te guhdar dikim.",
+    voiceFreeLimit:
+      "Di plana Free de sohbeta dengî îro bi 3 bersivên dengî sînordar e. Tu dikarî sohbeta nivîskî bidomînî an planê bilind bikî.",
+    voiceUnsupported:
+      "Ev gerok piştgirîya fermanên dengî nake. Bi Chrome an Safari biceribîne.",
+    voiceMicDenied:
+      "Destûra mîkrofonê girtî xuya dike. Di gerokê de destûra mîkrofonê veke.",
+    voiceNoSpeech: "Min dengê te negirt. Ez ê dîsa guhdar bikim.",
+    voiceRecognitionError:
+      "Di naskirina deng de pirsgirêk çêbû. Ez ê piştî çend çirkeyan dîsa biceribînim.",
+    voiceStartError:
+      "Guhdarkirina dengî dest pê nekir. Destûra mîkrofonê û gerokê kontrol bike.",
+    voiceAvatarLabel: "Hilbijartina robotê",
+    childRobot: "Robota zarok",
+    adultRobot: "Robota mezinan",
     plusMenu: {
       image: "Wêne zêde bike",
       file: "Pel zêde bike",
@@ -274,7 +393,7 @@ type SpeechRecognitionLike = {
   stop: () => void;
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event?: { error?: string }) => void) | null;
 };
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
@@ -298,8 +417,192 @@ type ChatUsageSnapshot = {
   toolCalls?: number;
 };
 
+type VoiceAvatarId = "child" | "adult";
+
+const VOICE_AVATARS: Array<{
+  id: VoiceAvatarId;
+  image: string;
+}> = [
+  {
+    id: "child",
+    image: "/voice-avatars/child-robot-avatar.png",
+  },
+  {
+    id: "adult",
+    image: "/voice-avatars/adult-robot-avatar.png",
+  },
+];
+
+const VOICE_AVATAR_MOTION_CSS = `
+  .voice-avatar-live {
+    isolation: isolate;
+    will-change: transform, box-shadow;
+  }
+
+  .voice-avatar-live.voice-avatar-speaking {
+    animation: dubles-avatar-body-talk 980ms ease-in-out infinite;
+  }
+
+  .voice-avatar-live.voice-avatar-listening {
+    animation: dubles-avatar-body-listen 1800ms ease-in-out infinite;
+  }
+
+  .voice-avatar-image {
+    will-change: transform, filter;
+  }
+
+  .voice-avatar-speaking .voice-avatar-image {
+    animation: dubles-avatar-face-talk 620ms ease-in-out infinite;
+    filter: saturate(1.1) contrast(1.05);
+  }
+
+  .voice-avatar-listening .voice-avatar-image {
+    animation: dubles-avatar-face-listen 1500ms ease-in-out infinite;
+  }
+
+  .voice-avatar-mouth {
+    will-change: width, height, opacity, transform;
+  }
+
+  .voice-avatar-speaking .voice-avatar-mouth {
+    animation: dubles-avatar-mouth-talk 150ms ease-in-out infinite alternate;
+  }
+
+  .voice-avatar-listening .voice-avatar-mouth {
+    animation: dubles-avatar-mouth-listen 1200ms ease-in-out infinite;
+  }
+
+  .voice-avatar-scanner {
+    will-change: transform, opacity;
+  }
+
+  .voice-avatar-speaking .voice-avatar-scanner,
+  .voice-avatar-listening .voice-avatar-scanner {
+    animation: dubles-avatar-scan 1200ms linear infinite;
+  }
+
+  .voice-avatar-live-dot {
+    will-change: transform, opacity;
+  }
+
+  .voice-avatar-speaking .voice-avatar-live-dot,
+  .voice-avatar-listening .voice-avatar-live-dot {
+    animation: dubles-avatar-live-dot 650ms ease-in-out infinite;
+  }
+
+  .voice-avatar-wave-bar {
+    transform-origin: 50% 100%;
+  }
+
+  .voice-avatar-speaking .voice-avatar-wave-bar {
+    animation: dubles-avatar-wave 360ms ease-in-out infinite alternate;
+  }
+
+  .voice-avatar-speaking .voice-avatar-wave-bar:nth-child(2) {
+    animation-delay: 70ms;
+  }
+
+  .voice-avatar-speaking .voice-avatar-wave-bar:nth-child(3) {
+    animation-delay: 130ms;
+  }
+
+  .voice-avatar-speaking .voice-avatar-wave-bar:nth-child(4) {
+    animation-delay: 30ms;
+  }
+
+  .voice-avatar-speaking .voice-avatar-wave-bar:nth-child(5) {
+    animation-delay: 110ms;
+  }
+
+  .voice-avatar-speaking .voice-avatar-wave-bar:nth-child(6) {
+    animation-delay: 170ms;
+  }
+
+  @keyframes dubles-avatar-body-talk {
+    0%, 100% { transform: translate3d(0, 0, 0) rotate(-0.4deg) scale(1); }
+    25% { transform: translate3d(2px, -4px, 0) rotate(0.7deg) scale(1.012); }
+    50% { transform: translate3d(-2px, 2px, 0) rotate(-0.9deg) scale(1.006); }
+    75% { transform: translate3d(1px, -2px, 0) rotate(0.5deg) scale(1.014); }
+  }
+
+  @keyframes dubles-avatar-body-listen {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(0, -5px, 0) scale(1.006); }
+  }
+
+  @keyframes dubles-avatar-face-talk {
+    0%, 100% { transform: scale(1.055) translate3d(0, 0, 0) rotate(0deg); }
+    20% { transform: scale(1.075) translate3d(3px, -4px, 0) rotate(0.9deg); }
+    45% { transform: scale(1.06) translate3d(-3px, 2px, 0) rotate(-0.8deg); }
+    70% { transform: scale(1.078) translate3d(2px, -2px, 0) rotate(0.6deg); }
+  }
+
+  @keyframes dubles-avatar-face-listen {
+    0%, 100% { transform: scale(1.045) translate3d(0, 0, 0); }
+    50% { transform: scale(1.055) translate3d(0, -4px, 0); }
+  }
+
+  @keyframes dubles-avatar-mouth-talk {
+    0% { width: 18%; height: 7px; opacity: 0.88; }
+    35% { width: 34%; height: 23px; opacity: 1; }
+    70% { width: 26%; height: 14px; opacity: 0.95; }
+    100% { width: 39%; height: 28px; opacity: 1; }
+  }
+
+  @keyframes dubles-avatar-mouth-listen {
+    0%, 100% { width: 22%; height: 5px; opacity: 0.74; }
+    50% { width: 28%; height: 8px; opacity: 0.9; }
+  }
+
+  @keyframes dubles-avatar-scan {
+    0% { transform: translateY(-12px); opacity: 0.2; }
+    18% { opacity: 1; }
+    100% { transform: translateY(360px); opacity: 0.32; }
+  }
+
+  @keyframes dubles-avatar-live-dot {
+    0%, 100% { transform: scale(0.82); opacity: 0.65; }
+    50% { transform: scale(1.22); opacity: 1; }
+  }
+
+  @keyframes dubles-avatar-wave {
+    0% { transform: scaleY(0.28); opacity: 0.55; }
+    100% { transform: scaleY(1.35); opacity: 1; }
+  }
+`;
+
 function getChatTexts(language: string): ChatTexts {
   return CHAT_TEXTS[language as keyof typeof CHAT_TEXTS] ?? CHAT_TEXTS.en;
+}
+
+function getVoiceAvatarLabel(id: VoiceAvatarId, texts: ChatTexts) {
+  return id === "child" ? texts.childRobot : texts.adultRobot;
+}
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getStoredVoiceAvatar(): VoiceAvatarId {
+  if (typeof window === "undefined") return "child";
+
+  try {
+    const stored = window.localStorage.getItem("dubles_voice_avatar_v1");
+    return stored === "adult" ? "adult" : "child";
+  } catch {
+    return "child";
+  }
+}
+
+function createVoiceUsageStorageKey(email?: string | null) {
+  return `dubles_voice_chat_usage_v1_${email || "guest"}_${getTodayKey()}`;
+}
+
+function isLegacyEnglishGreeting(content: string) {
+  return (
+    content.includes("Hello, I’m the Duble-S Motion AI chat assistant") ||
+    content.includes("Hello, I'm the Duble-S Motion AI chat assistant")
+  );
 }
 
 function detectIntent(text: string): V2IntentType {
@@ -582,10 +885,18 @@ export default function ChatPage() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const isMobile = useIsMobile(900);
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceRepliesEnabled, setVoiceRepliesEnabled] = useState(false);
+  const [selectedVoiceAvatar, setSelectedVoiceAvatar] =
+    useState<VoiceAvatarId>("child");
+  const [voiceReplyCount, setVoiceReplyCount] = useState(0);
+  const [voiceNotice, setVoiceNotice] = useState("");
+  const [realAvatarVideoUrl, setRealAvatarVideoUrl] = useState("");
+  const [realAvatarLoading, setRealAvatarLoading] = useState(false);
+  const [avatarMotionTick, setAvatarMotionTick] = useState(0);
   const [liveWebRequested, setLiveWebRequested] = useState(false);
   const [deepResearchRequested, setDeepResearchRequested] = useState(false);
-  const [projectAgentRequested, setProjectAgentRequested] = useState(true);
+  const [projectAgentRequested, setProjectAgentRequested] = useState(false);
   const [webUsageCount, setWebUsageCount] = useState(0);
   const [usageSnapshot, setUsageSnapshot] = useState<ChatUsageSnapshot>({
     status: "idle",
@@ -599,8 +910,71 @@ export default function ChatPage() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const realAvatarVideoRef = useRef<HTMLVideoElement | null>(null);
+  const voiceRestartTimerRef = useRef<number | null>(null);
+  const voiceRepliesEnabledRef = useRef(false);
+  const loadingRef = useRef(false);
+  const isSpeakingRef = useRef(false);
+  const isListeningRef = useRef(false);
+  const voiceReplyCountRef = useRef(0);
+  const isFreePlanRef = useRef(true);
 
   const storageEmail = user?.email ?? null;
+  const isFreePlan = !user || user.planCode === "free";
+  const freeVoiceReplyLimit = 3;
+  const liveWebUnlimited =
+    access.maxWebQueriesPerThread >= UNLIMITED_CHAT_QUERIES;
+
+  useEffect(() => {
+    voiceRepliesEnabledRef.current = voiceRepliesEnabled;
+  }, [voiceRepliesEnabled]);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    isSpeakingRef.current = isSpeaking;
+  }, [isSpeaking]);
+
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
+
+  useEffect(() => {
+    voiceReplyCountRef.current = voiceReplyCount;
+  }, [voiceReplyCount]);
+
+  useEffect(() => {
+    isFreePlanRef.current = isFreePlan;
+  }, [isFreePlan]);
+
+  useEffect(() => {
+    if (!voiceRepliesEnabled || realAvatarVideoUrl) return;
+
+    const interval = window.setInterval(
+      () => setAvatarMotionTick((prev) => (prev + 1) % 1000),
+      isSpeaking ? 115 : isListening ? 170 : 260
+    );
+
+    return () => window.clearInterval(interval);
+  }, [voiceRepliesEnabled, isListening, isSpeaking, realAvatarVideoUrl]);
+
+  useEffect(() => {
+    const realAvatarVideo = realAvatarVideoRef.current;
+
+    return () => {
+      if (voiceRestartTimerRef.current) {
+        window.clearTimeout(voiceRestartTimerRef.current);
+      }
+      recognitionRef.current?.stop();
+      window.speechSynthesis?.cancel();
+      ttsAudioRef.current?.pause();
+      ttsAudioRef.current = null;
+      realAvatarVideo?.pause();
+    };
+  }, []);
 
   useEffect(() => {
     const nextThreads = readThreads(storageEmail);
@@ -615,6 +989,31 @@ export default function ChatPage() {
 
     setActiveThreadId(nextThreads[0]?.id || null);
   }, [storageEmail]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    setSelectedVoiceAvatar(getStoredVoiceAvatar());
+
+    const raw = window.localStorage.getItem(
+      createVoiceUsageStorageKey(storageEmail)
+    );
+    const parsed = raw ? Number(raw) : 0;
+    const nextCount = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+    voiceReplyCountRef.current = nextCount;
+    setVoiceReplyCount(nextCount);
+    setVoiceNotice("");
+  }, [storageEmail]);
+
+  function selectVoiceAvatar(id: VoiceAvatarId) {
+    setSelectedVoiceAvatar(id);
+
+    try {
+      window.localStorage.setItem("dubles_voice_avatar_v1", id);
+    } catch {
+      // no-op
+    }
+  }
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -648,7 +1047,7 @@ export default function ChatPage() {
   );
 
   const liveWebLimitReached =
-    webUsageCount >= access.maxWebQueriesPerThread;
+    !liveWebUnlimited && webUsageCount >= access.maxWebQueriesPerThread;
 
   function getRequestedUsageMode(): ChatUsageMode {
     if (projectAgentRequested && access.canUseProjectAgent) {
@@ -683,6 +1082,22 @@ export default function ChatPage() {
     if (mode === "deep_research") return t.deepResearch;
     if (mode === "live_web") return t.liveWeb;
     return "Chat";
+  }
+
+  function getLiveWebLimitLabel() {
+    if (liveWebUnlimited) return t.unlimited;
+    return `${webUsageCount}/${access.maxWebQueriesPerThread}`;
+  }
+
+  function getMessageDisplayContent(message: ChatMessage) {
+    if (
+      message.role === "assistant" &&
+      isLegacyEnglishGreeting(message.content)
+    ) {
+      return t.welcomeMessage;
+    }
+
+    return message.content;
   }
 
   function mergeUsageSnapshot(nextUsage: Partial<ChatUsageSnapshot>) {
@@ -775,24 +1190,250 @@ export default function ChatPage() {
     setAttachments((prev) => prev.filter((item) => item.id !== attachmentId));
   }
 
-  function speakAssistantText(text: string) {
-    if (!voiceRepliesEnabled || !access.canUseVoiceMode) return;
+  function getPreferredSpeechVoice() {
+    if (typeof window === "undefined" || !window.speechSynthesis) return null;
+
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return null;
+    const languagePrefix =
+      language === "tr"
+        ? "tr"
+        : language === "de"
+        ? "de"
+        : language === "ku"
+        ? "tr"
+        : "en";
+
+    const maleHints =
+      selectedVoiceAvatar === "child"
+        ? ["child", "boy", "junior", "young", "echo", "çocuk", "cocuk"]
+        : [
+            "male",
+            "man",
+            "erkek",
+            "murat",
+            "emre",
+            "yusuf",
+            "cem",
+            "tolga",
+            "kerem",
+            "daniel",
+            "thomas",
+            "alex",
+            "fred",
+            "ralph",
+            "bruce",
+          ];
+    const femaleHints = [
+      "female",
+      "woman",
+      "kadın",
+      "kadin",
+      "ayşe",
+      "ayse",
+      "zeynep",
+      "yelda",
+      "seda",
+      "melis",
+      "susan",
+      "victoria",
+      "karen",
+      "moira",
+      "tessa",
+      "serena",
+      "samantha",
+    ];
+
+    function scoreVoice(voice: SpeechSynthesisVoice) {
+      const name = voice.name.toLowerCase();
+      const lang = voice.lang.toLowerCase();
+      let score = 0;
+
+      if (lang.startsWith(languagePrefix)) score += 120;
+      if (lang.startsWith("tr")) score += language === "tr" ? 60 : 10;
+      if (lang.startsWith("en")) score += 12;
+      if (voice.localService) score += 6;
+      if (voice.default) score += 2;
+      if (maleHints.some((hint) => name.includes(hint))) score += 180;
+      if (femaleHints.some((hint) => name.includes(hint))) score -= 220;
+
+      return score;
+    }
+
+    const sorted = [...voices].sort((a, b) => scoreVoice(b) - scoreVoice(a));
+    const preferred = sorted[0] || null;
+
+    return preferred;
+  }
+
+  function speakWithBrowserSpeech(cleanText: string) {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(cleanText.slice(0, 900));
+    const preferredVoice = getPreferredSpeechVoice();
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+      utterance.lang = preferredVoice.lang;
+    } else {
+      utterance.lang =
+        language === "tr"
+          ? "tr-TR"
+          : language === "de"
+          ? "de-DE"
+          : language === "ku"
+          ? "ku-TR"
+          : "en-US";
+    }
+    utterance.pitch = selectedVoiceAvatar === "child" ? 0.82 : 0.52;
+    utterance.rate = selectedVoiceAvatar === "child" ? 0.96 : 0.9;
+    utterance.volume = 1;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      scheduleNextVoiceListen();
+    };
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      scheduleNextVoiceListen(900);
+    };
+    window.speechSynthesis.speak(utterance);
+  }
+
+  async function speakWithOpenAiTts(cleanText: string) {
+    const response = await fetch("/api/ai/tts", {
+      method: "POST",
+      headers: sessionHeaders,
+      body: JSON.stringify({
+        text: cleanText,
+        language,
+        avatar: selectedVoiceAvatar,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("TTS request failed");
+    }
+
+    const blob = await response.blob();
+    const audioUrl = URL.createObjectURL(blob);
+    const audio = new Audio(audioUrl);
+
+    ttsAudioRef.current?.pause();
+    ttsAudioRef.current = audio;
+
+    audio.onplay = () => setIsSpeaking(true);
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+      if (ttsAudioRef.current === audio) ttsAudioRef.current = null;
+      setIsSpeaking(false);
+      scheduleNextVoiceListen();
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(audioUrl);
+      if (ttsAudioRef.current === audio) ttsAudioRef.current = null;
+      setIsSpeaking(false);
+      speakWithBrowserSpeech(cleanText);
+    };
+
+    await audio.play();
+  }
+
+  async function speakWithRealAvatarVideo(cleanText: string) {
+    setRealAvatarLoading(true);
+    setVoiceNotice("");
+
+    try {
+      const response = await fetch("/api/ai/avatar-video", {
+        method: "POST",
+        headers: sessionHeaders,
+        body: JSON.stringify({
+          text: cleanText,
+          language,
+          avatar: selectedVoiceAvatar,
+        }),
+      });
+      const data = (await response.json().catch(() => null)) as
+        | {
+            ok?: boolean;
+            fallback?: boolean;
+            videoUrl?: string;
+            code?: string;
+            usageCount?: number | null;
+            usageLimit?: number | null;
+            error?: string;
+          }
+        | null;
+
+      if (typeof data?.usageCount === "number") {
+        voiceReplyCountRef.current = data.usageCount;
+        setVoiceReplyCount(data.usageCount);
+      }
+
+      if (!response.ok || !data?.ok || data.fallback || !data.videoUrl) {
+        if (data?.code === "FREE_REAL_AVATAR_LIMIT") {
+          setVoiceNotice(t.voiceFreeLimit);
+        } else if (data?.code === "MISSING_FAL_KEY") {
+          setVoiceNotice(
+            "Gerçek avatar video servisi için FAL_KEY tanımlı değil. Şimdilik sahte canlı avatarla devam ediyorum."
+          );
+        } else if (data?.error) {
+          setVoiceNotice(data.error);
+        }
+
+        return false;
+      }
+
+      window.speechSynthesis.cancel();
+      ttsAudioRef.current?.pause();
+      setRealAvatarVideoUrl(data.videoUrl);
+      return true;
+    } finally {
+      setRealAvatarLoading(false);
+    }
+  }
+
+  function scheduleNextVoiceListen(delay = 650) {
+    if (voiceRestartTimerRef.current) {
+      window.clearTimeout(voiceRestartTimerRef.current);
+    }
+
+    voiceRestartTimerRef.current = window.setTimeout(() => {
+      if (
+        voiceRepliesEnabledRef.current &&
+        !loadingRef.current &&
+        !isSpeakingRef.current &&
+        !isListeningRef.current
+      ) {
+        startVoiceListening();
+      }
+    }, delay);
+  }
+
+  function speakAssistantText(
+    text: string,
+    options?: { countUsage?: boolean }
+  ) {
+    if (!voiceRepliesEnabledRef.current || !access.canUseVoiceMode) return;
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const shouldUseRealAvatar = options?.countUsage ?? true;
 
     const cleanText = text.replace(/```[\s\S]*?```/g, "").trim();
     if (!cleanText) return;
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(cleanText.slice(0, 900));
-    utterance.lang =
-      language === "tr"
-        ? "tr-TR"
-        : language === "de"
-        ? "de-DE"
-        : language === "ku"
-        ? "ku-TR"
-        : "en-US";
-    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(true);
+    setRealAvatarVideoUrl("");
+    void (shouldUseRealAvatar
+      ? speakWithRealAvatarVideo(cleanText)
+      : Promise.resolve(false)
+    )
+      .then((usedRealAvatar) => {
+        if (usedRealAvatar) return;
+        return speakWithOpenAiTts(cleanText);
+      })
+      .catch(() => {
+        speakWithBrowserSpeech(cleanText);
+      });
   }
 
   async function postJson(path: string, payload: Record<string, unknown>) {
@@ -1068,12 +1709,53 @@ export default function ChatPage() {
     return { content: "" };
   }
 
-  function handleVoiceInput() {
+  function stopVoiceConversation() {
+    if (voiceRestartTimerRef.current) {
+      window.clearTimeout(voiceRestartTimerRef.current);
+      voiceRestartTimerRef.current = null;
+    }
+
+    recognitionRef.current?.stop();
+    window.speechSynthesis?.cancel();
+    ttsAudioRef.current?.pause();
+    ttsAudioRef.current = null;
+    setIsListening(false);
+    setIsSpeaking(false);
+    setVoiceRepliesEnabled(false);
+  }
+
+  async function requestMicrophoneAccess() {
+    if (!navigator.mediaDevices?.getUserMedia) return true;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      return true;
+    } catch {
+      setVoiceNotice(t.voiceMicDenied);
+      return false;
+    }
+  }
+
+  async function handleVoiceInput() {
     if (!access.canUseVoiceMode || typeof window === "undefined") return;
 
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
+    if (voiceRepliesEnabled) {
+      stopVoiceConversation();
+      return;
+    }
+
+    const hasMicrophoneAccess = await requestMicrophoneAccess();
+    if (!hasMicrophoneAccess) return;
+
+    setVoiceRepliesEnabled(true);
+    setVoiceNotice("");
+    window.setTimeout(() => startVoiceListening(), 120);
+  }
+
+  function startVoiceListening() {
+    if (!access.canUseVoiceMode || typeof window === "undefined") return;
+    if (isListeningRef.current || loadingRef.current || isSpeakingRef.current) {
       return;
     }
 
@@ -1082,13 +1764,11 @@ export default function ChatPage() {
       speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
 
     if (!Recognition) {
-      setInput((prev) =>
-        prev.trim()
-          ? prev
-          : "Bu tarayıcı sesli komutu desteklemiyor. Chrome veya Safari ile deneyebilirsin."
-      );
+      setVoiceNotice(t.voiceUnsupported);
       return;
     }
+
+    setVoiceNotice("");
 
     const recognition = new Recognition();
     recognition.lang =
@@ -1101,19 +1781,67 @@ export default function ChatPage() {
         : "en-US";
     recognition.continuous = false;
     recognition.interimResults = true;
+    let latestTranscript = "";
+    let finalTranscript = "";
     recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
+      const results = Array.from(event.results);
+      const transcript = results
+        .map((result) => result[0]?.transcript || "")
+        .join(" ")
+        .trim();
+      const finalText = results
+        .filter((result) => result.isFinal)
         .map((result) => result[0]?.transcript || "")
         .join(" ")
         .trim();
 
-      if (transcript) setInput(transcript);
+      if (transcript) {
+        latestTranscript = transcript;
+        setInput(transcript);
+      }
+      if (finalText) finalTranscript = finalText;
     };
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => {
+      setIsListening(false);
+      const spokenText = (finalTranscript || latestTranscript).trim();
+
+      if (spokenText && !loadingRef.current) {
+        void handleSend(spokenText);
+        return;
+      }
+
+      if (voiceRepliesEnabledRef.current) {
+        scheduleNextVoiceListen(800);
+      }
+    };
+    recognition.onerror = (event) => {
+      setIsListening(false);
+
+      if (event?.error === "not-allowed" || event?.error === "service-not-allowed") {
+        setVoiceNotice(t.voiceMicDenied);
+        return;
+      }
+
+      if (event?.error === "no-speech") {
+        setVoiceNotice(t.voiceNoSpeech);
+      } else {
+        setVoiceNotice(t.voiceRecognitionError);
+      }
+
+      if (voiceRepliesEnabledRef.current) {
+        scheduleNextVoiceListen(1200);
+      }
+    };
     recognitionRef.current = recognition;
     setIsListening(true);
-    recognition.start();
+
+    try {
+      recognition.start();
+    } catch {
+      setIsListening(false);
+      setVoiceNotice(t.voiceStartError);
+      scheduleNextVoiceListen(1400);
+    }
   }
 
  async function handleSend(prefillText?: string) {
@@ -1148,6 +1876,7 @@ export default function ChatPage() {
   setInput("");
   setAttachments([]);
   setLoading(true);
+  setVoiceNotice("");
 
   try {
     const intent = detectIntent(text);
@@ -1313,6 +2042,10 @@ export default function ChatPage() {
       }
     }
 
+    if (!assistantText.trim()) {
+      throw new Error("Assistant response was empty");
+    }
+
     if (requestedUsageMode !== "basic") {
       setUsageSnapshot((prev) => ({
         ...prev,
@@ -1331,6 +2064,11 @@ export default function ChatPage() {
     speakAssistantText(assistantText);
   } catch (error) {
     console.error("Chat send error:", error);
+    if (voiceRepliesEnabledRef.current) {
+      setVoiceNotice(common.states.error);
+      speakAssistantText(common.states.error, { countUsage: false });
+    }
+
     setUsageSnapshot((prev) =>
       prev.status === "running" ? { ...prev, status: "done" } : prev
     );
@@ -1451,8 +2189,251 @@ export default function ChatPage() {
       </div>
     );
   }
+
+  function renderVoiceCompanion(options?: { immersive?: boolean }) {
+    if (!voiceRepliesEnabled) return null;
+
+    const isImmersive = Boolean(options?.immersive);
+    const avatarStateClass = isSpeaking
+      ? "voice-avatar-speaking"
+      : isListening
+      ? "voice-avatar-listening"
+      : loading
+      ? "voice-avatar-thinking"
+      : "voice-avatar-idle";
+    const activeAvatar =
+      VOICE_AVATARS.find((avatar) => avatar.id === selectedVoiceAvatar) ||
+      VOICE_AVATARS[0];
+    const statusText = realAvatarLoading
+      ? "Gerçek avatar hazırlanıyor"
+      : isListening
+      ? t.voiceListening
+      : loading
+      ? t.voiceThinking
+      : isSpeaking
+      ? t.voiceSpeaking
+      : t.voiceReady;
+    const motionStrength = isSpeaking ? 1 : isListening ? 0.62 : 0.32;
+    const motionX =
+      Math.sin(avatarMotionTick * 0.52) * 2.4 * motionStrength;
+    const motionY =
+      Math.cos(avatarMotionTick * 0.38) * 3.2 * motionStrength;
+    const motionTilt =
+      Math.sin(avatarMotionTick * 0.24) * 0.9 * motionStrength;
+    const mouthLevel = isSpeaking
+      ? 8 + Math.abs(Math.sin(avatarMotionTick * 1.35)) * 20
+      : isListening
+      ? 7
+      : 5;
+    const mouthWidth = isSpeaking
+      ? 24 + Math.abs(Math.cos(avatarMotionTick * 0.9)) * 12
+      : 28;
+    const blink = avatarMotionTick % 34 === 0 || avatarMotionTick % 34 === 1;
+    const waveBars = [0, 1, 2, 3, 4, 5];
+    const robotImageStyle: CSSProperties = {
+      ...styles.robotAvatarImage,
+      transform:
+        isSpeaking || isListening
+          ? undefined
+          : `scale(1.045) translate3d(${motionX}px, ${motionY}px, 0) rotate(${motionTilt}deg)`,
+    };
+    const robotScannerStyle: CSSProperties = {
+      ...styles.robotScanner,
+      top: `${8 + ((avatarMotionTick * 7) % 76)}%`,
+      opacity: isListening || isSpeaking ? 1 : 0.58,
+    };
+    const robotEyeStyle: CSSProperties = {
+      ...styles.robotEye,
+      opacity: blink ? 0.18 : 1,
+      transform: blink ? "scaleY(0.35)" : "scaleY(1)",
+    };
+    const robotMouthStyle: CSSProperties = {
+      ...styles.robotMouth,
+      ...(isSpeaking ? styles.robotMouthSpeaking : null),
+      height: mouthLevel,
+      width: `${mouthWidth}%`,
+    };
+
+    return (
+      <div
+        style={{
+          ...styles.voiceCompanion,
+          ...(isImmersive ? styles.voiceCompanionImmersive : null),
+          ...(isMobile && isImmersive
+            ? styles.voiceCompanionImmersiveMobile
+            : null),
+          ...(isMobile && !isImmersive ? styles.voiceCompanionMobile : null),
+        }}
+      >
+        <div
+          className={`voice-avatar-live ${avatarStateClass}`}
+          style={{
+            ...styles.robotAvatar,
+            ...(isImmersive ? styles.robotAvatarImmersive : null),
+            ...(isMobile && isImmersive
+              ? styles.robotAvatarImmersiveMobile
+              : null),
+            ...(isMobile && !isImmersive ? styles.robotAvatarMobile : null),
+            ...(isListening || isSpeaking ? styles.robotAvatarActive : null),
+          }}
+        >
+          {realAvatarVideoUrl ? (
+            <video
+              ref={realAvatarVideoRef}
+              className="voice-avatar-video"
+              src={realAvatarVideoUrl}
+              autoPlay
+              playsInline
+              controls={false}
+              style={styles.robotAvatarVideo}
+              onCanPlay={(event) => {
+                void event.currentTarget.play().catch(() => undefined);
+              }}
+              onPlay={() => setIsSpeaking(true)}
+              onEnded={() => {
+                setIsSpeaking(false);
+                setRealAvatarVideoUrl("");
+                scheduleNextVoiceListen();
+              }}
+              onError={() => {
+                setIsSpeaking(false);
+                setRealAvatarVideoUrl("");
+                scheduleNextVoiceListen(900);
+              }}
+            />
+          ) : (
+            <img
+              className="voice-avatar-image"
+              src={activeAvatar.image}
+              alt={getVoiceAvatarLabel(activeAvatar.id, t)}
+              style={robotImageStyle}
+            />
+          )}
+          <div style={styles.robotChrome} />
+          {!realAvatarVideoUrl ? (
+            <div className="voice-avatar-scanner" style={robotScannerStyle} />
+          ) : null}
+          <div style={styles.robotLiveBadge}>
+            <span className="voice-avatar-live-dot" style={styles.robotLiveDot} />
+            {t.active}
+          </div>
+          {!realAvatarVideoUrl ? (
+            <>
+              <div style={styles.robotFaceBadge}>
+                <span style={robotEyeStyle} />
+                <span style={robotEyeStyle} />
+              </div>
+              <div className="voice-avatar-mouth" style={robotMouthStyle} />
+              <div style={styles.robotWaveform}>
+                {waveBars.map((bar) => (
+                  <span
+                    className="voice-avatar-wave-bar"
+                    key={bar}
+                    style={{
+                      ...styles.robotWaveBar,
+                      height:
+                        isSpeaking || isListening
+                          ? 8 +
+                            Math.abs(
+                              Math.sin(avatarMotionTick * 0.65 + bar * 0.9)
+                            ) *
+                              24
+                          : 8 + (bar % 3) * 4,
+                      opacity: isSpeaking || isListening ? 0.95 : 0.46,
+                    }}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        <div
+          style={{
+            ...styles.voiceCompanionText,
+            ...(isImmersive ? styles.voiceCompanionTextImmersive : null),
+            ...(isMobile && isImmersive
+              ? styles.voiceCompanionTextImmersiveMobile
+              : null),
+          }}
+        >
+          <div
+            style={{
+              ...styles.voiceCompanionTitle,
+              ...(isImmersive ? styles.voiceCompanionTitleImmersive : null),
+            }}
+          >
+            {statusText}
+          </div>
+          <div style={styles.voiceCompanionMeta}>
+            {isFreePlan
+              ? `${voiceReplyCount}/${freeVoiceReplyLimit}`
+              : t.unlimited}
+          </div>
+          <div style={styles.voiceCompanionHint}>{t.voiceAutoHint}</div>
+          <div style={styles.voiceAvatarPickerLabel}>{t.voiceAvatarLabel}</div>
+          <div
+            style={{
+              ...styles.voiceAvatarPicker,
+              ...(isMobile && isImmersive
+                ? styles.voiceAvatarPickerImmersiveMobile
+                : null),
+            }}
+          >
+            {VOICE_AVATARS.map((avatar) => {
+              const selected = selectedVoiceAvatar === avatar.id;
+
+              return (
+                <button
+                  key={avatar.id}
+                  type="button"
+                  onClick={() => selectVoiceAvatar(avatar.id)}
+                  style={{
+                    ...styles.voiceAvatarOption,
+                    ...(selected ? styles.voiceAvatarOptionActive : null),
+                  }}
+                >
+                  {getVoiceAvatarLabel(avatar.id, t)}
+                </button>
+              );
+            })}
+          </div>
+          {voiceNotice ? (
+            <div style={styles.voiceCompanionNotice}>{voiceNotice}</div>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleVoiceInput}
+          style={{
+            ...styles.voiceCompanionButton,
+            ...(isImmersive ? styles.voiceCompanionButtonImmersive : null),
+            ...(isListening ? styles.voiceCompanionButtonActive : null),
+            ...(isMobile ? styles.voiceCompanionButtonMobile : null),
+          }}
+        >
+          {t.voiceSessionEnd}
+        </button>
+      </div>
+    );
+  }
+
+  function renderVoiceConversationStage() {
+    return (
+      <div
+        style={{
+          ...styles.voiceConversationStage,
+          ...(isMobile ? styles.voiceConversationStageMobile : null),
+        }}
+      >
+        {renderVoiceCompanion({ immersive: true })}
+      </div>
+    );
+  }
     return (
     <AppShell currentPath="/chat">
+      <style>{VOICE_AVATAR_MOTION_CSS}</style>
       <input
         ref={imageInputRef}
         type="file"
@@ -1577,7 +2558,7 @@ export default function ChatPage() {
               disabled={!access.canUseLiveWeb}
             >
               {t.liveWeb}: {liveWebRequested ? "on" : "off"}{" "}
-              ({webUsageCount}/{access.maxWebQueriesPerThread})
+              ({getLiveWebLimitLabel()})
             </button>
 
             <button
@@ -1611,7 +2592,7 @@ export default function ChatPage() {
 
             <button
               type="button"
-              onClick={() => setVoiceRepliesEnabled((prev) => !prev)}
+              onClick={handleVoiceInput}
               style={{
                 ...styles.sidebarToggleButton,
                 ...(voiceRepliesEnabled ? styles.sidebarToggleButtonActive : null),
@@ -1627,9 +2608,12 @@ export default function ChatPage() {
         </aside>
 
         <section style={styles.chatArea}>
-          {!hasStartedConversation ? (
+          {voiceRepliesEnabled ? (
+            renderVoiceConversationStage()
+          ) : !hasStartedConversation ? (
             <div style={styles.centerStage}>
               <div style={styles.centerContent}>
+                {renderVoiceCompanion()}
                 <h1 style={styles.centerTitle}>{t.centerTitle}</h1>
                 <p style={styles.centerSubtitle}>{t.centerSubtitle}</p>
 
@@ -1736,114 +2720,119 @@ export default function ChatPage() {
             </div>
           ) : (
             <div style={styles.chatLayout}>
+              {renderVoiceCompanion()}
               <div ref={messageScrollRef} style={styles.messageScroll}>
                 <div style={styles.messageList}>
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      style={{
-                        ...styles.messageRow,
-                        justifyContent:
-                          message.role === "user" ? "flex-end" : "flex-start",
-                      }}
-                    >
+                  {messages.map((message) => {
+                    const displayContent = getMessageDisplayContent(message);
+
+                    return (
                       <div
+                        key={message.id}
                         style={{
-                          ...styles.messageBubble,
-                          ...(message.role === "user"
-                            ? styles.userBubble
-                            : styles.assistantBubble),
+                          ...styles.messageRow,
+                          justifyContent:
+                            message.role === "user" ? "flex-end" : "flex-start",
                         }}
                       >
-                        <div style={styles.messageContent}>{message.content}</div>
+                        <div
+                          style={{
+                            ...styles.messageBubble,
+                            ...(message.role === "user"
+                              ? styles.userBubble
+                              : styles.assistantBubble),
+                          }}
+                        >
+                          <div style={styles.messageContent}>{displayContent}</div>
 
-                        {message.attachments?.length ? (
-                          <div style={styles.messageAttachmentList}>
-                            {message.attachments.map((attachment) => (
-                              <div key={attachment.id} style={styles.messageAttachmentItem}>
-                                {attachment.name}
-                              </div>
-                            ))}
-                          </div>
-                        ) : null}
-
-                        {message.generation ? (
-                          <div style={styles.generationCard}>
-                            <div style={styles.generationTitle}>
-                              {message.generation.title}
+                          {message.attachments?.length ? (
+                            <div style={styles.messageAttachmentList}>
+                              {message.attachments.map((attachment) => (
+                                <div key={attachment.id} style={styles.messageAttachmentItem}>
+                                  {attachment.name}
+                                </div>
+                              ))}
                             </div>
-                            {message.generation.kind === "image" ? (
-                              <img
-                                src={message.generation.url}
-                                alt={message.generation.title}
-                                style={styles.generatedImage}
-                              />
-                            ) : null}
-                            {message.generation.kind === "video" ? (
-                              <video
-                                controls
-                                playsInline
-                                src={message.generation.url}
-                                style={styles.generatedVideo}
-                              />
-                            ) : null}
-                            {message.generation.kind === "audio" ? (
-                              <audio
-                                controls
-                                src={message.generation.url}
-                                style={styles.generatedAudio}
-                              />
-                            ) : null}
-                            <a
-                              href={message.generation.url}
-                              download
-                              style={styles.generationLink}
-                            >
-                              Dosyayı aç / indir
-                            </a>
-                          </div>
-                        ) : null}
+                          ) : null}
 
-                        {message.role === "assistant" ? (
-                          <div style={styles.messageActions}>
-                            <button
-                              type="button"
-                              style={styles.iconAction}
-                              onClick={() => handleCopy(message.content)}
-                              title={t.copy}
-                              aria-label={t.copy}
-                            >
-                              <CopyIcon />
-                            </button>
-                            <button
-                              type="button"
-                              style={styles.iconAction}
-                              title={t.like}
-                              aria-label={t.like}
-                            >
-                              <LikeIcon />
-                            </button>
-                            <button
-                              type="button"
-                              style={styles.iconAction}
-                              title={t.dislike}
-                              aria-label={t.dislike}
-                            >
-                              <DislikeIcon />
-                            </button>
-                            <button
-                              type="button"
-                              style={styles.iconAction}
-                              title={t.share}
-                              aria-label={t.share}
-                            >
-                              <ShareIcon />
-                            </button>
-                          </div>
-                        ) : null}
+                          {message.generation ? (
+                            <div style={styles.generationCard}>
+                              <div style={styles.generationTitle}>
+                                {message.generation.title}
+                              </div>
+                              {message.generation.kind === "image" ? (
+                                <img
+                                  src={message.generation.url}
+                                  alt={message.generation.title}
+                                  style={styles.generatedImage}
+                                />
+                              ) : null}
+                              {message.generation.kind === "video" ? (
+                                <video
+                                  controls
+                                  playsInline
+                                  src={message.generation.url}
+                                  style={styles.generatedVideo}
+                                />
+                              ) : null}
+                              {message.generation.kind === "audio" ? (
+                                <audio
+                                  controls
+                                  src={message.generation.url}
+                                  style={styles.generatedAudio}
+                                />
+                              ) : null}
+                              <a
+                                href={message.generation.url}
+                                download
+                                style={styles.generationLink}
+                              >
+                                Dosyayı aç / indir
+                              </a>
+                            </div>
+                          ) : null}
+
+                          {message.role === "assistant" ? (
+                            <div style={styles.messageActions}>
+                              <button
+                                type="button"
+                                style={styles.iconAction}
+                                onClick={() => handleCopy(displayContent)}
+                                title={t.copy}
+                                aria-label={t.copy}
+                              >
+                                <CopyIcon />
+                              </button>
+                              <button
+                                type="button"
+                                style={styles.iconAction}
+                                title={t.like}
+                                aria-label={t.like}
+                              >
+                                <LikeIcon />
+                              </button>
+                              <button
+                                type="button"
+                                style={styles.iconAction}
+                                title={t.dislike}
+                                aria-label={t.dislike}
+                              >
+                                <DislikeIcon />
+                              </button>
+                              <button
+                                type="button"
+                                style={styles.iconAction}
+                                title={t.share}
+                                aria-label={t.share}
+                              >
+                                <ShareIcon />
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {loading ? (
                     <div style={styles.messageRow}>
@@ -2036,7 +3025,10 @@ const styles: Record<string, CSSProperties> = {
     transition: "transform 0.25s ease",
     zIndex: 60,
     background: "#f7f7f8",
-    padding: "18px 16px 16px",
+    paddingTop: 18,
+    paddingRight: 16,
+    paddingBottom: 16,
+    paddingLeft: 16,
     borderRight: "1px solid #e5e7eb",
   },
 
@@ -2254,6 +3246,346 @@ const styles: Record<string, CSSProperties> = {
     color: "#111827",
     fontSize: 14,
     lineHeight: 1.2,
+  },
+
+  voiceConversationStage: {
+    flex: 1,
+    minHeight: "calc(100dvh - 188px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "24px",
+    boxSizing: "border-box",
+  },
+
+  voiceConversationStageMobile: {
+    minHeight: "calc(100dvh - 118px)",
+    padding: "12px",
+  },
+
+  voiceCompanion: {
+    width: "100%",
+    maxWidth: 760,
+    margin: "0 auto 18px",
+    border: "1px solid #dbeafe",
+    borderRadius: 8,
+    background: "#ffffff",
+    padding: 12,
+    display: "grid",
+    gridTemplateColumns: "96px minmax(0, 1fr) auto",
+    alignItems: "center",
+    gap: 12,
+    boxShadow: "0 12px 32px rgba(15,23,42,0.06)",
+    boxSizing: "border-box",
+  },
+
+  voiceCompanionImmersive: {
+    maxWidth: 960,
+    minHeight: 520,
+    gridTemplateColumns: "300px minmax(0, 1fr)",
+    alignItems: "center",
+    padding: 28,
+    gap: 28,
+    marginBottom: 0,
+  },
+
+  voiceCompanionImmersiveMobile: {
+    maxWidth: "100%",
+    minHeight: "calc(100dvh - 142px)",
+    gridTemplateColumns: "1fr",
+    justifyItems: "center",
+    alignContent: "center",
+    textAlign: "center",
+    padding: "18px 14px",
+    gap: 16,
+    marginBottom: 0,
+  },
+
+  voiceCompanionMobile: {
+    gridTemplateColumns: "78px minmax(0, 1fr)",
+    minHeight: "auto",
+    padding: 12,
+    marginBottom: 12,
+  },
+
+  robotAvatar: {
+    width: 88,
+    height: 108,
+    borderRadius: 8,
+    background: "#0f172a",
+    border: "1px solid #94a3b8",
+    position: "relative",
+    overflow: "hidden",
+    boxShadow:
+      "0 14px 26px rgba(15,23,42,0.18), inset 0 0 0 2px rgba(255,255,255,0.10)",
+    flexShrink: 0,
+  },
+
+  robotAvatarImmersive: {
+    width: 280,
+    height: 420,
+    borderRadius: 8,
+  },
+
+  robotAvatarImmersiveMobile: {
+    width: "min(76vw, 280px)",
+    height: "min(104vw, 388px)",
+  },
+
+  robotAvatarMobile: {
+    width: 72,
+    height: 88,
+  },
+
+  robotAvatarActive: {
+    border: "1px solid #38bdf8",
+    boxShadow:
+      "0 0 0 6px rgba(14,165,233,0.16), 0 24px 50px rgba(15,23,42,0.24), inset 0 0 0 2px rgba(255,255,255,0.14)",
+  },
+
+  robotAvatarImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+    transformOrigin: "50% 38%",
+    transition: "transform 160ms ease-out",
+  },
+
+  robotAvatarVideo: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+    background: "#020617",
+  },
+
+  robotChrome: {
+    position: "absolute",
+    inset: 0,
+    borderRadius: 8,
+    background:
+      "linear-gradient(180deg, rgba(14,165,233,0.22) 0%, rgba(15,23,42,0) 36%, rgba(15,23,42,0.48) 100%)",
+    boxShadow:
+      "inset 0 0 0 2px rgba(103,232,249,0.34), inset 0 -22px 28px rgba(15,23,42,0.62)",
+    pointerEvents: "none",
+  },
+
+  robotScanner: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    background: "#67e8f9",
+    boxShadow: "0 0 14px rgba(103,232,249,0.95)",
+  },
+
+  robotLiveBadge: {
+    position: "absolute",
+    left: 10,
+    top: 10,
+    minHeight: 22,
+    borderRadius: 8,
+    padding: "0 8px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    background: "rgba(15,23,42,0.78)",
+    color: "#ecfeff",
+    border: "1px solid rgba(103,232,249,0.42)",
+    fontSize: 10,
+    fontWeight: 900,
+    textTransform: "uppercase",
+  },
+
+  robotLiveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+    background: "#22c55e",
+    boxShadow: "0 0 10px rgba(34,197,94,0.92)",
+  },
+
+  robotFaceBadge: {
+    position: "absolute",
+    right: 7,
+    top: 7,
+    width: 30,
+    height: 16,
+    borderRadius: 5,
+    background: "rgba(15,23,42,0.82)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-around",
+    padding: "0 5px",
+    boxSizing: "border-box",
+    border: "1px solid rgba(103,232,249,0.42)",
+  },
+
+  robotEye: {
+    width: 6,
+    height: 6,
+    borderRadius: 999,
+    background: "#67e8f9",
+    boxShadow: "0 0 8px rgba(103,232,249,0.9)",
+  },
+
+  robotMouth: {
+    position: "absolute",
+    left: "50%",
+    top: "32%",
+    bottom: "auto",
+    transform: "translateX(-50%)",
+    width: "28%",
+    height: 5,
+    borderRadius: 999,
+    background: "#67e8f9",
+    boxShadow: "0 0 10px rgba(103,232,249,0.8)",
+  },
+
+  robotMouthSpeaking: {
+    height: 16,
+    background: "#0ea5e9",
+    boxShadow:
+      "0 0 14px rgba(14,165,233,0.95), 0 0 34px rgba(14,165,233,0.55)",
+  },
+
+  robotWaveform: {
+    position: "absolute",
+    left: "50%",
+    bottom: 18,
+    transform: "translateX(-50%)",
+    width: "58%",
+    height: 38,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    borderRadius: 8,
+    background: "rgba(15,23,42,0.42)",
+    border: "1px solid rgba(103,232,249,0.28)",
+    pointerEvents: "none",
+  },
+
+  robotWaveBar: {
+    width: 5,
+    borderRadius: 999,
+    background: "#67e8f9",
+    boxShadow: "0 0 10px rgba(103,232,249,0.72)",
+    transition: "height 110ms ease-out, opacity 140ms ease-out",
+  },
+
+  voiceCompanionText: {
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+  },
+
+  voiceCompanionTextImmersive: {
+    gap: 8,
+  },
+
+  voiceCompanionTextImmersiveMobile: {
+    alignItems: "center",
+    maxWidth: 320,
+  },
+
+  voiceCompanionTitle: {
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: 800,
+    lineHeight: 1.25,
+  },
+
+  voiceCompanionTitleImmersive: {
+    fontSize: 24,
+  },
+
+  voiceCompanionMeta: {
+    color: "#2563eb",
+    fontSize: 12,
+    fontWeight: 800,
+  },
+
+  voiceCompanionHint: {
+    color: "#475569",
+    fontSize: 13,
+    lineHeight: 1.45,
+  },
+
+  voiceAvatarPickerLabel: {
+    marginTop: 4,
+    color: "#64748b",
+    fontSize: 11,
+    fontWeight: 800,
+    textTransform: "uppercase",
+  },
+
+  voiceAvatarPicker: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+
+  voiceAvatarPickerImmersiveMobile: {
+    justifyContent: "center",
+  },
+
+  voiceAvatarOption: {
+    minHeight: 30,
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
+    background: "#ffffff",
+    color: "#334155",
+    padding: "0 10px",
+    fontSize: 12,
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
+  voiceAvatarOptionActive: {
+    border: "1px solid #38bdf8",
+    background: "#eff6ff",
+    color: "#0369a1",
+  },
+
+  voiceCompanionNotice: {
+    color: "#b45309",
+    fontSize: 12,
+    lineHeight: 1.45,
+  },
+
+  voiceCompanionButton: {
+    minHeight: 38,
+    borderRadius: 8,
+    border: "1px solid #111827",
+    background: "#111827",
+    color: "#ffffff",
+    padding: "0 14px",
+    fontSize: 13,
+    fontWeight: 800,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+
+  voiceCompanionButtonActive: {
+    border: "1px solid #ef4444",
+    background: "#ef4444",
+  },
+
+  voiceCompanionButtonImmersive: {
+    gridColumn: "2 / 3",
+    justifySelf: "start",
+    minWidth: 180,
+  },
+
+  voiceCompanionButtonMobile: {
+    gridColumn: "1 / -1",
+    width: "100%",
+    justifySelf: "stretch",
   },
 
   chatArea: {

@@ -46,10 +46,11 @@ export async function GET(req: Request) {
     const session = await getAppSessionFromCookie();
 
     if (!session?.userId || !session?.email) {
-      return NextResponse.json(
-        { ok: false, error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        ok: false,
+        authenticated: false,
+        profile: null,
+      });
     }
 
     await ensureUserProfile({

@@ -132,8 +132,8 @@ export default function LoginPage() {
   }, []);
 
   const canSubmit = useMemo(() => {
-    return email.trim().length > 3 && password.trim().length >= 4;
-  }, [email, password]);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  }, [email]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -171,9 +171,9 @@ export default function LoginPage() {
       });
 
       router.push("/chat");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || t.error);
+      setError(err instanceof Error ? err.message : t.error);
     } finally {
       setSubmitting(false);
     }

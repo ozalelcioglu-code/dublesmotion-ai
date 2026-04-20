@@ -1,5 +1,7 @@
 export type UserPlan = "free" | "starter" | "pro" | "agency";
 
+export const UNLIMITED_CHAT_QUERIES = 999_999;
+
 export type ChatAccess = {
   canUseLiveWeb: boolean;
   canUseDeepResearch: boolean;
@@ -15,6 +17,7 @@ export type ChatAccess = {
   maxProjectFileReads: number;
   maxProjectFileWrites: number;
   maxProjectFileLists: number;
+  projectAgentDailyLimit: number;
   maxToolOutputChars: number;
   canHandleHeavyTasks: boolean;
 };
@@ -39,7 +42,7 @@ export function getChatAccess(planCode?: string | null): ChatAccess {
         canUseDeepResearch: false,
         canUseProjectAgent: false,
         canEditProjectFiles: false,
-        canUseVoiceMode: false,
+        canUseVoiceMode: true,
         maxWebQueriesPerThread: 3,
         liveWebCreditCost: 2,
         deepResearchCreditCost: 0,
@@ -49,6 +52,7 @@ export function getChatAccess(planCode?: string | null): ChatAccess {
         maxProjectFileReads: 0,
         maxProjectFileWrites: 0,
         maxProjectFileLists: 0,
+        projectAgentDailyLimit: 0,
         maxToolOutputChars: 8_000,
         canHandleHeavyTasks: false,
       };
@@ -56,19 +60,20 @@ export function getChatAccess(planCode?: string | null): ChatAccess {
     case "starter":
       return {
         canUseLiveWeb: true,
-        canUseDeepResearch: false,
-        canUseProjectAgent: false,
+        canUseDeepResearch: true,
+        canUseProjectAgent: true,
         canEditProjectFiles: false,
         canUseVoiceMode: true,
-        maxWebQueriesPerThread: 8,
+        maxWebQueriesPerThread: UNLIMITED_CHAT_QUERIES,
         liveWebCreditCost: 2,
-        deepResearchCreditCost: 0,
-        projectAgentReadCreditCost: 0,
+        deepResearchCreditCost: 10,
+        projectAgentReadCreditCost: 10,
         projectAgentEditCreditCost: 0,
-        maxAgentSteps: 0,
-        maxProjectFileReads: 0,
+        maxAgentSteps: 4,
+        maxProjectFileReads: 8,
         maxProjectFileWrites: 0,
-        maxProjectFileLists: 0,
+        maxProjectFileLists: 4,
+        projectAgentDailyLimit: 3,
         maxToolOutputChars: 10_000,
         canHandleHeavyTasks: false,
       };
@@ -80,7 +85,7 @@ export function getChatAccess(planCode?: string | null): ChatAccess {
         canUseProjectAgent: true,
         canEditProjectFiles: true,
         canUseVoiceMode: true,
-        maxWebQueriesPerThread: 15,
+        maxWebQueriesPerThread: UNLIMITED_CHAT_QUERIES,
         liveWebCreditCost: 2,
         deepResearchCreditCost: 10,
         projectAgentReadCreditCost: 10,
@@ -89,6 +94,7 @@ export function getChatAccess(planCode?: string | null): ChatAccess {
         maxProjectFileReads: 20,
         maxProjectFileWrites: 5,
         maxProjectFileLists: 10,
+        projectAgentDailyLimit: 8,
         maxToolOutputChars: 16_000,
         canHandleHeavyTasks: true,
       };
@@ -100,7 +106,7 @@ export function getChatAccess(planCode?: string | null): ChatAccess {
         canUseProjectAgent: true,
         canEditProjectFiles: true,
         canUseVoiceMode: true,
-        maxWebQueriesPerThread: 50,
+        maxWebQueriesPerThread: UNLIMITED_CHAT_QUERIES,
         liveWebCreditCost: 2,
         deepResearchCreditCost: 10,
         projectAgentReadCreditCost: 10,
@@ -109,6 +115,7 @@ export function getChatAccess(planCode?: string | null): ChatAccess {
         maxProjectFileReads: 100,
         maxProjectFileWrites: 25,
         maxProjectFileLists: 40,
+        projectAgentDailyLimit: 40,
         maxToolOutputChars: 30_000,
         canHandleHeavyTasks: true,
       };
@@ -119,7 +126,7 @@ export function getChatAccess(planCode?: string | null): ChatAccess {
         canUseDeepResearch: false,
         canUseProjectAgent: false,
         canEditProjectFiles: false,
-        canUseVoiceMode: false,
+        canUseVoiceMode: true,
         maxWebQueriesPerThread: 3,
         liveWebCreditCost: 2,
         deepResearchCreditCost: 0,
@@ -129,6 +136,7 @@ export function getChatAccess(planCode?: string | null): ChatAccess {
         maxProjectFileReads: 0,
         maxProjectFileWrites: 0,
         maxProjectFileLists: 0,
+        projectAgentDailyLimit: 0,
         maxToolOutputChars: 8_000,
         canHandleHeavyTasks: false,
       };

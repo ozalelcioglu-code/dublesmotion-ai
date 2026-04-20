@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sql } from "@/lib/db";
 import { getChatAccess, type ChatAccess } from "@/lib/plan-access";
 import {
   refundUserCredits,
@@ -583,6 +584,95 @@ function getWebLimitMessage(language: string, maxWebQueriesPerThread: number) {
   return `This chat reached the live web limit. This plan allows ${maxWebQueriesPerThread} live web queries per chat.`;
 }
 
+function getProjectAgentDailyLimitMessage(language: string, limit: number) {
+  if (language === "tr") {
+    return `Proje ajanı için günlük sınıra ulaşıldı. Bu planda günde ${limit} proje ajanı isteği kullanılabilir.`;
+  }
+  if (language === "de") {
+    return `Das Tageslimit für den Projekt-Agenten wurde erreicht. Dieser Plan erlaubt ${limit} Projekt-Agent-Anfragen pro Tag.`;
+  }
+  if (language === "ku") {
+    return `Sînora rojane ya ajana projeyê hat tijîkirin. Ev plan rojê ${limit} daxwazên ajana projeyê destûr dide.`;
+  }
+  return `The project agent daily limit has been reached. This plan allows ${limit} project agent requests per day.`;
+}
+
+async function ensureProjectAgentDailyUsageTable() {
+  await sql`
+    create table if not exists chat_project_agent_daily_usage (
+      user_id text not null,
+      usage_date date not null,
+      usage_count integer not null default 0,
+      updated_at timestamptz not null default now(),
+      primary key (user_id, usage_date)
+    )
+  `;
+}
+
+async function tryConsumeProjectAgentDailyUsage(
+  userId: string,
+  dailyLimit: number
+) {
+  if (dailyLimit <= 0) {
+    return { ok: false, count: 0, limit: dailyLimit };
+  }
+
+  await ensureProjectAgentDailyUsageTable();
+
+  const today = new Date().toISOString().slice(0, 10);
+  const rows = (await sql`
+    insert into chat_project_agent_daily_usage (
+      user_id,
+      usage_date,
+      usage_count,
+      updated_at
+    )
+    values (${userId}::text, ${today}::date, 1, now())
+    on conflict (user_id, usage_date)
+    do update set
+      usage_count = chat_project_agent_daily_usage.usage_count + 1,
+      updated_at = now()
+    where chat_project_agent_daily_usage.usage_count < ${dailyLimit}
+    returning usage_count
+  `) as Array<{ usage_count: number }>;
+
+  if (rows[0]) {
+    return {
+      ok: true,
+      count: rows[0].usage_count,
+      limit: dailyLimit,
+    };
+  }
+
+  const existing = (await sql`
+    select usage_count
+    from chat_project_agent_daily_usage
+    where user_id = ${userId}::text
+      and usage_date = ${today}::date
+    limit 1
+  `) as Array<{ usage_count: number }>;
+
+  return {
+    ok: false,
+    count: existing[0]?.usage_count ?? dailyLimit,
+    limit: dailyLimit,
+  };
+}
+
+async function refundProjectAgentDailyUsage(userId: string) {
+  await ensureProjectAgentDailyUsageTable();
+
+  const today = new Date().toISOString().slice(0, 10);
+  await sql`
+    update chat_project_agent_daily_usage
+    set
+      usage_count = greatest(0, usage_count - 1),
+      updated_at = now()
+    where user_id = ${userId}::text
+      and usage_date = ${today}::date
+  `;
+}
+
 async function readErrorText(response: Response) {
   try {
     return await response.text();
@@ -811,6 +901,7 @@ export async function POST(req: Request) {
   let language = "tr";
   let chargedUserId: string | null = null;
   let chargedAmount = 0;
+  let projectAgentDailyChargedUserId: string | null = null;
 
   try {
     if (!OPENAI_API_KEY) {
@@ -883,6 +974,26 @@ export async function POST(req: Request) {
       );
     }
 
+    if (projectAgentEnabled) {
+      const dailyUsage = await tryConsumeProjectAgentDailyUsage(
+        usageSession.userId,
+        access.projectAgentDailyLimit
+      );
+
+      if (!dailyUsage.ok) {
+        return createSseTextResponse(
+          getProjectAgentDailyLimitMessage(language, dailyUsage.limit),
+          200,
+          {
+            mode: "project_agent",
+            creditCost: 0,
+          }
+        );
+      }
+
+      projectAgentDailyChargedUserId = usageSession.userId;
+    }
+
     const creditCost = getChatCreditCost({
       liveWebEnabled,
       deepResearchEnabled,
@@ -896,6 +1007,11 @@ export async function POST(req: Request) {
     );
 
     if (!consumed.ok) {
+      if (projectAgentDailyChargedUserId) {
+        await refundProjectAgentDailyUsage(projectAgentDailyChargedUserId);
+        projectAgentDailyChargedUserId = null;
+      }
+
       return createSseTextResponse(getCreditLimitMessage(language), 200, {
         mode: usageMode,
         creditCost: 0,
@@ -955,6 +1071,11 @@ export async function POST(req: Request) {
           await refundUserCredits(chargedUserId, chargedAmount);
           chargedUserId = null;
           chargedAmount = 0;
+        }
+
+        if (projectAgentDailyChargedUserId) {
+          await refundProjectAgentDailyUsage(projectAgentDailyChargedUserId);
+          projectAgentDailyChargedUserId = null;
         }
 
         return createSseTextResponse(
@@ -1023,6 +1144,14 @@ export async function POST(req: Request) {
         await refundUserCredits(chargedUserId, chargedAmount);
       } catch (refundError) {
         console.error("Chat credit refund failed:", refundError);
+      }
+    }
+
+    if (projectAgentDailyChargedUserId) {
+      try {
+        await refundProjectAgentDailyUsage(projectAgentDailyChargedUserId);
+      } catch (refundError) {
+        console.error("Project agent daily usage refund failed:", refundError);
       }
     }
 

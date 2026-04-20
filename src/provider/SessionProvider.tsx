@@ -37,7 +37,7 @@ type SessionContextValue = {
     email: string;
     planCode?: PlanCode;
   }) => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   updatePlan: (planCode: PlanCode) => void;
   refreshSession: () => Promise<void>;
   consumeCredits: (amount: number) => void;
@@ -104,6 +104,19 @@ function buildUser(params: {
   };
 }
 
+function readStoredSession() {
+  try {
+    const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as SessionUser;
+    return parsed?.email ? parsed : null;
+  } catch (error) {
+    console.error("Session load error:", error);
+    return null;
+  }
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
 
@@ -159,21 +172,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
-      if (!raw) return;
+    const timer = window.setTimeout(() => {
+      const storedUser = readStoredSession();
+      if (storedUser) setUser(storedUser);
+      void refreshSession();
+    }, 0);
 
-      const parsed = JSON.parse(raw) as SessionUser;
-      if (parsed?.email) {
-        setUser(parsed);
-      }
-    } catch (error) {
-      console.error("Session load error:", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshSession();
+    return () => window.clearTimeout(timer);
   }, [refreshSession]);
 
   useEffect(() => {
@@ -196,7 +201,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
   }, [refreshSession]);
 
-  const signIn = (payload: {
+  const signIn = useCallback((payload: {
     name: string;
     email: string;
     planCode?: PlanCode;
@@ -204,15 +209,24 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     persist(buildUser(payload));
 
     setTimeout(() => {
-      refreshSession();
+      void refreshSession();
     }, 150);
-  };
+  }, [persist, refreshSession]);
 
-  const signOut = () => {
+  const signOut = useCallback(async () => {
+    try {
+      await fetch("/api/session/clear", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Session clear error:", error);
+    }
+
     persist(null);
-  };
+  }, [persist]);
 
-  const updatePlan = (planCode: PlanCode) => {
+  const updatePlan = useCallback((planCode: PlanCode) => {
     setUser((prev) => {
       if (!prev) return prev;
 
@@ -229,9 +243,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       saveSession(nextUser);
       return nextUser;
     });
-  };
+  }, []);
 
-  const consumeCredits = (amount: number) => {
+  const consumeCredits = useCallback((amount: number) => {
     setUser((prev) => {
       if (!prev) return prev;
       if (prev.remainingCredits === null) return prev;
@@ -246,16 +260,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       saveSession(nextUser);
       return nextUser;
     });
-  };
+  }, []);
 
-  const hasEnoughCreditsFor = (action: CreditAction) => {
+  const hasEnoughCreditsFor = useCallback((action: CreditAction) => {
     if (!user) return false;
     if (user.remainingCredits === null) return true;
 
     return hasEnoughCredits(user.remainingCredits, action);
-  };
+  }, [user]);
 
-  const consumeCreditsByAction = (action: CreditAction) => {
+  const consumeCreditsByAction = useCallback((action: CreditAction) => {
     if (!user) return false;
     if (user.remainingCredits === null) return true;
 
@@ -279,9 +293,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
 
     return true;
-  };
+  }, [user]);
 
-  const refundCreditsByAction = (action: CreditAction) => {
+  const refundCreditsByAction = useCallback((action: CreditAction) => {
     setUser((prev) => {
       if (!prev) return prev;
       if (prev.remainingCredits === null) return prev;
@@ -297,11 +311,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       saveSession(nextUser);
       return nextUser;
     });
-  };
+  }, []);
 
-  const getActionCost = (action: CreditAction) => {
+  const getActionCost = useCallback((action: CreditAction) => {
     return getCreditCost(action);
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -317,7 +331,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       hasEnoughCreditsFor,
       getActionCost,
     }),
-    [user, refreshSession]
+    [
+      user,
+      signIn,
+      signOut,
+      updatePlan,
+      refreshSession,
+      consumeCredits,
+      consumeCreditsByAction,
+      refundCreditsByAction,
+      hasEnoughCreditsFor,
+      getActionCost,
+    ]
   );
 
   return (

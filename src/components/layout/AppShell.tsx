@@ -27,6 +27,37 @@ type AppShellProps = {
   children: ReactNode;
 };
 
+const AUTH_TEXTS = {
+  tr: {
+    login: "Giriş",
+    register: "Kayıt ol",
+    account: "Hesap",
+    remaining: "Kalan",
+    used: "Harcanan",
+  },
+  en: {
+    login: "Login",
+    register: "Sign up",
+    account: "Account",
+    remaining: "Remaining",
+    used: "Used",
+  },
+  de: {
+    login: "Anmelden",
+    register: "Registrieren",
+    account: "Konto",
+    remaining: "Übrig",
+    used: "Genutzt",
+  },
+  ku: {
+    login: "Têkeve",
+    register: "Tomar bibe",
+    account: "Hesab",
+    remaining: "Mayî",
+    used: "Bikarhatî",
+  },
+} as const;
+
 function HistoryIcon() {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
@@ -78,6 +109,7 @@ export default function AppShell({
   const isMobile = useIsMobile(900);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const common = getCommonI18n(language);
+  const authText = AUTH_TEXTS[language] ?? AUTH_TEXTS.en;
 
   const activePath = currentPath || pathname || "/chat";
 
@@ -214,34 +246,51 @@ export default function AppShell({
                     <BillingIcon />
                   </Link>
 
-                  <div style={styles.userArea}>
-                    <div style={styles.userIcon}>
-                      <UserIcon />
-                    </div>
-
-                    <div style={styles.userText}>
-                      <div style={styles.userMainLine}>
-                        <div style={styles.userName}>
-                          {user?.name || user?.email?.split("@")[0] || common.user.guest}
-                        </div>
-
-                        <div style={styles.planText}>
-                          {user?.planLabel || common.user.freePlan}
-                        </div>
+                  {isAuthenticated ? (
+                    <div style={styles.userArea}>
+                      <div style={styles.userIcon}>
+                        <UserIcon />
                       </div>
 
-                      <div style={styles.userMeta}>
-                        <span style={styles.creditText}>
-                          Kalan: {remainingCredits}
-                        </span>
-                        <span style={styles.metaDot}>•</span>
-                        <span style={styles.creditText}>
-                          Harcanan: {usedThisMonth}
-                        </span>
+                      <div style={styles.userText}>
+                        <div style={styles.userMainLine}>
+                          <div style={styles.userName}>
+                            {user?.name || user?.email?.split("@")[0] || common.user.guest}
+                          </div>
+
+                          <div style={styles.planText}>
+                            {user?.planLabel || common.user.freePlan}
+                          </div>
+                        </div>
+
+                        <div style={styles.userMeta}>
+                          <span style={styles.creditText}>
+                            {authText.remaining}: {remainingCredits}
+                          </span>
+                          <span style={styles.metaDot}>•</span>
+                          <span style={styles.creditText}>
+                            {authText.used}: {usedThisMonth}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div style={styles.authLinks}>
+                      <Link href="/login" style={styles.authLoginLink}>
+                        {authText.login}
+                      </Link>
+                      <Link href="/register" style={styles.authRegisterLink}>
+                        {authText.register}
+                      </Link>
+                    </div>
+                  )}
                 </>
+              ) : null}
+
+              {isMobile && !isAuthenticated ? (
+                <Link href="/login" style={styles.mobileLoginLink}>
+                  {authText.login}
+                </Link>
               ) : null}
 
               {isAuthenticated ? (
@@ -289,6 +338,46 @@ export default function AppShell({
                   </Link>
                 );
               })}
+
+              <div style={styles.mobileAuthPanel}>
+                {isAuthenticated ? (
+                  <>
+                    <div style={styles.mobileUserSummary}>
+                      <span style={styles.mobileUserName}>
+                        {user?.name || user?.email?.split("@")[0] || authText.account}
+                      </span>
+                      <span style={styles.mobileUserMeta}>
+                        {user?.planLabel || common.user.freePlan} · {authText.remaining}:{" "}
+                        {remainingCredits}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      style={styles.mobileLogoutButton}
+                    >
+                      {common.user.logout}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileNavOpen(false)}
+                      style={styles.mobileAuthPrimary}
+                    >
+                      {authText.login}
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setMobileNavOpen(false)}
+                      style={styles.mobileAuthSecondary}
+                    >
+                      {authText.register}
+                    </Link>
+                  </>
+                )}
+              </div>
             </nav>
           ) : null}
         </div>
@@ -478,6 +567,22 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
   },
 
+  mobileLoginLink: {
+    minHeight: 36,
+    padding: "0 12px",
+    border: "1px solid #bfdbfe",
+    borderRadius: 8,
+    background: "#eff6ff",
+    color: "#2563eb",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textDecoration: "none",
+    fontSize: 13,
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+  },
+
   mobileNav: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
@@ -506,6 +611,82 @@ const styles: Record<string, CSSProperties> = {
     borderColor: "#bfdbfe",
     background: "#eff6ff",
     color: "#2563eb",
+  },
+
+  mobileAuthPanel: {
+    gridColumn: "1 / -1",
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 8,
+    paddingTop: 10,
+    marginTop: 2,
+    borderTop: "1px solid #e5e7eb",
+  },
+
+  mobileAuthPrimary: {
+    minHeight: 40,
+    borderRadius: 8,
+    background: "#111827",
+    color: "#ffffff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textDecoration: "none",
+    fontSize: 13,
+    fontWeight: 800,
+  },
+
+  mobileAuthSecondary: {
+    minHeight: 40,
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
+    background: "#ffffff",
+    color: "#111827",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textDecoration: "none",
+    fontSize: 13,
+    fontWeight: 800,
+  },
+
+  mobileUserSummary: {
+    gridColumn: "1 / -1",
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
+    background: "#ffffff",
+    padding: "10px 12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    minWidth: 0,
+  },
+
+  mobileUserName: {
+    color: "#111827",
+    fontSize: 13,
+    fontWeight: 800,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+
+  mobileUserMeta: {
+    color: "#6b7280",
+    fontSize: 12,
+    fontWeight: 600,
+  },
+
+  mobileLogoutButton: {
+    gridColumn: "1 / -1",
+    minHeight: 40,
+    borderRadius: 8,
+    border: "1px solid #fecaca",
+    background: "#ffffff",
+    color: "#ef4444",
+    fontSize: 13,
+    fontWeight: 800,
+    cursor: "pointer",
   },
 
   languageSelect: {
@@ -538,6 +719,44 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     textDecoration: "none",
+  },
+
+  authLinks: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  authLoginLink: {
+    minHeight: 36,
+    padding: "0 14px",
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
+    background: "#ffffff",
+    color: "#111827",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textDecoration: "none",
+    fontSize: 13,
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+  },
+
+  authRegisterLink: {
+    minHeight: 36,
+    padding: "0 14px",
+    borderRadius: 8,
+    border: "1px solid #111827",
+    background: "#111827",
+    color: "#ffffff",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textDecoration: "none",
+    fontSize: 13,
+    fontWeight: 800,
+    whiteSpace: "nowrap",
   },
 
   userArea: {
