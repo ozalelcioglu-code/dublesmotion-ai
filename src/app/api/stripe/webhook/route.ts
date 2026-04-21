@@ -7,6 +7,7 @@ import {
   reconcileCheckoutSessionPlan,
   syncPlanFromSubscription,
 } from "@/lib/server/billing-plan-sync";
+import { reconcileDeveloperApiTopupSession } from "@/lib/server/developer-api-billing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,11 +49,18 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const result = await reconcileCheckoutSessionPlan({
-          sessionId: session.id,
-          fallbackSelectedPlan: session.metadata?.selectedPlan ?? null,
-        });
-        console.log("checkout.session.completed plan sync:", result);
+        if (session.metadata?.kind === "api_topup") {
+          const result = await reconcileDeveloperApiTopupSession({
+            sessionId: session.id,
+          });
+          console.log("checkout.session.completed API top-up sync:", result);
+        } else {
+          const result = await reconcileCheckoutSessionPlan({
+            sessionId: session.id,
+            fallbackSelectedPlan: session.metadata?.selectedPlan ?? null,
+          });
+          console.log("checkout.session.completed plan sync:", result);
+        }
         break;
       }
 

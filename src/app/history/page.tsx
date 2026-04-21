@@ -80,8 +80,6 @@ type HistoryTexts = {
   emptyDesc: string;
   createdAtLabel: string;
   durationLabel: string;
-  providerLabel: string;
-  modelLabel: string;
   promptLabel: string;
   lyricsLabel: string;
   openEditor: string;
@@ -117,8 +115,6 @@ const TEXTS: Record<AppLanguage, HistoryTexts> = {
     emptyDesc: "Henüz kaydedilmiş üretim bulunmuyor.",
     createdAtLabel: "Tarih",
     durationLabel: "Süre",
-    providerLabel: "Provider",
-    modelLabel: "Model",
     promptLabel: "Prompt",
     lyricsLabel: "Lyrics",
     openEditor: "Editöre gönder",
@@ -152,8 +148,6 @@ const TEXTS: Record<AppLanguage, HistoryTexts> = {
     emptyDesc: "There are no saved generations yet.",
     createdAtLabel: "Date",
     durationLabel: "Duration",
-    providerLabel: "Provider",
-    modelLabel: "Model",
     promptLabel: "Prompt",
     lyricsLabel: "Lyrics",
     openEditor: "Send to editor",
@@ -187,8 +181,6 @@ const TEXTS: Record<AppLanguage, HistoryTexts> = {
     emptyDesc: "Es gibt noch keine gespeicherten Inhalte.",
     createdAtLabel: "Datum",
     durationLabel: "Dauer",
-    providerLabel: "Provider",
-    modelLabel: "Modell",
     promptLabel: "Prompt",
     lyricsLabel: "Lyrics",
     openEditor: "An Editor senden",
@@ -222,8 +214,6 @@ const TEXTS: Record<AppLanguage, HistoryTexts> = {
     emptyDesc: "Hê naverokên tomarkirî tune ne.",
     createdAtLabel: "Dîrok",
     durationLabel: "Dirêjahî",
-    providerLabel: "Provider",
-    modelLabel: "Model",
     promptLabel: "Prompt",
     lyricsLabel: "Lyrics",
     openEditor: "Bişîne editor",
@@ -258,7 +248,7 @@ function getSafeLanguage(language?: string): AppLanguage {
   ) {
     return language;
   }
-  return "en";
+  return "tr";
 }
 
 function createHistoryStorageKey(email?: string | null) {
@@ -737,16 +727,6 @@ function HistoryPageContent() {
                       <p style={styles.metaValue}>
                         {formatDate(item.createdAt, safeLanguage)}
                       </p>
-                    </div>
-
-                    <div style={styles.metaBox}>
-                      <p style={styles.metaLabel}>{t.providerLabel}</p>
-                      <p style={styles.metaValue}>{item.provider || "-"}</p>
-                    </div>
-
-                    <div style={styles.metaBox}>
-                      <p style={styles.metaLabel}>{t.modelLabel}</p>
-                      <p style={styles.metaValue}>{item.model || "-"}</p>
                     </div>
 
                     <div style={styles.metaBox}>

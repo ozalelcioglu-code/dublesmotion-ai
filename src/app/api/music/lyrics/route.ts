@@ -28,7 +28,7 @@ function normalizeText(input?: string) {
 }
 
 function normalizeLanguage(value?: string) {
-  const lang = String(value || "en").trim().toLowerCase();
+  const lang = String(value || "tr").trim().toLowerCase();
 
   if (
     lang === "tr" ||
@@ -41,7 +41,7 @@ function normalizeLanguage(value?: string) {
     return lang;
   }
 
-  return "en";
+  return "tr";
 }
 
 function languageLabel(language: string) {

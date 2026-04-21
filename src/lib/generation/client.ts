@@ -12,7 +12,7 @@ export function getSafeGenerationLanguage(language?: string): AppLanguage {
     return language;
   }
 
-  return "en";
+  return "tr";
 }
 
 export function buildSessionHeaders(

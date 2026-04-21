@@ -25,9 +25,9 @@ import {
   setV2EditorPrefill,
 } from "@/lib/v2-store";
 import {
-  DURATION_OPTIONS,
-  RATIO_OPTIONS,
-  VISUAL_STYLE_OPTIONS,
+  getDurationOptions,
+  getRatioOptions,
+  getVisualStyleOptions,
   type AspectRatio,
   type VisualStyle,
 } from "@/lib/generation/options";
@@ -87,6 +87,11 @@ const COPY = {
     addToEditor: "Editöre ekle",
     download: "İndir",
     editorReady: "Video editöre gönderildi.",
+    imageRequired: "Önce kaynak görsel yüklemelisin.",
+    promptRequired: "Prompt alanı boş olamaz.",
+    generatedTemplateDescription: "Son resimden video üretiminden hareket brief’i.",
+    generatedTitle: "Resimden Video",
+    seconds: "sn",
   },
   en: {
     title: "Image to Video",
@@ -119,59 +124,305 @@ const COPY = {
     addToEditor: "Add to editor",
     download: "Download",
     editorReady: "Video sent to editor.",
+    imageRequired: "Upload a source image first.",
+    promptRequired: "Prompt cannot be empty.",
+    generatedTemplateDescription: "Motion brief from the latest image-to-video generation.",
+    generatedTitle: "Image Motion Video",
+    seconds: "sec",
+  },
+  de: {
+    title: "Bild zu Video",
+    description:
+      "Lade ein Bild hoch, beschreibe die Bewegung und verwandle es im gleichen Studioablauf in Video.",
+    inputTitle: "Bewegungsbrief",
+    inputDescription: "Quellbild, Bewegungsprompt, Stil und Format in einem Panel.",
+    sourceImage: "Quellbild",
+    uploadImage: "Bild hochladen",
+    uploadDescription: "Wähle eine PNG-, JPG- oder WebP-Datei.",
+    prompt: "Bewegungsprompt",
+    promptPlaceholder:
+      "Die Kamera fährt langsam näher, Haare bewegen sich leicht, das Licht bleibt natürlich, filmische Bewegung",
+    style: "Stil",
+    ratio: "Format",
+    duration: "Dauer",
+    generate: "In Video umwandeln",
+    reset: "Zurücksetzen",
+    previewTitle: "Preview",
+    previewDescription: "Quellbild und erzeugtes Video erscheinen hier.",
+    emptyTitle: "Noch kein Bild",
+    emptyText: "Lade zuerst ein Quellbild hoch und beschreibe dann die Bewegung.",
+    templatesTitle: "Fertige Bewegungsbriefs",
+    templatesDescription: "Wähle schnell eine passende Kamerabewegung.",
+    loading: "Video wird vorbereitet...",
+    uploading: "Bild wird hochgeladen...",
+    done: "Bereit",
+    error: "Bild-zu-Video-Erzeugung fehlgeschlagen.",
+    credits: "Credits",
+    addToEditor: "Zum Editor hinzufügen",
+    download: "Download",
+    editorReady: "Video wurde an den Editor gesendet.",
+    imageRequired: "Lade zuerst ein Quellbild hoch.",
+    promptRequired: "Prompt darf nicht leer sein.",
+    generatedTemplateDescription: "Bewegungsbrief aus der letzten Bild-zu-Video-Erzeugung.",
+    generatedTitle: "Bildbewegungs-Video",
+    seconds: "Sek.",
+  },
+  ku: {
+    title: "Ji Wêneyê Vîdyo",
+    description:
+      "Wêneyek bar bike, tevgerê şirove bike û wê di heman stûdyoyê de bike vîdyo.",
+    inputTitle: "Briefa tevgerê",
+    inputDescription: "Wêneya çavkanî, prompta tevgerê, stîl û format di yek panelê de.",
+    sourceImage: "Wêneya çavkanî",
+    uploadImage: "Wêne bar bike",
+    uploadDescription: "Pela PNG, JPG an WebP hilbijêre.",
+    prompt: "Prompta tevgerê",
+    promptPlaceholder:
+      "Kamera hêdî nêzîk bibe, por hinekî bileve, ronahî xwezayî bimîne, tevgera sînematîk be",
+    style: "Stîl",
+    ratio: "Format",
+    duration: "Dem",
+    generate: "Bike vîdyo",
+    reset: "Ji nû ve",
+    previewTitle: "Preview",
+    previewDescription: "Wêneya çavkanî û vîdyoya çêkirî li vir xuya dibin.",
+    emptyTitle: "Hê wêne tune",
+    emptyText: "Pêşî wêneya çavkanî bar bike, paşê tevgerê şirove bike.",
+    templatesTitle: "Briefên tevgerê yên amade",
+    templatesDescription: "Ji bo wêneya xwe tevgera kamerayê zû hilbijêre.",
+    loading: "Vîdyo tê amadekirin...",
+    uploading: "Wêne tê barkirin...",
+    done: "Amade",
+    error: "Çêkirina ji-wêneyê-vîdyo bi ser neket.",
+    credits: "Kredit",
+    addToEditor: "Li editorê zêde bike",
+    download: "Daxe",
+    editorReady: "Vîdyo ji editorê re hate şandin.",
+    imageRequired: "Pêşî wêneya çavkanî bar bike.",
+    promptRequired: "Prompt vala nabe.",
+    generatedTemplateDescription: "Briefa tevgerê ji hilberîna dawî ya ji-wêneyê-vîdyo.",
+    generatedTitle: "Vîdyoya Tevgera Wêneyê",
+    seconds: "sn",
   },
 } as const;
 
-const TEMPLATES = [
-  {
-    id: "portrait",
-    title: "Portre canlandırma",
-    description: "Yumuşak yaklaşma ve doğal mikro hareket.",
-    prompt:
-      "Kamera yavaşça yaklaşsın, gözler canlı kalsın, saç ve kıyafet hafif hareket etsin, yüz doğal ve stabil olsun",
-    style: "realistic" as VisualStyle,
-    ratio: "9:16" as AspectRatio,
-    duration: "6",
-    badge: "Portrait",
-  },
-  {
-    id: "product",
-    title: "Ürün kamera turu",
-    description: "Ürünü merkezde tutan premium hareket.",
-    prompt:
-      "Kamera ürün etrafında yumuşak dönüş yapsın, yansımalar kontrollü kalsın, reklam filmi kalitesinde hareket olsun",
-    style: "product" as VisualStyle,
-    ratio: "1:1" as AspectRatio,
-    duration: "8",
-  },
-  {
-    id: "landscape",
-    title: "Manzara parallax",
-    description: "Derinlik ve atmosfer ekler.",
-    prompt:
-      "Ön plan ve arka plan arasında doğal parallax oluşsun, kamera yavaşça süzülsün, atmosfer sinematik olsun",
-    style: "cinematic" as VisualStyle,
-    ratio: "16:9" as AspectRatio,
-    duration: "8",
-  },
-  {
-    id: "fashion",
-    title: "Fashion loop",
-    description: "Editorial hareket ve ışık.",
-    prompt:
-      "Model sabit kompozisyonda kalsın, kumaş ve ışık hafif hareket etsin, dergi kapağı kalitesinde video olsun",
-    style: "fashion" as VisualStyle,
-    ratio: "9:16" as AspectRatio,
-    duration: "6",
-  },
-];
+type MotionTemplate = {
+  id: string;
+  title: string;
+  description: string;
+  prompt: string;
+  style: VisualStyle;
+  ratio: AspectRatio;
+  duration: string;
+  badge?: string;
+};
+
+function isVisualStyle(value: string | null): value is VisualStyle {
+  return (
+    value === "cinematic" ||
+    value === "realistic" ||
+    value === "fashion" ||
+    value === "product" ||
+    value === "anime" ||
+    value === "cartoon" ||
+    value === "3d_animation"
+  );
+}
+
+function isAspectRatio(value: string | null): value is AspectRatio {
+  return value === "16:9" || value === "9:16" || value === "1:1";
+}
+
+const TEMPLATES: Record<keyof typeof COPY, MotionTemplate[]> = {
+  tr: [
+    {
+      id: "portrait",
+      title: "Portre canlandırma",
+      description: "Yumuşak yaklaşma ve doğal mikro hareket.",
+      prompt:
+        "Kamera yavaşça yaklaşsın, gözler canlı kalsın, saç ve kıyafet hafif hareket etsin, yüz doğal ve stabil olsun",
+      style: "realistic",
+      ratio: "9:16",
+      duration: "6",
+      badge: "Portrait",
+    },
+    {
+      id: "product",
+      title: "Ürün kamera turu",
+      description: "Ürünü merkezde tutan premium hareket.",
+      prompt:
+        "Kamera ürün etrafında yumuşak dönüş yapsın, yansımalar kontrollü kalsın, reklam filmi kalitesinde hareket olsun",
+      style: "product",
+      ratio: "1:1",
+      duration: "8",
+    },
+    {
+      id: "landscape",
+      title: "Manzara parallax",
+      description: "Derinlik ve atmosfer ekler.",
+      prompt:
+        "Ön plan ve arka plan arasında doğal parallax oluşsun, kamera yavaşça süzülsün, atmosfer sinematik olsun",
+      style: "cinematic",
+      ratio: "16:9",
+      duration: "8",
+    },
+    {
+      id: "fashion",
+      title: "Fashion loop",
+      description: "Editorial hareket ve ışık.",
+      prompt:
+        "Model sabit kompozisyonda kalsın, kumaş ve ışık hafif hareket etsin, dergi kapağı kalitesinde video olsun",
+      style: "fashion",
+      ratio: "9:16",
+      duration: "6",
+    },
+  ],
+  en: [
+    {
+      id: "portrait",
+      title: "Portrait animation",
+      description: "Soft push-in and natural micro motion.",
+      prompt:
+        "Camera slowly pushes in, eyes stay alive, hair and clothing move subtly, face remains natural and stable",
+      style: "realistic",
+      ratio: "9:16",
+      duration: "6",
+      badge: "Portrait",
+    },
+    {
+      id: "product",
+      title: "Product camera orbit",
+      description: "Premium motion keeping the product centered.",
+      prompt:
+        "Camera softly orbits around the product, reflections stay controlled, commercial-grade motion",
+      style: "product",
+      ratio: "1:1",
+      duration: "8",
+    },
+    {
+      id: "landscape",
+      title: "Landscape parallax",
+      description: "Adds depth and atmosphere.",
+      prompt:
+        "Natural parallax between foreground and background, camera glides slowly, cinematic atmosphere",
+      style: "cinematic",
+      ratio: "16:9",
+      duration: "8",
+    },
+    {
+      id: "fashion",
+      title: "Fashion loop",
+      description: "Editorial motion and light.",
+      prompt:
+        "Model stays in a stable composition, fabric and light move subtly, magazine-cover-quality video",
+      style: "fashion",
+      ratio: "9:16",
+      duration: "6",
+    },
+  ],
+  de: [
+    {
+      id: "portrait",
+      title: "Porträt animieren",
+      description: "Sanfte Annäherung und natürliche Mikro-Bewegung.",
+      prompt:
+        "Die Kamera fährt langsam näher, Augen bleiben lebendig, Haare und Kleidung bewegen sich leicht, das Gesicht bleibt natürlich und stabil",
+      style: "realistic",
+      ratio: "9:16",
+      duration: "6",
+      badge: "Portrait",
+    },
+    {
+      id: "product",
+      title: "Produkt-Kamerafahrt",
+      description: "Premiumbewegung mit Produkt im Zentrum.",
+      prompt:
+        "Die Kamera dreht sich weich um das Produkt, Reflexionen bleiben kontrolliert, Bewegung in Werbefilmqualität",
+      style: "product",
+      ratio: "1:1",
+      duration: "8",
+    },
+    {
+      id: "landscape",
+      title: "Landschaft-Parallax",
+      description: "Fügt Tiefe und Atmosphäre hinzu.",
+      prompt:
+        "Natürlicher Parallax zwischen Vorder- und Hintergrund, Kamera gleitet langsam, filmische Atmosphäre",
+      style: "cinematic",
+      ratio: "16:9",
+      duration: "8",
+    },
+    {
+      id: "fashion",
+      title: "Fashion Loop",
+      description: "Editoriale Bewegung und Licht.",
+      prompt:
+        "Das Model bleibt stabil in der Komposition, Stoff und Licht bewegen sich leicht, Video in Magazin-Cover-Qualität",
+      style: "fashion",
+      ratio: "9:16",
+      duration: "6",
+    },
+  ],
+  ku: [
+    {
+      id: "portrait",
+      title: "Zindîkirina portreyê",
+      description: "Nêzîkbûna nerm û tevgera xwezayî ya piçûk.",
+      prompt:
+        "Kamera hêdî nêzîk bibe, çav zindî bimînin, por û cil hinekî bilevin, rû xwezayî û stabîl bimîne",
+      style: "realistic",
+      ratio: "9:16",
+      duration: "6",
+      badge: "Portrait",
+    },
+    {
+      id: "product",
+      title: "Geroka kamerayê ya hilberê",
+      description: "Tevgera premium ku hilberê li navendê digire.",
+      prompt:
+        "Kamera bi nermî li dora hilberê bizivire, ronahî û vedîtin kontrolkirî bimînin, tevgera kalîteya reklamê",
+      style: "product",
+      ratio: "1:1",
+      duration: "8",
+    },
+    {
+      id: "landscape",
+      title: "Parallax ya dîmenê",
+      description: "Kûrahî û atmosfer zêde dike.",
+      prompt:
+        "Di navbera pêşzemîn û paşzemînê de parallaxa xwezayî çêbibe, kamera hêdî bisûze, atmosfer sînematîk be",
+      style: "cinematic",
+      ratio: "16:9",
+      duration: "8",
+    },
+    {
+      id: "fashion",
+      title: "Fashion loop",
+      description: "Tevger û ronahiya editorial.",
+      prompt:
+        "Model di kompozîsyona stabîl de bimîne, qumaş û ronahî hinekî bilevin, vîdyo bi kalîteya bergê kovarê be",
+      style: "fashion",
+      ratio: "9:16",
+      duration: "6",
+    },
+  ],
+};
 
 export default function ImageToVideoPage() {
   const { language } = useLanguage();
   const { user, refreshSession } = useSession();
   const isMobile = useIsMobile(980);
   const safeLanguage = getSafeGenerationLanguage(language);
-  const t = safeLanguage === "tr" ? COPY.tr : COPY.en;
+  const t = COPY[safeLanguage];
+  const durationOptions = useMemo(
+    () => getDurationOptions(safeLanguage),
+    [safeLanguage]
+  );
+  const ratioOptions = useMemo(() => getRatioOptions(safeLanguage), [safeLanguage]);
+  const visualStyleOptions = useMemo(
+    () => getVisualStyleOptions(safeLanguage),
+    [safeLanguage]
+  );
 
   const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -188,13 +439,37 @@ export default function ImageToVideoPage() {
   });
 
   useEffect(() => {
-    const prefill = getV2Prefill<{
-      intent?: string;
-      prompt?: string;
-      imageUrl?: string;
-      style?: VisualStyle;
-      ratio?: AspectRatio;
-    }>();
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get("source");
+    const hasQueryPrefill =
+      source === "showcase" || source === "community_showcase";
+
+    if (hasQueryPrefill) {
+      const nextPrompt = params.get("prompt");
+      const nextImageUrl = params.get("imageUrl");
+      const nextStyle = params.get("style");
+      const nextRatio = params.get("ratio");
+      const nextDuration = params.get("durationSec");
+
+      if (nextPrompt) setPrompt(nextPrompt);
+      if (nextImageUrl) setImageUrl(nextImageUrl);
+      if (isVisualStyle(nextStyle)) setStyle(nextStyle);
+      if (isAspectRatio(nextRatio)) setRatio(nextRatio);
+      if (nextDuration && /^\d+$/.test(nextDuration)) {
+        setDurationSec(nextDuration);
+      }
+      setNotice("");
+    }
+
+    const prefill = hasQueryPrefill
+      ? null
+      : getV2Prefill<{
+          intent?: string;
+          prompt?: string;
+          imageUrl?: string;
+          style?: VisualStyle;
+          ratio?: AspectRatio;
+        }>();
 
     if (!prefill) return;
 
@@ -209,7 +484,7 @@ export default function ImageToVideoPage() {
 
   const templates = useMemo<StudioTemplate[]>(
     () => {
-      const staticTemplates = TEMPLATES.map((template) => ({
+      const staticTemplates = TEMPLATES[safeLanguage].map((template) => ({
         id: template.id,
         title: template.title,
         description: template.description,
@@ -245,7 +520,7 @@ export default function ImageToVideoPage() {
         (item) => ({
           id: `generated-${item.id}`,
           title: item.title,
-          description: "Son resimden video üretiminden hareket brief’i.",
+          description: t.generatedTemplateDescription,
           badge: "Neon",
           onSelect: () => {
             const sourceImage =
@@ -271,7 +546,7 @@ export default function ImageToVideoPage() {
 
       return [...staticTemplates, ...generatedTemplates];
     },
-    [generation, recentImageVideos]
+    [generation, recentImageVideos, safeLanguage, t.generatedTemplateDescription]
   );
 
   async function handleImageUpload(file: File) {
@@ -294,12 +569,12 @@ export default function ImageToVideoPage() {
   async function handleGenerate() {
     const cleanPrompt = prompt.trim();
     if (!imageUrl) {
-      setGeneration({ status: "error", message: "Önce kaynak görsel yüklemelisin." });
+      setGeneration({ status: "error", message: t.imageRequired });
       return;
     }
 
     if (!cleanPrompt) {
-      setGeneration({ status: "error", message: "Prompt alanı boş olamaz." });
+      setGeneration({ status: "error", message: t.promptRequired });
       return;
     }
 
@@ -328,7 +603,7 @@ export default function ImageToVideoPage() {
       }
 
       const videoUrl = String(data.videoUrl);
-      const title = compactTitle(cleanPrompt, "Image Motion Video");
+      const title = compactTitle(cleanPrompt, t.generatedTitle);
 
       setGeneration({
         status: "done",
@@ -400,7 +675,7 @@ export default function ImageToVideoPage() {
       ? { label: t.done, tone: "good" as const }
       : generation.status === "error"
       ? { label: generation.message, tone: "danger" as const }
-      : { label: "Ready" };
+      : { label: t.done };
 
   const credits =
     generation.status === "done" ? generation.remainingCredits : user?.remainingCredits;
@@ -415,7 +690,7 @@ export default function ImageToVideoPage() {
       status={status}
       metrics={[
         { label: t.credits, value: credits ?? "-" },
-        { label: t.duration, value: `${durationSec} sn` },
+        { label: t.duration, value: `${durationSec} ${t.seconds}` },
         { label: t.ratio, value: ratio },
       ]}
       inputTitle={t.inputTitle}
@@ -445,21 +720,21 @@ export default function ImageToVideoPage() {
             <StudioSelect<VisualStyle>
               value={style}
               onChange={setStyle}
-              options={VISUAL_STYLE_OPTIONS}
+              options={visualStyleOptions}
             />
           </StudioField>
           <StudioField label={t.ratio}>
             <StudioSegmented<AspectRatio>
               value={ratio}
               onChange={setRatio}
-              options={RATIO_OPTIONS}
+              options={ratioOptions}
             />
           </StudioField>
           <StudioField label={t.duration}>
             <StudioSelect
               value={durationSec}
               onChange={setDurationSec}
-              options={DURATION_OPTIONS}
+              options={durationOptions}
             />
           </StudioField>
         </>

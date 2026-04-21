@@ -124,6 +124,7 @@ export default function AppShell({
 
   const navItems = useMemo(
     () => [
+      { href: "/", label: common.nav.home },
       { href: "/chat", label: common.nav.chat },
       { href: "/music", label: common.nav.music },
       { href: "/text-to-image", label: common.nav.textToImage },
@@ -163,7 +164,7 @@ export default function AppShell({
             }}
           >
             <div style={styles.leftZone}>
-              <Link href="/chat" style={styles.brand}>
+              <Link href="/" style={styles.brand}>
                 <div style={styles.logoWrap}>
                   <img src="/dubles-logo.png" alt={common.appName} style={styles.logo} />
                 </div>
@@ -187,7 +188,9 @@ export default function AppShell({
                 {navItems.map((item) => {
                   const active =
                     activePath === item.href ||
-                    (item.href !== "/chat" && activePath.startsWith(item.href));
+                    (item.href !== "/" &&
+                      item.href !== "/chat" &&
+                      activePath.startsWith(item.href));
 
                   return (
                     <Link
@@ -322,7 +325,9 @@ export default function AppShell({
               {navItems.map((item) => {
                 const active =
                   activePath === item.href ||
-                  (item.href !== "/chat" && activePath.startsWith(item.href));
+                  (item.href !== "/" &&
+                    item.href !== "/chat" &&
+                    activePath.startsWith(item.href));
 
                 return (
                   <Link

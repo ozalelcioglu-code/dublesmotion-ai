@@ -166,8 +166,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         saveSession(nextUser);
         return nextUser;
       });
-    } catch (error) {
-      console.error("Session refresh error:", error);
+    } catch {
+      // Network hiccups during local dev or deploy refresh should not open
+      // the Next.js error overlay or block the app shell.
     }
   }, []);
 

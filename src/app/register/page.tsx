@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useEffect,
@@ -15,7 +16,7 @@ import { getCommonI18n } from "@/lib/i18n";
 
 const REGISTER_TEXTS = {
   tr: {
-    createWorkspace: "Create Your Workspace",
+    createWorkspace: "Çalışma Alanını Oluştur",
     createAccount: "Hesap Oluştur",
     heroText:
       "Hesabını oluştur, planını seç ve Duble-S Motion AI üzerinde tüm üretim modüllerini tek merkezden yönet.",
@@ -61,7 +62,7 @@ const REGISTER_TEXTS = {
     error: "An error occurred during registration.",
   },
   de: {
-    createWorkspace: "Create Your Workspace",
+    createWorkspace: "Arbeitsbereich erstellen",
     createAccount: "Konto erstellen",
     heroText:
       "Erstelle dein Konto, wähle deinen Plan und verwalte alle Duble-S Motion AI Module zentral.",
@@ -84,7 +85,7 @@ const REGISTER_TEXTS = {
     error: "Bei der Registrierung ist ein Fehler aufgetreten.",
   },
   ku: {
-    createWorkspace: "Create Your Workspace",
+    createWorkspace: "Cihê xebatê çêke",
     createAccount: "Hesab çêke",
     heroText:
       "Hesaba xwe çêke, planê xwe hilbijêre û hemû modulên çêkirinê yên Duble-S Motion AI ji yek navendê birêve bibe.",
@@ -112,7 +113,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { language } = useLanguage();
   const common = getCommonI18n(language);
-  const t = REGISTER_TEXTS[language] ?? REGISTER_TEXTS.en;
+  const t = REGISTER_TEXTS[language] ?? REGISTER_TEXTS.tr;
   const { signIn } = useSession();
 
   const [fullName, setFullName] = useState("");
@@ -199,9 +200,11 @@ if (!sessionRes.ok || !sessionData?.ok) {
         <div style={styles.left}>
           <Link href="/chat" style={styles.brand}>
             <div style={styles.logoWrap}>
-              <img
+              <Image
                 src="/dubles-logo.png"
                 alt="Duble-S Motion AI Logo"
+                width={40}
+                height={40}
                 style={styles.logo}
               />
             </div>

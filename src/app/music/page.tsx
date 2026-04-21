@@ -25,10 +25,10 @@ import {
   setV2EditorPrefill,
 } from "@/lib/v2-store";
 import {
-  MUSIC_DURATION_OPTIONS,
-  SONG_LANGUAGE_OPTIONS,
-  VOCAL_MODE_OPTIONS,
-  VOCAL_PRESET_OPTIONS,
+  getMusicDurationOptions,
+  getSongLanguageOptions,
+  getVocalModeOptions,
+  getVocalPresetOptions,
   type SongLanguage,
   type VocalMode,
   type VocalPreset,
@@ -113,7 +113,16 @@ const COPY = {
     editorReady: "Müzik editöre gönderildi.",
     clipReady: "Müzik klip üretimi için hazırlandı.",
     voiceFallback:
-      "Ses örneği kaydedildi. Aktif müzik modeli ses klonlamayı desteklemiyorsa seçilen dilde native AI vokal kullanır.",
+      "Ses örneği kaydedildi. Aktif müzik akışı ses klonlamayı desteklemiyorsa seçilen dilde native AI vokal kullanır.",
+    promptOrTitleRequired: "Prompt veya şarkı adı gerekli.",
+    lyricsError: "Şarkı sözleri üretilemedi.",
+    promptTooShort: "Prompt en az 10 karakter olmalı.",
+    voiceRequired: "Kendi ses modu için ses örneği yüklemelisin.",
+    lyricsRequired: "Şarkı sözleri gerekli.",
+    generatedTemplateDescription: "Son üretilen şarkıdan müzik brief’i.",
+    generatedTitle: "Üretilen Şarkı",
+    instrumentalLyrics: "Vokalsiz enstrümantal düzenleme.",
+    seconds: "sn",
   },
   en: {
     title: "Music Studio",
@@ -160,66 +169,388 @@ const COPY = {
     editorReady: "Music sent to editor.",
     clipReady: "Music prepared for clip generation.",
     voiceFallback:
-      "Voice sample saved. If the active music model does not support voice cloning, it will use a native AI vocal in the selected language.",
+      "Voice sample saved. If the active music flow does not support voice cloning, it will use a native AI vocal in the selected language.",
+    promptOrTitleRequired: "Prompt or song title is required.",
+    lyricsError: "Lyrics could not be generated.",
+    promptTooShort: "Prompt must be at least 10 characters.",
+    voiceRequired: "Upload a voice sample for own-voice mode.",
+    lyricsRequired: "Lyrics are required.",
+    generatedTemplateDescription: "Music brief from the latest generated song.",
+    generatedTitle: "Generated Song",
+    instrumentalLyrics: "Instrumental arrangement without lead vocal.",
+    seconds: "sec",
+  },
+  de: {
+    title: "Musikstudio",
+    description:
+      "Steuere Sprache, Vokalcharakter, Lyrics und Stimmprobe in einem professionellen Musikstudio.",
+    inputTitle: "Songbrief",
+    inputDescription:
+      "Lyrics, Genre, Vokal, Sprache und eigene Stimme in einem Panel.",
+    songTitle: "Songtitel",
+    titlePlaceholder: "Mein Song",
+    prompt: "Musikprompt",
+    promptPlaceholder:
+      "Erzeuge einen emotionalen, aber rhythmischen Song mit moderner Produktion und starkem Refrain.",
+    lyrics: "Lyrics",
+    lyricsPlaceholder: "Schreibe Lyrics oder erzeuge sie automatisch.",
+    style: "Genre / Gefühl",
+    language: "Songsprache",
+    vocalPreset: "Vokalcharakter",
+    vocalMode: "Vokalquelle",
+    voiceSample: "Eigene Stimmprobe",
+    uploadVoice: "Stimmprobe hochladen",
+    voiceDescription: "Lade eine kurze, saubere Sprach- oder Gesangsaufnahme hoch.",
+    instrumental: "Instrumental erzeugen",
+    instrumentalDescription: "Nutze das, wenn du nur die Begleitung möchtest.",
+    duration: "Dauer",
+    generateLyrics: "Lyrics erzeugen",
+    generatingLyrics: "Lyrics werden vorbereitet...",
+    generate: "Musik erzeugen",
+    reset: "Zurücksetzen",
+    previewTitle: "Preview",
+    previewDescription: "Der erzeugte Song wird hier abgespielt.",
+    emptyTitle: "Noch keine Musik",
+    emptyText: "Vervollständige Prompt und Vokaleinstellungen und starte die Erstellung.",
+    templatesTitle: "Fertige Songbriefs",
+    templatesDescription: "Wähle einen schnellen Start nach Sprache und Genre.",
+    loading: "Musik wird erzeugt...",
+    uploading: "Stimme wird hochgeladen...",
+    done: "Bereit",
+    error: "Musikerzeugung fehlgeschlagen.",
+    credits: "Credits",
+    addToEditor: "Zum Editor hinzufügen",
+    prepareClip: "Für Clip vorbereiten",
+    download: "Download",
+    editorReady: "Musik wurde an den Editor gesendet.",
+    clipReady: "Musik wurde für die Clip-Erzeugung vorbereitet.",
+    voiceFallback:
+      "Stimmprobe gespeichert. Wenn der aktive Musikablauf Voice Cloning nicht unterstützt, wird ein nativer KI-Vokal in der ausgewählten Sprache genutzt.",
+    promptOrTitleRequired: "Prompt oder Songtitel ist erforderlich.",
+    lyricsError: "Lyrics konnten nicht erzeugt werden.",
+    promptTooShort: "Prompt muss mindestens 10 Zeichen lang sein.",
+    voiceRequired: "Lade für den eigenen Stimm-Modus eine Stimmprobe hoch.",
+    lyricsRequired: "Lyrics sind erforderlich.",
+    generatedTemplateDescription: "Musikbrief aus dem zuletzt erzeugten Song.",
+    generatedTitle: "Erzeugter Song",
+    instrumentalLyrics: "Instrumentales Arrangement ohne Lead-Vokal.",
+    seconds: "Sek.",
+  },
+  ku: {
+    title: "Stûdyoya Muzîkê",
+    description:
+      "Ziman, karaktera vokalê, gotin û nimûneya dengê di yek stûdyoya muzîkê ya profesyonel de rêve bibe.",
+    inputTitle: "Briefa stranê",
+    inputDescription:
+      "Gotin, cure, vokal, ziman û dengê xwe di yek panelê de.",
+    songTitle: "Navê stranê",
+    titlePlaceholder: "Strana Min",
+    prompt: "Prompta muzîkê",
+    promptPlaceholder:
+      "Stranek bi hilberîna modern, nakarata bihêz, hestyar lê rîtimîk çêke.",
+    lyrics: "Gotinên stranê",
+    lyricsPlaceholder: "Gotinan binivîse an bixweber çêke.",
+    style: "Cure / hest",
+    language: "Zimanê stranê",
+    vocalPreset: "Karaktera vokalê",
+    vocalMode: "Çavkaniya vokalê",
+    voiceSample: "Nimûneya dengê xwe",
+    uploadVoice: "Nimûneya deng bar bike",
+    voiceDescription: "Tomarek kurt û paqij a axaftin an stranê bar bike.",
+    instrumental: "Enstrûmental çêke",
+    instrumentalDescription: "Ger vokal nexwazî, tenê altyapı çêke.",
+    duration: "Dem",
+    generateLyrics: "Gotinan çêke",
+    generatingLyrics: "Gotin têne amadekirin...",
+    generate: "Muzîk çêke",
+    reset: "Ji nû ve",
+    previewTitle: "Preview",
+    previewDescription: "Strana çêkirî li vir tê bihîstin.",
+    emptyTitle: "Hê muzîk tune",
+    emptyText: "Prompt û mîhengên vokalê temam bike û dest bi çêkirinê bike.",
+    templatesTitle: "Briefên stranê yên amade",
+    templatesDescription: "Li gor ziman û cure destpêkek zû hilbijêre.",
+    loading: "Muzîk tê çêkirin...",
+    uploading: "Deng tê barkirin...",
+    done: "Amade",
+    error: "Çêkirina muzîkê bi ser neket.",
+    credits: "Kredit",
+    addToEditor: "Li editorê zêde bike",
+    prepareClip: "Ji bo klîpê amade bike",
+    download: "Daxe",
+    editorReady: "Muzîk ji editorê re hate şandin.",
+    clipReady: "Muzîk ji bo çêkirina klîpê hate amadekirin.",
+    voiceFallback:
+      "Nimûneya deng hate tomar kirin. Ger herikîna muzîkê voice cloning piştgirî neke, ew ê di zimanê hilbijartî de vokala AI ya xwezayî bikar bîne.",
+    promptOrTitleRequired: "Prompt an navê stranê pêwîst e.",
+    lyricsError: "Gotinên stranê nehatin çêkirin.",
+    promptTooShort: "Prompt divê herî kêm 10 karakter be.",
+    voiceRequired: "Ji bo moda dengê xwe, nimûneya deng bar bike.",
+    lyricsRequired: "Gotinên stranê pêwîst in.",
+    generatedTemplateDescription: "Briefa muzîkê ji strana dawî ya çêkirî.",
+    generatedTitle: "Strana Çêkirî",
+    instrumentalLyrics: "Rêkxistina enstrûmental bê vokala sereke.",
+    seconds: "sn",
   },
 } as const;
 
-const MUSIC_STYLE_OPTIONS = [
-  { value: "Pop / Commercial", label: "Pop / Commercial" },
-  { value: "Halay / Folk Pop", label: "Halay / Folk Pop" },
-  { value: "Arabesk / Emotional", label: "Arabesk / Emotional" },
-  { value: "Rap / Melodic", label: "Rap / Melodic" },
-  { value: "Cinematic Ballad", label: "Cinematic Ballad" },
-  { value: "Electronic Dance", label: "Electronic Dance" },
-];
+const MUSIC_STYLE_VALUES = [
+  "Pop / Commercial",
+  "Halay / Folk Pop",
+  "Arabesk / Emotional",
+  "Rap / Melodic",
+  "Cinematic Ballad",
+  "Electronic Dance",
+] as const;
 
-const TEMPLATES = [
-  {
-    id: "tr-pop",
-    title: "Türkçe pop",
-    description: "Net nakarat ve modern prodüksiyon.",
-    prompt:
-      "Türkçe, modern pop prodüksiyonlu, güçlü nakaratlı, duygusal ama ritmik bir şarkı üret.",
-    titleValue: "Yeni Gün",
-    style: "Pop / Commercial",
-    songLanguage: "tr" as SongLanguage,
-    vocalPreset: "female" as VocalPreset,
-    badge: "TR",
+const MUSIC_STYLE_LABELS: Record<
+  keyof typeof COPY,
+  Record<(typeof MUSIC_STYLE_VALUES)[number], string>
+> = {
+  tr: {
+    "Pop / Commercial": "Pop / Ticari",
+    "Halay / Folk Pop": "Halay / Folk Pop",
+    "Arabesk / Emotional": "Arabesk / Duygusal",
+    "Rap / Melodic": "Rap / Melodik",
+    "Cinematic Ballad": "Sinematik Balad",
+    "Electronic Dance": "Elektronik Dans",
   },
-  {
-    id: "ku-halay",
-    title: "Kurdish halay",
-    description: "Kürtçe ritim ve modern altyapı.",
-    prompt:
-      "Kürtçe halay enerjisi olan, modern prodüksiyonlu, güçlü nakaratlı ve sahnede söylenecek bir şarkı üret.",
-    titleValue: "Gulamin",
-    style: "Halay / Folk Pop",
-    songLanguage: "ku" as SongLanguage,
-    vocalPreset: "male" as VocalPreset,
+  en: {
+    "Pop / Commercial": "Pop / Commercial",
+    "Halay / Folk Pop": "Halay / Folk Pop",
+    "Arabesk / Emotional": "Arabesk / Emotional",
+    "Rap / Melodic": "Rap / Melodic",
+    "Cinematic Ballad": "Cinematic Ballad",
+    "Electronic Dance": "Electronic Dance",
   },
-  {
-    id: "de-ballad",
-    title: "Deutsch ballad",
-    description: "Duygusal Alman vokal yönü.",
-    prompt:
-      "Deutsch pop ballad, emotional storytelling, cinematic chorus, polished modern production.",
-    titleValue: "Bleib Hier",
-    style: "Cinematic Ballad",
-    songLanguage: "de" as SongLanguage,
-    vocalPreset: "female" as VocalPreset,
+  de: {
+    "Pop / Commercial": "Pop / Kommerziell",
+    "Halay / Folk Pop": "Halay / Folk Pop",
+    "Arabesk / Emotional": "Arabesk / Emotional",
+    "Rap / Melodic": "Rap / Melodisch",
+    "Cinematic Ballad": "Cinematic Ballade",
+    "Electronic Dance": "Electronic Dance",
   },
-  {
-    id: "en-rap",
-    title: "English melodic rap",
-    description: "Melodik rap akışı.",
-    prompt:
-      "English melodic rap song with a memorable hook, modern drums, emotional verses, clean commercial mix.",
-    titleValue: "City Lights",
-    style: "Rap / Melodic",
-    songLanguage: "en" as SongLanguage,
-    vocalPreset: "rap" as VocalPreset,
+  ku: {
+    "Pop / Commercial": "Pop / Bazirganî",
+    "Halay / Folk Pop": "Govenda Halay / Folk Pop",
+    "Arabesk / Emotional": "Arabesk / Hestyar",
+    "Rap / Melodic": "Rap / Melodîk",
+    "Cinematic Ballad": "Balada Sînematîk",
+    "Electronic Dance": "Dance ya Elektronîk",
   },
-];
+};
+
+function getMusicStyleOptions(language: keyof typeof COPY) {
+  const labels = MUSIC_STYLE_LABELS[language];
+  return MUSIC_STYLE_VALUES.map((value) => ({
+    value,
+    label: labels[value],
+  }));
+}
+
+type MusicTemplate = {
+  id: string;
+  title: string;
+  description: string;
+  prompt: string;
+  titleValue: string;
+  style: string;
+  songLanguage: SongLanguage;
+  vocalPreset: VocalPreset;
+  badge?: string;
+};
+
+const TEMPLATES: Record<keyof typeof COPY, MusicTemplate[]> = {
+  tr: [
+    {
+      id: "tr-pop",
+      title: "Türkçe pop",
+      description: "Net nakarat ve modern prodüksiyon.",
+      prompt:
+        "Türkçe, modern pop prodüksiyonlu, güçlü nakaratlı, duygusal ama ritmik bir şarkı üret.",
+      titleValue: "Yeni Gün",
+      style: "Pop / Commercial",
+      songLanguage: "tr",
+      vocalPreset: "female",
+      badge: "TR",
+    },
+    {
+      id: "ku-halay",
+      title: "Kürtçe halay",
+      description: "Kürtçe ritim ve modern altyapı.",
+      prompt:
+        "Kürtçe halay enerjisi olan, modern prodüksiyonlu, güçlü nakaratlı ve sahnede söylenecek bir şarkı üret.",
+      titleValue: "Gulamin",
+      style: "Halay / Folk Pop",
+      songLanguage: "ku",
+      vocalPreset: "male",
+    },
+    {
+      id: "de-ballad",
+      title: "Almanca balad",
+      description: "Duygusal Alman vokal yönü.",
+      prompt:
+        "Almanca pop balad, duygusal hikaye anlatımı, sinematik nakarat, parlak modern prodüksiyon.",
+      titleValue: "Bleib Hier",
+      style: "Cinematic Ballad",
+      songLanguage: "de",
+      vocalPreset: "female",
+    },
+    {
+      id: "en-rap",
+      title: "İngilizce melodik rap",
+      description: "Melodik rap akışı.",
+      prompt:
+        "English melodic rap song with a memorable hook, modern drums, emotional verses, clean commercial mix.",
+      titleValue: "City Lights",
+      style: "Rap / Melodic",
+      songLanguage: "en",
+      vocalPreset: "rap",
+    },
+  ],
+  en: [
+    {
+      id: "tr-pop",
+      title: "Turkish pop",
+      description: "Clear chorus and modern production.",
+      prompt:
+        "Create a Turkish modern pop song with a strong chorus, emotional but rhythmic energy.",
+      titleValue: "Yeni Gun",
+      style: "Pop / Commercial",
+      songLanguage: "tr",
+      vocalPreset: "female",
+      badge: "TR",
+    },
+    {
+      id: "ku-halay",
+      title: "Kurdish halay",
+      description: "Kurdish rhythm with modern production.",
+      prompt:
+        "Create a Kurdish halay-inspired song with modern production, a powerful chorus, and stage-ready energy.",
+      titleValue: "Gulamin",
+      style: "Halay / Folk Pop",
+      songLanguage: "ku",
+      vocalPreset: "male",
+    },
+    {
+      id: "de-ballad",
+      title: "German ballad",
+      description: "Emotional German vocal direction.",
+      prompt:
+        "German pop ballad, emotional storytelling, cinematic chorus, polished modern production.",
+      titleValue: "Bleib Hier",
+      style: "Cinematic Ballad",
+      songLanguage: "de",
+      vocalPreset: "female",
+    },
+    {
+      id: "en-rap",
+      title: "English melodic rap",
+      description: "Melodic rap flow.",
+      prompt:
+        "English melodic rap song with a memorable hook, modern drums, emotional verses, clean commercial mix.",
+      titleValue: "City Lights",
+      style: "Rap / Melodic",
+      songLanguage: "en",
+      vocalPreset: "rap",
+    },
+  ],
+  de: [
+    {
+      id: "tr-pop",
+      title: "Türkischer Pop",
+      description: "Klarer Refrain und moderne Produktion.",
+      prompt:
+        "Erzeuge einen türkischen modernen Popsong mit starkem Refrain, emotionaler aber rhythmischer Energie.",
+      titleValue: "Yeni Gun",
+      style: "Pop / Commercial",
+      songLanguage: "tr",
+      vocalPreset: "female",
+      badge: "TR",
+    },
+    {
+      id: "ku-halay",
+      title: "Kurdischer Halay",
+      description: "Kurdischer Rhythmus mit moderner Produktion.",
+      prompt:
+        "Erzeuge einen kurdischen Halay-Song mit moderner Produktion, starkem Refrain und bühnentauglicher Energie.",
+      titleValue: "Gulamin",
+      style: "Halay / Folk Pop",
+      songLanguage: "ku",
+      vocalPreset: "male",
+    },
+    {
+      id: "de-ballad",
+      title: "Deutsche Ballade",
+      description: "Emotionale deutsche Vokalrichtung.",
+      prompt:
+        "Deutsche Pop-Ballade, emotionales Storytelling, cinematic Refrain, moderne polierte Produktion.",
+      titleValue: "Bleib Hier",
+      style: "Cinematic Ballad",
+      songLanguage: "de",
+      vocalPreset: "female",
+    },
+    {
+      id: "en-rap",
+      title: "Englischer melodischer Rap",
+      description: "Melodischer Rap-Flow.",
+      prompt:
+        "Englischer melodischer Rap-Song mit einprägsamem Hook, modernen Drums, emotionalen Versen und sauberem kommerziellem Mix.",
+      titleValue: "City Lights",
+      style: "Rap / Melodic",
+      songLanguage: "en",
+      vocalPreset: "rap",
+    },
+  ],
+  ku: [
+    {
+      id: "tr-pop",
+      title: "Popa Tirkî",
+      description: "Nakarata zelal û hilberîna modern.",
+      prompt:
+        "Stranek pop a Tirkî bi hilberîna modern, nakarata bihêz, hestyar lê rîtimîk çêke.",
+      titleValue: "Yeni Gun",
+      style: "Pop / Commercial",
+      songLanguage: "tr",
+      vocalPreset: "female",
+      badge: "TR",
+    },
+    {
+      id: "ku-halay",
+      title: "Halaya Kurdî",
+      description: "Rîtma Kurdî û altyapıya modern.",
+      prompt:
+        "Stranek Kurdî bi enerjiyê halayê, hilberîna modern, nakarata bihêz û hêza sahneyê çêke.",
+      titleValue: "Gulamin",
+      style: "Halay / Folk Pop",
+      songLanguage: "ku",
+      vocalPreset: "male",
+    },
+    {
+      id: "de-ballad",
+      title: "Balada Almanî",
+      description: "Rêberiya vokala Almanî ya hestyar.",
+      prompt:
+        "Balada pop a Almanî, çîrokbêjiya hestyar, nakarata sînematîk, hilberîna modern û paqij.",
+      titleValue: "Bleib Hier",
+      style: "Cinematic Ballad",
+      songLanguage: "de",
+      vocalPreset: "female",
+    },
+    {
+      id: "en-rap",
+      title: "Rapa melodîk a Îngilîzî",
+      description: "Herikîna rapê ya melodîk.",
+      prompt:
+        "Strana rap a melodîk bi Îngilîzî, hook a mayînde, drumên modern, verseyên hestyar û mixa paqij.",
+      titleValue: "City Lights",
+      style: "Rap / Melodic",
+      songLanguage: "en",
+      vocalPreset: "rap",
+    },
+  ],
+};
 
 function mapVocalType(vocalPreset: VocalPreset) {
   if (vocalPreset === "male") return "ai_male";
@@ -240,14 +571,40 @@ export default function MusicPage() {
   const { user, refreshSession } = useSession();
   const isMobile = useIsMobile(980);
   const safeLanguage = getSafeGenerationLanguage(language);
-  const t = safeLanguage === "tr" ? COPY.tr : COPY.en;
+  const t = COPY[safeLanguage];
+  const musicDurationOptions = useMemo(
+    () => getMusicDurationOptions(safeLanguage),
+    [safeLanguage]
+  );
+  const musicStyleOptions = useMemo(
+    () => getMusicStyleOptions(safeLanguage),
+    [safeLanguage]
+  );
+  const songLanguageOptions = useMemo(
+    () => getSongLanguageOptions(safeLanguage),
+    [safeLanguage]
+  );
+  const vocalModeOptions = useMemo(
+    () => getVocalModeOptions(safeLanguage),
+    [safeLanguage]
+  );
+  const vocalPresetOptions = useMemo(
+    () => getVocalPresetOptions(safeLanguage),
+    [safeLanguage]
+  );
 
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState<string>(t.promptPlaceholder);
   const [lyrics, setLyrics] = useState("");
   const [style, setStyle] = useState("Pop / Commercial");
   const [songLanguage, setSongLanguage] = useState<SongLanguage>(
-    safeLanguage === "tr" ? "tr" : safeLanguage === "de" ? "de" : "en"
+    safeLanguage === "tr"
+      ? "tr"
+      : safeLanguage === "de"
+      ? "de"
+      : safeLanguage === "ku"
+      ? "ku"
+      : "en"
   );
   const [vocalPreset, setVocalPreset] = useState<VocalPreset>("female");
   const [vocalMode, setVocalMode] = useState<VocalMode>("preset");
@@ -266,7 +623,7 @@ export default function MusicPage() {
 
   const templates = useMemo<StudioTemplate[]>(
     () => {
-      const staticTemplates = TEMPLATES.map((template) => ({
+      const staticTemplates = TEMPLATES[safeLanguage].map((template) => ({
         id: template.id,
         title: template.title,
         description: template.description,
@@ -308,7 +665,7 @@ export default function MusicPage() {
         (item) => ({
           id: `generated-${item.id}`,
           title: item.title,
-          description: "Son üretilen şarkıdan müzik brief’i.",
+          description: t.generatedTemplateDescription,
           badge: "Neon",
           onSelect: () => {
             const nextStyle = String(
@@ -343,7 +700,7 @@ export default function MusicPage() {
 
       return [...staticTemplates, ...generatedTemplates];
     },
-    [generation, recentMusic, style]
+    [generation, recentMusic, safeLanguage, style, t.generatedTemplateDescription]
   );
 
   async function requestLyrics() {
@@ -351,7 +708,7 @@ export default function MusicPage() {
     const cleanTitle = title.trim();
 
     if (!cleanPrompt && !cleanTitle) {
-      throw new Error("Prompt veya şarkı adı gerekli.");
+      throw new Error(t.promptOrTitleRequired);
     }
 
     const res = await fetch(GENERATE_LYRICS_ROUTE, {
@@ -369,7 +726,7 @@ export default function MusicPage() {
 
     const data = await res.json().catch(() => null);
     if (!res.ok || !data?.ok || !data?.lyrics) {
-      throw new Error(data?.error || "Şarkı sözleri üretilemedi.");
+      throw new Error(data?.error || t.lyricsError);
     }
 
     return String(data.lyrics).trim();
@@ -412,12 +769,12 @@ export default function MusicPage() {
     const cleanPrompt = prompt.trim();
 
     if (cleanPrompt.length < 10) {
-      setGeneration({ status: "error", message: "Prompt en az 10 karakter olmalı." });
+      setGeneration({ status: "error", message: t.promptTooShort });
       return;
     }
 
     if (vocalMode === "own_voice" && !voiceSampleUrl) {
-      setGeneration({ status: "error", message: "Kendi ses modu için ses örneği yüklemelisin." });
+      setGeneration({ status: "error", message: t.voiceRequired });
       return;
     }
 
@@ -434,11 +791,11 @@ export default function MusicPage() {
       }
 
       if (!instrumental && !finalLyrics) {
-        throw new Error("Şarkı sözleri gerekli.");
+        throw new Error(t.lyricsRequired);
       }
 
       const duration = Number(durationSec);
-      const songTitle = title.trim() || compactTitle(cleanPrompt, "Generated Song");
+      const songTitle = title.trim() || compactTitle(cleanPrompt, t.generatedTitle);
 
       const res = await fetch(GENERATE_SONG_ROUTE, {
         method: "POST",
@@ -447,7 +804,7 @@ export default function MusicPage() {
           mode: "song",
           title: songTitle,
           prompt: cleanPrompt,
-          lyrics: instrumental ? "Instrumental arrangement without lead vocal." : finalLyrics,
+          lyrics: instrumental ? t.instrumentalLyrics : finalLyrics,
           durationSec: duration,
           language: songLanguage,
           vocalType: mapVocalType(vocalPreset),
@@ -525,7 +882,15 @@ export default function MusicPage() {
     setPrompt(t.promptPlaceholder);
     setLyrics("");
     setStyle("Pop / Commercial");
-    setSongLanguage(safeLanguage === "tr" ? "tr" : safeLanguage === "de" ? "de" : "en");
+    setSongLanguage(
+      safeLanguage === "tr"
+        ? "tr"
+        : safeLanguage === "de"
+        ? "de"
+        : safeLanguage === "ku"
+        ? "ku"
+        : "en"
+    );
     setVocalPreset("female");
     setVocalMode("preset");
     setVoiceSampleUrl("");
@@ -590,7 +955,7 @@ export default function MusicPage() {
       ? { label: t.done, tone: "good" as const }
       : generation.status === "error"
       ? { label: generation.message, tone: "danger" as const }
-      : { label: "Ready" };
+      : { label: t.done };
 
   const credits =
     generation.status === "done" ? generation.remainingCredits : user?.remainingCredits;
@@ -606,7 +971,7 @@ export default function MusicPage() {
       metrics={[
         { label: t.credits, value: credits ?? "-" },
         { label: t.language, value: songLanguage.toUpperCase() },
-        { label: t.duration, value: `${durationSec} sn` },
+        { label: t.duration, value: `${durationSec} ${t.seconds}` },
       ]}
       inputTitle={t.inputTitle}
       inputDescription={t.inputDescription}
@@ -636,27 +1001,27 @@ export default function MusicPage() {
             />
           </StudioField>
           <StudioField label={t.style}>
-            <StudioSelect value={style} onChange={setStyle} options={MUSIC_STYLE_OPTIONS} />
+            <StudioSelect value={style} onChange={setStyle} options={musicStyleOptions} />
           </StudioField>
           <StudioField label={t.language}>
             <StudioSelect<SongLanguage>
               value={songLanguage}
               onChange={setSongLanguage}
-              options={SONG_LANGUAGE_OPTIONS}
+              options={songLanguageOptions}
             />
           </StudioField>
           <StudioField label={t.vocalPreset}>
             <StudioSelect<VocalPreset>
               value={vocalPreset}
               onChange={setVocalPreset}
-              options={VOCAL_PRESET_OPTIONS}
+              options={vocalPresetOptions}
             />
           </StudioField>
           <StudioField label={t.vocalMode}>
             <StudioSegmented<VocalMode>
               value={vocalMode}
               onChange={setVocalMode}
-              options={VOCAL_MODE_OPTIONS}
+              options={vocalModeOptions}
             />
           </StudioField>
           {vocalMode === "own_voice" ? (
@@ -682,7 +1047,7 @@ export default function MusicPage() {
             <StudioSelect
               value={durationSec}
               onChange={setDurationSec}
-              options={MUSIC_DURATION_OPTIONS}
+              options={musicDurationOptions}
             />
           </StudioField>
         </>

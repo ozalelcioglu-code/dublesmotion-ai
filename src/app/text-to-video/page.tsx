@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   GenerationStudio,
   StudioDownloadLink,
@@ -22,9 +22,9 @@ import {
   setV2EditorPrefill,
 } from "@/lib/v2-store";
 import {
-  DURATION_OPTIONS,
-  RATIO_OPTIONS,
-  VISUAL_STYLE_OPTIONS,
+  getDurationOptions,
+  getRatioOptions,
+  getVisualStyleOptions,
   type AspectRatio,
   type VisualStyle,
 } from "@/lib/generation/options";
@@ -78,6 +78,10 @@ const COPY = {
     addToEditor: "Editöre ekle",
     download: "İndir",
     editorReady: "Video editöre gönderildi.",
+    promptRequired: "Prompt alanı boş olamaz.",
+    generatedTemplateDescription: "Son üretilen videodan brief.",
+    generatedTitle: "Üretilen Video",
+    seconds: "sn",
   },
   en: {
     title: "Video Studio",
@@ -106,59 +110,294 @@ const COPY = {
     addToEditor: "Add to editor",
     download: "Download",
     editorReady: "Video sent to editor.",
+    promptRequired: "Prompt cannot be empty.",
+    generatedTemplateDescription: "Brief from the latest generated video.",
+    generatedTitle: "Generated Video",
+    seconds: "sec",
+  },
+  de: {
+    title: "Videostudio",
+    description:
+      "Schreibe die Szene, wähle die Kamerasprache und erzeuge ein kurzes Video für den Editor.",
+    inputTitle: "Videobrief",
+    inputDescription: "Szene, Bewegung, Stil, Dauer und Format in einem Panel.",
+    prompt: "Prompt",
+    promptPlaceholder:
+      "Eine Figur geht nachts durch Stadtlichter, langsame Tracking-Kamera, filmische Werbequalität",
+    style: "Stil",
+    ratio: "Format",
+    duration: "Dauer",
+    generate: "Video erzeugen",
+    reset: "Zurücksetzen",
+    previewTitle: "Preview",
+    previewDescription: "Das erzeugte Video wird hier abgespielt.",
+    emptyTitle: "Noch kein Video",
+    emptyText: "Vervollständige den Prompt und starte die Erstellung.",
+    templatesTitle: "Fertige Videobriefs",
+    templatesDescription: "Wähle einen Startpunkt und passe die Szene an.",
+    loading: "Video wird vorbereitet...",
+    done: "Bereit",
+    error: "Videoerzeugung fehlgeschlagen.",
+    credits: "Credits",
+    addToEditor: "Zum Editor hinzufügen",
+    download: "Download",
+    editorReady: "Video wurde an den Editor gesendet.",
+    promptRequired: "Prompt darf nicht leer sein.",
+    generatedTemplateDescription: "Brief aus dem zuletzt erzeugten Video.",
+    generatedTitle: "Erzeugtes Video",
+    seconds: "Sek.",
+  },
+  ku: {
+    title: "Stûdyoya Vîdyoyê",
+    description:
+      "Dîmenê binivîse, zimanê kamerayê hilbijêre û vîdyoyeke kurt ji bo editorê çêke.",
+    inputTitle: "Briefa vîdyoyê",
+    inputDescription: "Dîmen, tevger, stîl, dem û format di yek panelê de.",
+    prompt: "Prompt",
+    promptPlaceholder:
+      "Karakterek di ronahiya bajêr ya şevê de dimeşe, kamera hêdî dişopîne, kalîteya reklamê ya sînematîk",
+    style: "Stîl",
+    ratio: "Format",
+    duration: "Dem",
+    generate: "Vîdyo çêke",
+    reset: "Ji nû ve",
+    previewTitle: "Preview",
+    previewDescription: "Vîdyoya çêkirî li vir tê lîstin.",
+    emptyTitle: "Hê vîdyo tune",
+    emptyText: "Promptê temam bike û dest bi çêkirinê bike.",
+    templatesTitle: "Briefên vîdyoyê yên amade",
+    templatesDescription: "Destpêkek hilbijêre, paşê dîmenê li gor xwe biguherîne.",
+    loading: "Vîdyo tê amadekirin...",
+    done: "Amade",
+    error: "Çêkirina vîdyoyê bi ser neket.",
+    credits: "Kredit",
+    addToEditor: "Li editorê zêde bike",
+    download: "Daxe",
+    editorReady: "Vîdyo ji editorê re hate şandin.",
+    promptRequired: "Prompt vala nabe.",
+    generatedTemplateDescription: "Brief ji vîdyoya dawî ya çêkirî.",
+    generatedTitle: "Vîdyoya Çêkirî",
+    seconds: "sn",
   },
 } as const;
 
-const TEMPLATES = [
-  {
-    id: "commercial",
-    title: "Premium reklam",
-    description: "Parlak marka filmi hissi.",
-    prompt:
-      "Premium marka reklam filmi, kontrollü ışık, yavaş kamera hareketi, modern şehir atmosferi, yüksek prodüksiyon kalitesi",
-    style: "cinematic" as VisualStyle,
-    ratio: "16:9" as AspectRatio,
-    duration: "8",
-    badge: "Pro",
-  },
-  {
-    id: "social",
-    title: "Dikey sosyal video",
-    description: "Mobil akışa uygun hareket.",
-    prompt:
-      "Dikey sosyal medya videosu, enerjik kamera hareketi, net konu, parlak doğal ışık, premium içerik kalitesi",
-    style: "realistic" as VisualStyle,
-    ratio: "9:16" as AspectRatio,
-    duration: "6",
-  },
-  {
-    id: "product",
-    title: "Ürün hareketi",
-    description: "Ürünü merkezde tutar.",
-    prompt:
-      "Lüks ürün tanıtım videosu, ürün etrafında yumuşak kamera dönüşü, temiz arka plan, reklam kalitesi",
-    style: "product" as VisualStyle,
-    ratio: "1:1" as AspectRatio,
-    duration: "8",
-  },
-  {
-    id: "anime",
-    title: "Anime sahne",
-    description: "Poster tadında hareket.",
-    prompt:
-      "Detaylı anime sahnesi, dramatik ışık, karakter odaklı yumuşak hareket, etkileyici atmosfer",
-    style: "anime" as VisualStyle,
-    ratio: "16:9" as AspectRatio,
-    duration: "6",
-  },
-];
+type VideoTemplate = {
+  id: string;
+  title: string;
+  description: string;
+  prompt: string;
+  style: VisualStyle;
+  ratio: AspectRatio;
+  duration: string;
+  badge?: string;
+};
+
+function isVisualStyle(value: string | null): value is VisualStyle {
+  return (
+    value === "cinematic" ||
+    value === "realistic" ||
+    value === "fashion" ||
+    value === "product" ||
+    value === "anime" ||
+    value === "cartoon" ||
+    value === "3d_animation"
+  );
+}
+
+function isAspectRatio(value: string | null): value is AspectRatio {
+  return value === "16:9" || value === "9:16" || value === "1:1";
+}
+
+const TEMPLATES: Record<keyof typeof COPY, VideoTemplate[]> = {
+  tr: [
+    {
+      id: "commercial",
+      title: "Premium reklam",
+      description: "Parlak marka filmi hissi.",
+      prompt:
+        "Premium marka reklam filmi, kontrollü ışık, yavaş kamera hareketi, modern şehir atmosferi, yüksek prodüksiyon kalitesi",
+      style: "cinematic",
+      ratio: "16:9",
+      duration: "8",
+      badge: "Pro",
+    },
+    {
+      id: "social",
+      title: "Dikey sosyal video",
+      description: "Mobil akışa uygun hareket.",
+      prompt:
+        "Dikey sosyal medya videosu, enerjik kamera hareketi, net konu, parlak doğal ışık, premium içerik kalitesi",
+      style: "realistic",
+      ratio: "9:16",
+      duration: "6",
+    },
+    {
+      id: "product",
+      title: "Ürün hareketi",
+      description: "Ürünü merkezde tutar.",
+      prompt:
+        "Lüks ürün tanıtım videosu, ürün etrafında yumuşak kamera dönüşü, temiz arka plan, reklam kalitesi",
+      style: "product",
+      ratio: "1:1",
+      duration: "8",
+    },
+    {
+      id: "anime",
+      title: "Anime sahne",
+      description: "Poster tadında hareket.",
+      prompt:
+        "Detaylı anime sahnesi, dramatik ışık, karakter odaklı yumuşak hareket, etkileyici atmosfer",
+      style: "anime",
+      ratio: "16:9",
+      duration: "6",
+    },
+  ],
+  en: [
+    {
+      id: "commercial",
+      title: "Premium ad",
+      description: "Polished brand film feeling.",
+      prompt:
+        "Premium brand commercial film, controlled lighting, slow camera move, modern city atmosphere, high production quality",
+      style: "cinematic",
+      ratio: "16:9",
+      duration: "8",
+      badge: "Pro",
+    },
+    {
+      id: "social",
+      title: "Vertical social video",
+      description: "Motion built for mobile feeds.",
+      prompt:
+        "Vertical social media video, energetic camera movement, clear subject, bright natural light, premium content quality",
+      style: "realistic",
+      ratio: "9:16",
+      duration: "6",
+    },
+    {
+      id: "product",
+      title: "Product motion",
+      description: "Keeps the product centered.",
+      prompt:
+        "Luxury product promo video, smooth camera orbit around the product, clean background, commercial quality",
+      style: "product",
+      ratio: "1:1",
+      duration: "8",
+    },
+    {
+      id: "anime",
+      title: "Anime scene",
+      description: "Poster-like motion.",
+      prompt:
+        "Detailed anime scene, dramatic lighting, character-focused smooth motion, impressive atmosphere",
+      style: "anime",
+      ratio: "16:9",
+      duration: "6",
+    },
+  ],
+  de: [
+    {
+      id: "commercial",
+      title: "Premium-Werbung",
+      description: "Glänzendes Markenfilmgefühl.",
+      prompt:
+        "Premium Markenwerbefilm, kontrolliertes Licht, langsame Kamerabewegung, moderne Stadtatmosphäre, hohe Produktionsqualität",
+      style: "cinematic",
+      ratio: "16:9",
+      duration: "8",
+      badge: "Pro",
+    },
+    {
+      id: "social",
+      title: "Vertikales Social Video",
+      description: "Bewegung für mobile Feeds.",
+      prompt:
+        "Vertikales Social-Media-Video, energetische Kamerabewegung, klares Motiv, helles natürliches Licht, Premium-Content-Qualität",
+      style: "realistic",
+      ratio: "9:16",
+      duration: "6",
+    },
+    {
+      id: "product",
+      title: "Produktbewegung",
+      description: "Hält das Produkt im Zentrum.",
+      prompt:
+        "Luxuriöses Produktvideo, weiche Kameradrehung um das Produkt, sauberer Hintergrund, Werbequalität",
+      style: "product",
+      ratio: "1:1",
+      duration: "8",
+    },
+    {
+      id: "anime",
+      title: "Anime-Szene",
+      description: "Bewegung mit Posterwirkung.",
+      prompt:
+        "Detaillierte Anime-Szene, dramatisches Licht, weiche charakterfokussierte Bewegung, eindrucksvolle Atmosphäre",
+      style: "anime",
+      ratio: "16:9",
+      duration: "6",
+    },
+  ],
+  ku: [
+    {
+      id: "commercial",
+      title: "Reklama premium",
+      description: "Hesta filmê brandê ya paqij.",
+      prompt:
+        "Filmê reklamê ya branda premium, ronahiya kontrolkirî, tevgera kamerayê ya hêdî, atmosfera bajêr ya modern, kalîteya hilberîna bilind",
+      style: "cinematic",
+      ratio: "16:9",
+      duration: "8",
+      badge: "Pro",
+    },
+    {
+      id: "social",
+      title: "Vîdyoya social ya tîk",
+      description: "Tevger ji bo mobile feed.",
+      prompt:
+        "Vîdyoya social media ya tîk, tevgera kamerayê ya enerjîk, mijara zelal, ronahiya xwezayî ya geş, kalîteya naveroka premium",
+      style: "realistic",
+      ratio: "9:16",
+      duration: "6",
+    },
+    {
+      id: "product",
+      title: "Tevgera hilberê",
+      description: "Hilberê di navendê de dihêle.",
+      prompt:
+        "Vîdyoya danasîna hilbera luks, kamerayê bi nermî li dora hilberê digere, paşxaneya paqij, kalîteya reklamê",
+      style: "product",
+      ratio: "1:1",
+      duration: "8",
+    },
+    {
+      id: "anime",
+      title: "Dîmena anime",
+      description: "Tevgera bi hesta posterê.",
+      prompt:
+        "Dîmena anime bi detay, ronahiya dramatîk, tevgera nerm a li ser karakterê, atmosfera balkêş",
+      style: "anime",
+      ratio: "16:9",
+      duration: "6",
+    },
+  ],
+};
 
 export default function TextToVideoPage() {
   const { language } = useLanguage();
   const { user, refreshSession } = useSession();
   const isMobile = useIsMobile(980);
   const safeLanguage = getSafeGenerationLanguage(language);
-  const t = safeLanguage === "tr" ? COPY.tr : COPY.en;
+  const t = COPY[safeLanguage];
+  const durationOptions = useMemo(
+    () => getDurationOptions(safeLanguage),
+    [safeLanguage]
+  );
+  const ratioOptions = useMemo(() => getRatioOptions(safeLanguage), [safeLanguage]);
+  const visualStyleOptions = useMemo(
+    () => getVisualStyleOptions(safeLanguage),
+    [safeLanguage]
+  );
 
   const [prompt, setPrompt] = useState<string>(t.promptPlaceholder);
   const [style, setStyle] = useState<VisualStyle>("cinematic");
@@ -172,9 +411,28 @@ export default function TextToVideoPage() {
     limit: 8,
   });
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get("source");
+    if (source !== "showcase" && source !== "community_showcase") return;
+
+    const nextPrompt = params.get("prompt");
+    const nextStyle = params.get("style");
+    const nextRatio = params.get("ratio");
+    const nextDuration = params.get("durationSec");
+
+    if (nextPrompt) setPrompt(nextPrompt);
+    if (isVisualStyle(nextStyle)) setStyle(nextStyle);
+    if (isAspectRatio(nextRatio)) setRatio(nextRatio);
+    if (nextDuration && /^\d+$/.test(nextDuration)) {
+      setDurationSec(nextDuration);
+    }
+    setNotice("");
+  }, []);
+
   const templates = useMemo<StudioTemplate[]>(
     () => {
-      const staticTemplates = TEMPLATES.map((template) => ({
+      const staticTemplates = TEMPLATES[safeLanguage].map((template) => ({
         id: template.id,
         title: template.title,
         description: template.description,
@@ -208,7 +466,7 @@ export default function TextToVideoPage() {
         (item) => ({
           id: `generated-${item.id}`,
           title: item.title,
-          description: "Son üretilen videodan brief.",
+          description: t.generatedTemplateDescription,
           badge: "Neon",
           onSelect: () => {
             setPrompt(item.prompt || item.title);
@@ -228,13 +486,13 @@ export default function TextToVideoPage() {
 
       return [...staticTemplates, ...generatedTemplates];
     },
-    [generation, recentVideos]
+    [generation, recentVideos, safeLanguage, t.generatedTemplateDescription]
   );
 
   async function handleGenerate() {
     const cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
-      setGeneration({ status: "error", message: "Prompt alanı boş olamaz." });
+      setGeneration({ status: "error", message: t.promptRequired });
       return;
     }
 
@@ -262,7 +520,7 @@ export default function TextToVideoPage() {
       }
 
       const videoUrl = String(data.videoUrl);
-      const title = compactTitle(cleanPrompt, "Generated Video");
+      const title = compactTitle(cleanPrompt, t.generatedTitle);
 
       setGeneration({
         status: "done",
@@ -328,7 +586,7 @@ export default function TextToVideoPage() {
       ? { label: t.done, tone: "good" as const }
       : generation.status === "error"
       ? { label: generation.message, tone: "danger" as const }
-      : { label: "Ready" };
+      : { label: t.done };
 
   const credits =
     generation.status === "done" ? generation.remainingCredits : user?.remainingCredits;
@@ -343,7 +601,7 @@ export default function TextToVideoPage() {
       status={status}
       metrics={[
         { label: t.credits, value: credits ?? "-" },
-        { label: t.duration, value: `${durationSec} sn` },
+        { label: t.duration, value: `${durationSec} ${t.seconds}` },
         { label: t.ratio, value: ratio },
       ]}
       inputTitle={t.inputTitle}
@@ -362,21 +620,21 @@ export default function TextToVideoPage() {
             <StudioSelect<VisualStyle>
               value={style}
               onChange={setStyle}
-              options={VISUAL_STYLE_OPTIONS}
+              options={visualStyleOptions}
             />
           </StudioField>
           <StudioField label={t.ratio}>
             <StudioSegmented<AspectRatio>
               value={ratio}
               onChange={setRatio}
-              options={RATIO_OPTIONS}
+              options={ratioOptions}
             />
           </StudioField>
           <StudioField label={t.duration}>
             <StudioSelect
               value={durationSec}
               onChange={setDurationSec}
-              options={DURATION_OPTIONS}
+              options={durationOptions}
             />
           </StudioField>
         </>

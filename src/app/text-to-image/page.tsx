@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   GenerationStudio,
   StudioEmpty,
@@ -17,8 +17,8 @@ import { useIsMobile } from "@/lib/useIsMobile";
 import { useGenerationHistory } from "@/lib/generation/useGenerationHistory";
 import { addV2HistoryItem, makeHistoryId, setV2Prefill } from "@/lib/v2-store";
 import {
-  RATIO_OPTIONS,
-  VISUAL_STYLE_OPTIONS,
+  getRatioOptions,
+  getVisualStyleOptions,
   type AspectRatio,
   type VisualStyle,
 } from "@/lib/generation/options";
@@ -69,6 +69,9 @@ const COPY = {
     download: "İndir",
     turnIntoVideo: "Video akışına gönder",
     routed: "Görsel image-to-video akışına hazırlandı.",
+    promptRequired: "Prompt alanı boş olamaz.",
+    generatedTemplateDescription: "Son üretilen görselden brief.",
+    generatedTitle: "Üretilen Görsel",
   },
   en: {
     title: "Image Studio",
@@ -96,55 +99,268 @@ const COPY = {
     download: "Download",
     turnIntoVideo: "Send to video flow",
     routed: "Image prepared for image-to-video.",
+    promptRequired: "Prompt cannot be empty.",
+    generatedTemplateDescription: "Brief from the latest generated image.",
+    generatedTitle: "Generated Image",
+  },
+  de: {
+    title: "Bildstudio",
+    description:
+      "Schreibe deinen visuellen Brief, wähle den Stil und erzeuge ein Bild für den Videoablauf.",
+    inputTitle: "Bildbrief",
+    inputDescription: "Steuere Komposition, Licht, Motiv und Ästhetik an einem Ort.",
+    prompt: "Prompt",
+    promptPlaceholder:
+      "Premium Produktaufnahme, sauberer Hintergrund, kontrolliertes Licht, Werbequalität mit klaren Details",
+    style: "Stil",
+    ratio: "Format",
+    generate: "Bild erzeugen",
+    reset: "Zurücksetzen",
+    previewTitle: "Preview",
+    previewDescription: "Das erzeugte Bild erscheint hier.",
+    emptyTitle: "Noch kein Bild",
+    emptyText: "Vervollständige links den Prompt und starte die Erstellung.",
+    templatesTitle: "Fertige Briefs",
+    templatesDescription: "Wähle einen Startpunkt und passe den Prompt an.",
+    done: "Bereit",
+    loading: "Bild wird vorbereitet...",
+    error: "Bilderzeugung fehlgeschlagen.",
+    credits: "Credits",
+    download: "Download",
+    turnIntoVideo: "Zum Videoablauf senden",
+    routed: "Bild für Bild-zu-Video vorbereitet.",
+    promptRequired: "Prompt darf nicht leer sein.",
+    generatedTemplateDescription: "Brief aus dem zuletzt erzeugten Bild.",
+    generatedTitle: "Erzeugtes Bild",
+  },
+  ku: {
+    title: "Stûdyoya Wêneyê",
+    description:
+      "Briefa xwe binivîse, stîla wêneyê hilbijêre û encamê ji bo vîdyoyê amade bike.",
+    inputTitle: "Briefa wêneyê",
+    inputDescription: "Kompozîsyon, ronahî, mijar û estetîkê di yek cihî de rêve bibe.",
+    prompt: "Prompt",
+    promptPlaceholder:
+      "Wêneya hilbera premium, paşxaneya paqij, ronahiya kontrolkirî, detaya kalîteya reklamê",
+    style: "Stîl",
+    ratio: "Format",
+    generate: "Wêne çêke",
+    reset: "Ji nû ve",
+    previewTitle: "Preview",
+    previewDescription: "Wêneya çêkirî li vir xuya dibe.",
+    emptyTitle: "Hê wêne tune",
+    emptyText: "Li aliyê çepê promptê temam bike û dest bi çêkirinê bike.",
+    templatesTitle: "Briefên amade",
+    templatesDescription: "Destpêkek hilbijêre, paşê promptê li gor fikra xwe biguherîne.",
+    done: "Amade",
+    loading: "Wêne tê amadekirin...",
+    error: "Çêkirina wêneyê bi ser neket.",
+    credits: "Kredit",
+    download: "Daxe",
+    turnIntoVideo: "Bişîne rêya vîdyoyê",
+    routed: "Wêne ji bo ji-wêneyê-vîdyo hate amadekirin.",
+    promptRequired: "Prompt vala nabe.",
+    generatedTemplateDescription: "Brief ji wêneya dawî ya çêkirî.",
+    generatedTitle: "Wêneya Çêkirî",
   },
 } as const;
 
-const TEMPLATES = [
-  {
-    id: "product",
-    title: "Ürün hero",
-    description: "Temiz reklam kompozisyonu.",
-    prompt:
-      "Premium ürün hero shot, temiz arka plan, kontrollü ışık, reklam kalitesinde detay, keskin odak",
-    style: "product" as VisualStyle,
-    ratio: "1:1" as AspectRatio,
-    badge: "Commerce",
-  },
-  {
-    id: "fashion",
-    title: "Fashion editorial",
-    description: "Dergi kapağı hissi.",
-    prompt:
-      "Lüks moda editorial çekimi, yumuşak sinematik ışık, premium styling, profesyonel portre",
-    style: "fashion" as VisualStyle,
-    ratio: "9:16" as AspectRatio,
-  },
-  {
-    id: "cinematic",
-    title: "Sinematik sahne",
-    description: "Film karesi estetiği.",
-    prompt:
-      "Sinematik gece sahnesi, doğal lens derinliği, dramatik ışık, yüksek prodüksiyon kalitesi",
-    style: "cinematic" as VisualStyle,
-    ratio: "16:9" as AspectRatio,
-  },
-  {
-    id: "anime",
-    title: "Anime visual",
-    description: "Poster etkili anime stil.",
-    prompt:
-      "Detaylı anime key visual, güçlü kompozisyon, atmosferik arka plan, premium poster kalitesi",
-    style: "anime" as VisualStyle,
-    ratio: "16:9" as AspectRatio,
-  },
-];
+type ImageTemplate = {
+  id: string;
+  title: string;
+  description: string;
+  prompt: string;
+  style: VisualStyle;
+  ratio: AspectRatio;
+  badge?: string;
+};
+
+function isVisualStyle(value: string | null): value is VisualStyle {
+  return (
+    value === "cinematic" ||
+    value === "realistic" ||
+    value === "fashion" ||
+    value === "product" ||
+    value === "anime" ||
+    value === "cartoon" ||
+    value === "3d_animation"
+  );
+}
+
+function isAspectRatio(value: string | null): value is AspectRatio {
+  return value === "16:9" || value === "9:16" || value === "1:1";
+}
+
+const TEMPLATES: Record<keyof typeof COPY, ImageTemplate[]> = {
+  tr: [
+    {
+      id: "product",
+      title: "Ürün hero",
+      description: "Temiz reklam kompozisyonu.",
+      prompt:
+        "Premium ürün hero shot, temiz arka plan, kontrollü ışık, reklam kalitesinde detay, keskin odak",
+      style: "product",
+      ratio: "1:1",
+      badge: "Commerce",
+    },
+    {
+      id: "fashion",
+      title: "Fashion editorial",
+      description: "Dergi kapağı hissi.",
+      prompt:
+        "Lüks moda editorial çekimi, yumuşak sinematik ışık, premium styling, profesyonel portre",
+      style: "fashion",
+      ratio: "9:16",
+    },
+    {
+      id: "cinematic",
+      title: "Sinematik sahne",
+      description: "Film karesi estetiği.",
+      prompt:
+        "Sinematik gece sahnesi, doğal lens derinliği, dramatik ışık, yüksek prodüksiyon kalitesi",
+      style: "cinematic",
+      ratio: "16:9",
+    },
+    {
+      id: "anime",
+      title: "Anime visual",
+      description: "Poster etkili anime stil.",
+      prompt:
+        "Detaylı anime key visual, güçlü kompozisyon, atmosferik arka plan, premium poster kalitesi",
+      style: "anime",
+      ratio: "16:9",
+    },
+  ],
+  en: [
+    {
+      id: "product",
+      title: "Product hero",
+      description: "Clean commercial composition.",
+      prompt:
+        "Premium product hero shot, clean background, controlled lighting, commercial detail, sharp focus",
+      style: "product",
+      ratio: "1:1",
+      badge: "Commerce",
+    },
+    {
+      id: "fashion",
+      title: "Fashion editorial",
+      description: "Magazine cover feeling.",
+      prompt:
+        "Luxury fashion editorial shoot, soft cinematic lighting, premium styling, professional portrait",
+      style: "fashion",
+      ratio: "9:16",
+    },
+    {
+      id: "cinematic",
+      title: "Cinematic scene",
+      description: "Film still aesthetic.",
+      prompt:
+        "Cinematic night scene, natural lens depth, dramatic lighting, high production quality",
+      style: "cinematic",
+      ratio: "16:9",
+    },
+    {
+      id: "anime",
+      title: "Anime visual",
+      description: "Poster-grade anime style.",
+      prompt:
+        "Detailed anime key visual, strong composition, atmospheric background, premium poster quality",
+      style: "anime",
+      ratio: "16:9",
+    },
+  ],
+  de: [
+    {
+      id: "product",
+      title: "Produkt-Hero",
+      description: "Saubere Werbekomposition.",
+      prompt:
+        "Premium Produkt-Hero-Shot, sauberer Hintergrund, kontrolliertes Licht, Werbedetails, scharfer Fokus",
+      style: "product",
+      ratio: "1:1",
+      badge: "Commerce",
+    },
+    {
+      id: "fashion",
+      title: "Fashion Editorial",
+      description: "Gefühl eines Magazin-Covers.",
+      prompt:
+        "Luxuriöses Fashion-Editorial, weiches filmisches Licht, Premium-Styling, professionelles Porträt",
+      style: "fashion",
+      ratio: "9:16",
+    },
+    {
+      id: "cinematic",
+      title: "Cinematic Scene",
+      description: "Ästhetik eines Filmstills.",
+      prompt:
+        "Cinematic Nachtszene, natürliche Tiefenschärfe, dramatisches Licht, hohe Produktionsqualität",
+      style: "cinematic",
+      ratio: "16:9",
+    },
+    {
+      id: "anime",
+      title: "Anime Visual",
+      description: "Anime-Stil mit Posterwirkung.",
+      prompt:
+        "Detailliertes Anime-Key-Visual, starke Komposition, atmosphärischer Hintergrund, Premium-Posterqualität",
+      style: "anime",
+      ratio: "16:9",
+    },
+  ],
+  ku: [
+    {
+      id: "product",
+      title: "Hero ya hilberê",
+      description: "Kompozîsyona reklamê ya paqij.",
+      prompt:
+        "Wêneya hero ya hilbera premium, paşxaneya paqij, ronahiya kontrolkirî, detaya reklamê, fokusê tûj",
+      style: "product",
+      ratio: "1:1",
+      badge: "Commerce",
+    },
+    {
+      id: "fashion",
+      title: "Fashion editorial",
+      description: "Hesta bergê kovarê.",
+      prompt:
+        "Wênekişandina moda ya luks, ronahiya sînematîk a nerm, styling premium, portreya profesyonel",
+      style: "fashion",
+      ratio: "9:16",
+    },
+    {
+      id: "cinematic",
+      title: "Dîmena sînematîk",
+      description: "Estetîka kareya filmê.",
+      prompt:
+        "Dîmena şevê ya sînematîk, kûrahiya lensê ya xwezayî, ronahiya dramatîk, kalîteya hilberîna bilind",
+      style: "cinematic",
+      ratio: "16:9",
+    },
+    {
+      id: "anime",
+      title: "Anime visual",
+      description: "Stîla anime ya posterê.",
+      prompt:
+        "Anime key visual bi detay, kompozîsyona bihêz, paşxaneya atmosferîk, kalîteya posterê ya premium",
+      style: "anime",
+      ratio: "16:9",
+    },
+  ],
+};
 
 export default function TextToImagePage() {
   const { language } = useLanguage();
   const { user, refreshSession } = useSession();
   const isMobile = useIsMobile(980);
   const safeLanguage = getSafeGenerationLanguage(language);
-  const t = safeLanguage === "tr" ? COPY.tr : COPY.en;
+  const t = COPY[safeLanguage];
+  const ratioOptions = useMemo(() => getRatioOptions(safeLanguage), [safeLanguage]);
+  const visualStyleOptions = useMemo(
+    () => getVisualStyleOptions(safeLanguage),
+    [safeLanguage]
+  );
 
   const [prompt, setPrompt] = useState<string>(t.promptPlaceholder);
   const [style, setStyle] = useState<VisualStyle>("product");
@@ -157,9 +373,24 @@ export default function TextToImagePage() {
     limit: 8,
   });
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get("source");
+    if (source !== "showcase" && source !== "community_showcase") return;
+
+    const nextPrompt = params.get("prompt");
+    const nextStyle = params.get("style");
+    const nextRatio = params.get("ratio");
+
+    if (nextPrompt) setPrompt(nextPrompt);
+    if (isVisualStyle(nextStyle)) setStyle(nextStyle);
+    if (isAspectRatio(nextRatio)) setRatio(nextRatio);
+    setNotice("");
+  }, []);
+
   const templates = useMemo<StudioTemplate[]>(
     () => {
-      const staticTemplates = TEMPLATES.map((template) => ({
+      const staticTemplates = TEMPLATES[safeLanguage].map((template) => ({
         id: template.id,
         title: template.title,
         description: template.description,
@@ -190,7 +421,7 @@ export default function TextToImagePage() {
         (item) => ({
           id: `generated-${item.id}`,
           title: item.title,
-          description: "Son üretilen görselden brief.",
+          description: t.generatedTemplateDescription,
           badge: "Neon",
           onSelect: () => {
             setPrompt(item.prompt || item.title);
@@ -203,13 +434,13 @@ export default function TextToImagePage() {
 
       return [...staticTemplates, ...generatedTemplates];
     },
-    [generation, recentImages]
+    [generation, recentImages, safeLanguage, t.generatedTemplateDescription]
   );
 
   async function handleGenerate() {
     const cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
-      setGeneration({ status: "error", message: "Prompt alanı boş olamaz." });
+      setGeneration({ status: "error", message: t.promptRequired });
       return;
     }
 
@@ -235,7 +466,7 @@ export default function TextToImagePage() {
       }
 
       const imageUrl = String(data.imageUrl);
-      const title = compactTitle(cleanPrompt, "Generated Image");
+      const title = compactTitle(cleanPrompt, t.generatedTitle);
 
       setGeneration({
         status: "done",
@@ -296,7 +527,7 @@ export default function TextToImagePage() {
       ? { label: t.done, tone: "good" as const }
       : generation.status === "error"
       ? { label: generation.message, tone: "danger" as const }
-      : { label: "Ready" };
+      : { label: t.done };
 
   const credits =
     generation.status === "done" ? generation.remainingCredits : user?.remainingCredits;
@@ -326,14 +557,14 @@ export default function TextToImagePage() {
             <StudioSelect<VisualStyle>
               value={style}
               onChange={setStyle}
-              options={VISUAL_STYLE_OPTIONS}
+              options={visualStyleOptions}
             />
           </StudioField>
           <StudioField label={t.ratio}>
             <StudioSegmented<AspectRatio>
               value={ratio}
               onChange={setRatio}
-              options={RATIO_OPTIONS}
+              options={ratioOptions}
             />
           </StudioField>
         </>

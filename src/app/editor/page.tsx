@@ -514,7 +514,7 @@ function getSafeLanguage(language?: string): AppLanguage {
   if (language === "tr" || language === "en" || language === "de" || language === "ku") {
     return language;
   }
-  return "en";
+  return "tr";
 }
 
 function EditorPageContent() {

@@ -69,6 +69,8 @@ type ChatTexts = {
   voiceInput: string;
   limited: string;
   active: string;
+  inactive: string;
+  locked: string;
   tools: string;
   menu: string;
   usageTitle: string;
@@ -105,6 +107,21 @@ type ChatTexts = {
     file: string;
     audio: string;
   };
+  generationRequestFailed: string;
+  generatedResultTitle: string;
+  imageOutputEmpty: string;
+  videoOutputEmpty: string;
+  cloneOutputEmpty: string;
+  audioOutputEmpty: string;
+  chatImageReady: string;
+  chatVideoReady: string;
+  imageToVideoNeedsImage: string;
+  imageToVideoReady: string;
+  videoCloneNeedsAssets: string;
+  videoCloneReady: string;
+  videoCloneNotePrefix: string;
+  musicReady: string;
+  musicNotePrefix: string;
 };
 
 const CHAT_TEXTS = {
@@ -131,6 +148,8 @@ const CHAT_TEXTS = {
     voiceInput: "Ses",
     limited: "sınırlı",
     active: "aktif",
+    inactive: "pasif",
+    locked: "kilitli",
     tools: "Araçlar",
     menu: "Menü",
     usageTitle: "Kullanım",
@@ -173,6 +192,23 @@ const CHAT_TEXTS = {
       file: "Dosya ekle",
       audio: "Ses ekle",
     },
+    generationRequestFailed: "Üretim isteği başarısız oldu.",
+    generatedResultTitle: "Üretilen sonuç",
+    imageOutputEmpty: "Görsel çıktısı boş geldi.",
+    videoOutputEmpty: "Video çıktısı boş geldi.",
+    cloneOutputEmpty: "Clone çıktısı boş geldi.",
+    audioOutputEmpty: "Ses çıktısı boş geldi.",
+    chatImageReady: "Görsel hazır. Sonucu burada ekledim.",
+    chatVideoReady: "Video hazır. Sonucu sohbet içine ekledim.",
+    imageToVideoNeedsImage:
+      "Resimden video üretmek için mesajına bir görsel ekle. Görseli ekleyip aynı isteği tekrar gönderdiğinde burada üreteceğim.",
+    imageToVideoReady: "Görseli videoya dönüştürdüm. Sonuç burada.",
+    videoCloneNeedsAssets:
+      "Video clone için aynı mesaja bir kaynak video ve bir referans görsel ekle. İstersen kendi ses tonun için ses dosyası da ekleyebilirsin.",
+    videoCloneReady: "Video clone hazır. Sonucu burada ekledim.",
+    videoCloneNotePrefix: "Video clone hazır. Not:",
+    musicReady: "Müzik hazır. Buradan dinleyebilirsin.",
+    musicNotePrefix: "Müzik hazır. Not:",
   },
   en: {
     centerTitle: "I’m ready when you are.",
@@ -197,6 +233,8 @@ const CHAT_TEXTS = {
     voiceInput: "Voice",
     limited: "limited",
     active: "active",
+    inactive: "off",
+    locked: "locked",
     tools: "Tools",
     menu: "Menu",
     usageTitle: "Usage",
@@ -239,6 +277,23 @@ const CHAT_TEXTS = {
       file: "Add file",
       audio: "Add audio",
     },
+    generationRequestFailed: "Generation request failed.",
+    generatedResultTitle: "Generated result",
+    imageOutputEmpty: "Image output is empty.",
+    videoOutputEmpty: "Video output is empty.",
+    cloneOutputEmpty: "Clone output is empty.",
+    audioOutputEmpty: "Audio output is empty.",
+    chatImageReady: "Image is ready. I added the result here.",
+    chatVideoReady: "Video is ready. I added the result inside the chat.",
+    imageToVideoNeedsImage:
+      "To create image-to-video, attach an image to your message. Add the image and send the same request again, and I’ll generate it here.",
+    imageToVideoReady: "I converted the image to video. The result is here.",
+    videoCloneNeedsAssets:
+      "For video clone, attach a source video and a reference image to the same message. You can also add an audio file for your own voice tone.",
+    videoCloneReady: "Video clone is ready. I added the result here.",
+    videoCloneNotePrefix: "Video clone is ready. Note:",
+    musicReady: "Music is ready. You can listen to it here.",
+    musicNotePrefix: "Music is ready. Note:",
   },
   de: {
     centerTitle: "Ich bin bereit, wenn du es bist.",
@@ -263,6 +318,8 @@ const CHAT_TEXTS = {
     voiceInput: "Sprache",
     limited: "begrenzt",
     active: "aktiv",
+    inactive: "inaktiv",
+    locked: "gesperrt",
     tools: "Werkzeuge",
     menu: "Menü",
     usageTitle: "Nutzung",
@@ -305,6 +362,23 @@ const CHAT_TEXTS = {
       file: "Datei hinzufügen",
       audio: "Audio hinzufügen",
     },
+    generationRequestFailed: "Generierungsanfrage fehlgeschlagen.",
+    generatedResultTitle: "Erzeugtes Ergebnis",
+    imageOutputEmpty: "Bildausgabe ist leer.",
+    videoOutputEmpty: "Videoausgabe ist leer.",
+    cloneOutputEmpty: "Clone-Ausgabe ist leer.",
+    audioOutputEmpty: "Audioausgabe ist leer.",
+    chatImageReady: "Bild ist bereit. Ich habe das Ergebnis hier eingefügt.",
+    chatVideoReady: "Video ist bereit. Ich habe das Ergebnis im Chat eingefügt.",
+    imageToVideoNeedsImage:
+      "Für Bild-zu-Video füge deiner Nachricht ein Bild hinzu. Sende danach dieselbe Anfrage erneut, dann erzeuge ich es hier.",
+    imageToVideoReady: "Ich habe das Bild in ein Video umgewandelt. Das Ergebnis ist hier.",
+    videoCloneNeedsAssets:
+      "Für Video Clone füge derselben Nachricht ein Quellvideo und ein Referenzbild hinzu. Für deine eigene Stimmfarbe kannst du auch eine Audiodatei hinzufügen.",
+    videoCloneReady: "Video Clone ist bereit. Ich habe das Ergebnis hier eingefügt.",
+    videoCloneNotePrefix: "Video Clone ist bereit. Notiz:",
+    musicReady: "Musik ist bereit. Du kannst sie hier anhören.",
+    musicNotePrefix: "Musik ist bereit. Notiz:",
   },
   ku: {
     centerTitle: "Dema tu amade bî, ez amade me.",
@@ -329,6 +403,8 @@ const CHAT_TEXTS = {
     voiceInput: "Deng",
     limited: "sînorkirî",
     active: "çalak",
+    inactive: "neçalak",
+    locked: "girtî",
     tools: "Amûr",
     menu: "Menû",
     usageTitle: "Bikaranîn",
@@ -371,6 +447,23 @@ const CHAT_TEXTS = {
       file: "Pel zêde bike",
       audio: "Deng zêde bike",
     },
+    generationRequestFailed: "Daxwaza hilberînê bi ser neket.",
+    generatedResultTitle: "Encama çêkirî",
+    imageOutputEmpty: "Encama wêneyê vala ye.",
+    videoOutputEmpty: "Encama vîdyoyê vala ye.",
+    cloneOutputEmpty: "Encama clone vala ye.",
+    audioOutputEmpty: "Encama dengê vala ye.",
+    chatImageReady: "Wêne amade ye. Min encam li vir zêde kir.",
+    chatVideoReady: "Vîdyo amade ye. Min encam di sohbetê de zêde kir.",
+    imageToVideoNeedsImage:
+      "Ji bo ji-wêneyê-vîdyo, wêneyekê li peyama xwe zêde bike. Wêne zêde bike û heman daxwazê dîsa bişîne, ez ê li vir çêkim.",
+    imageToVideoReady: "Min wêne kir vîdyo. Encam li vir e.",
+    videoCloneNeedsAssets:
+      "Ji bo video clone, di heman peyamê de vîdyoya çavkanî û wêneya referans zêde bike. Heke bixwazî dikarî ji bo tonê dengê xwe pelê dengê jî zêde bikî.",
+    videoCloneReady: "Video clone amade ye. Min encam li vir zêde kir.",
+    videoCloneNotePrefix: "Video clone amade ye. Têbînî:",
+    musicReady: "Muzîk amade ye. Tu dikarî li vir guhdar bikî.",
+    musicNotePrefix: "Muzîk amade ye. Têbînî:",
   },
 } as const;
 
@@ -759,10 +852,10 @@ function buildFallbackLyrics(prompt: string, language: string) {
 }
 
 function inferSongLanguage(language: string) {
-  if (language === "tr" || language === "de" || language === "ku") {
+  if (language === "tr" || language === "en" || language === "de" || language === "ku") {
     return language;
   }
-  return "en";
+  return "tr";
 }
 
 export default function ChatPage() {
@@ -993,6 +1086,51 @@ export default function ChatPage() {
   function getLiveWebLimitLabel() {
     if (liveWebUnlimited) return t.unlimited;
     return `${webUsageCount}/${access.maxWebQueriesPerThread}`;
+  }
+
+  function getToolStateLabel(isEnabled: boolean, canUse: boolean) {
+    if (!canUse) return t.locked;
+    return isEnabled ? t.active : t.inactive;
+  }
+
+  function toggleLiveWeb() {
+    if (!access.canUseLiveWeb) return;
+    if (!liveWebRequested && liveWebLimitReached) return;
+
+    setLiveWebRequested((prev) => {
+      const next = !prev;
+      if (next) {
+        setDeepResearchRequested(false);
+        setProjectAgentRequested(false);
+      }
+      return next;
+    });
+  }
+
+  function toggleDeepResearch() {
+    if (!access.canUseDeepResearch) return;
+
+    setDeepResearchRequested((prev) => {
+      const next = !prev;
+      if (next) {
+        setLiveWebRequested(false);
+        setProjectAgentRequested(false);
+      }
+      return next;
+    });
+  }
+
+  function toggleProjectAgent() {
+    if (!access.canUseProjectAgent) return;
+
+    setProjectAgentRequested((prev) => {
+      const next = !prev;
+      if (next) {
+        setLiveWebRequested(false);
+        setDeepResearchRequested(false);
+      }
+      return next;
+    });
   }
 
   function getMessageDisplayContent(message: ChatMessage) {
@@ -1404,7 +1542,7 @@ export default function ChatPage() {
     const data = await response.json().catch(() => null);
 
     if (!response.ok || !data?.ok) {
-      throw new Error(data?.error || "Generation request failed");
+      throw new Error(data?.error || t.generationRequestFailed);
     }
 
     return data as Record<string, unknown>;
@@ -1415,7 +1553,7 @@ export default function ChatPage() {
     text: string,
     currentAttachments: ComposerAttachment[]
   ): Promise<{ content: string; generation?: ChatGenerationResult }> {
-    const title = compactTitle(text, "Generated result");
+    const title = compactTitle(text, t.generatedResultTitle);
     const now = new Date().toISOString();
 
     if (intent === "text-to-image") {
@@ -1428,7 +1566,7 @@ export default function ChatPage() {
       });
 
       const imageUrl = String(data.imageUrl || "");
-      if (!imageUrl) throw new Error("Image output is empty");
+      if (!imageUrl) throw new Error(t.imageOutputEmpty);
 
       addV2HistoryItem({
         id: makeHistoryId("chat-image"),
@@ -1442,7 +1580,7 @@ export default function ChatPage() {
       await refreshSession();
 
       return {
-        content: "Görsel hazır. Sonucu burada ekledim.",
+        content: t.chatImageReady,
         generation: {
           kind: "image",
           title,
@@ -1463,7 +1601,7 @@ export default function ChatPage() {
       });
 
       const videoUrl = String(data.videoUrl || "");
-      if (!videoUrl) throw new Error("Video output is empty");
+      if (!videoUrl) throw new Error(t.videoOutputEmpty);
 
       addV2HistoryItem({
         id: makeHistoryId("chat-video"),
@@ -1478,7 +1616,7 @@ export default function ChatPage() {
       await refreshSession();
 
       return {
-        content: "Video hazır. Sonucu sohbet içine ekledim.",
+        content: t.chatVideoReady,
         generation: {
           kind: "video",
           title,
@@ -1494,8 +1632,7 @@ export default function ChatPage() {
 
       if (!imageAttachment?.file) {
         return {
-          content:
-            "Resimden video üretmek için mesajına bir görsel ekle. Görseli ekleyip aynı isteği tekrar gönderdiğinde burada üreteceğim.",
+          content: t.imageToVideoNeedsImage,
         };
       }
 
@@ -1511,7 +1648,7 @@ export default function ChatPage() {
       });
 
       const videoUrl = String(data.videoUrl || "");
-      if (!videoUrl) throw new Error("Video output is empty");
+      if (!videoUrl) throw new Error(t.videoOutputEmpty);
 
       addV2HistoryItem({
         id: makeHistoryId("chat-image-video"),
@@ -1527,7 +1664,7 @@ export default function ChatPage() {
       await refreshSession();
 
       return {
-        content: "Görseli videoya dönüştürdüm. Sonuç burada.",
+        content: t.imageToVideoReady,
         generation: {
           kind: "video",
           title,
@@ -1547,8 +1684,7 @@ export default function ChatPage() {
 
       if (!videoAttachment?.file || !imageAttachment?.file) {
         return {
-          content:
-            "Video clone için aynı mesaja bir kaynak video ve bir referans görsel ekle. İstersen kendi ses tonun için ses dosyası da ekleyebilirsin.",
+          content: t.videoCloneNeedsAssets,
         };
       }
 
@@ -1578,7 +1714,7 @@ export default function ChatPage() {
       });
 
       const videoUrl = String(data.videoUrl || "");
-      if (!videoUrl) throw new Error("Clone output is empty");
+      if (!videoUrl) throw new Error(t.cloneOutputEmpty);
 
       addV2HistoryItem({
         id: makeHistoryId("chat-clone"),
@@ -1594,8 +1730,8 @@ export default function ChatPage() {
 
       return {
         content: data.voiceCloneNote
-          ? `Video clone hazır. Not: ${String(data.voiceCloneNote)}`
-          : "Video clone hazır. Sonucu burada ekledim.",
+          ? `${t.videoCloneNotePrefix} ${String(data.voiceCloneNote)}`
+          : t.videoCloneReady,
         generation: {
           kind: "video",
           title,
@@ -1636,7 +1772,7 @@ export default function ChatPage() {
       });
 
       const audioUrl = String(data.audioUrl || "");
-      if (!audioUrl) throw new Error("Audio output is empty");
+      if (!audioUrl) throw new Error(t.audioOutputEmpty);
 
       addV2HistoryItem({
         id: makeHistoryId("chat-music"),
@@ -1652,8 +1788,8 @@ export default function ChatPage() {
 
       return {
         content: data.voiceCloneNote
-          ? `Müzik hazır. Not: ${String(data.voiceCloneNote)}`
-          : "Müzik hazır. Buradan dinleyebilirsin.",
+          ? `${t.musicNotePrefix} ${String(data.voiceCloneNote)}`
+          : t.musicReady,
         generation: {
           kind: "audio",
           title,
@@ -2471,10 +2607,8 @@ export default function ChatPage() {
 
             <button
               type="button"
-              onClick={() => {
-                if (!liveWebRequested && liveWebLimitReached) return;
-                setLiveWebRequested((prev) => !prev);
-              }}
+              onClick={toggleLiveWeb}
+              aria-pressed={liveWebRequested}
               style={{
                 ...styles.sidebarToggleButton,
                 ...(liveWebRequested ? styles.sidebarToggleButtonActive : null),
@@ -2483,15 +2617,19 @@ export default function ChatPage() {
                   ? styles.sendButtonDisabled
                   : null),
               }}
-              disabled={!access.canUseLiveWeb}
+              disabled={!access.canUseLiveWeb || (!liveWebRequested && liveWebLimitReached)}
             >
-              {t.liveWeb}: {liveWebRequested ? "on" : "off"}{" "}
+              {t.liveWeb}:{" "}
+              {liveWebLimitReached && !liveWebRequested
+                ? t.limited
+                : getToolStateLabel(liveWebRequested, access.canUseLiveWeb)}{" "}
               ({getLiveWebLimitLabel()})
             </button>
 
             <button
               type="button"
-              onClick={() => setDeepResearchRequested((prev) => !prev)}
+              onClick={toggleDeepResearch}
+              aria-pressed={deepResearchRequested}
               style={{
                 ...styles.sidebarToggleButton,
                 ...(deepResearchRequested ? styles.sidebarToggleButtonActive : null),
@@ -2499,12 +2637,14 @@ export default function ChatPage() {
               }}
               disabled={!access.canUseDeepResearch}
             >
-              {t.deepResearch}: {deepResearchRequested ? "on" : "off"}
+              {t.deepResearch}:{" "}
+              {getToolStateLabel(deepResearchRequested, access.canUseDeepResearch)}
             </button>
 
             <button
               type="button"
-              onClick={() => setProjectAgentRequested((prev) => !prev)}
+              onClick={toggleProjectAgent}
+              aria-pressed={projectAgentRequested && access.canUseProjectAgent}
               style={{
                 ...styles.sidebarToggleButton,
                 ...(projectAgentRequested && access.canUseProjectAgent
@@ -2515,12 +2655,16 @@ export default function ChatPage() {
               disabled={!access.canUseProjectAgent}
             >
               {t.projectAgent}:{" "}
-              {projectAgentRequested && access.canUseProjectAgent ? "on" : "off"}
+              {getToolStateLabel(
+                projectAgentRequested && access.canUseProjectAgent,
+                access.canUseProjectAgent
+              )}
             </button>
 
             <button
               type="button"
               onClick={handleVoiceInput}
+              aria-pressed={voiceRepliesEnabled}
               style={{
                 ...styles.sidebarToggleButton,
                 ...(voiceRepliesEnabled ? styles.sidebarToggleButtonActive : null),
@@ -2528,7 +2672,8 @@ export default function ChatPage() {
               }}
               disabled={!access.canUseVoiceMode}
             >
-              {t.voiceMode}: {voiceRepliesEnabled ? "on" : "off"}
+              {t.voiceMode}:{" "}
+              {getToolStateLabel(voiceRepliesEnabled, access.canUseVoiceMode)}
             </button>
 
             {renderUsagePanel()}
@@ -3103,12 +3248,16 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 13,
     fontWeight: 600,
     cursor: "pointer",
+    textAlign: "left",
+    padding: "0 10px",
+    width: "100%",
   },
 
   sidebarToggleButtonActive: {
-    border: "1px solid #bfdbfe",
-    background: "#eff6ff",
-    color: "#2563eb",
+    border: "1px solid #2563eb",
+    background: "#dbeafe",
+    color: "#1d4ed8",
+    boxShadow: "inset 0 0 0 1px rgba(37,99,235,0.18)",
   },
 
   usagePanel: {

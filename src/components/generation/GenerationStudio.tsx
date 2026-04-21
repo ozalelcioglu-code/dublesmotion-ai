@@ -4,6 +4,8 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import AppShell from "@/components/layout/AppShell";
+import { getSafeLanguage, type AppLanguage } from "@/lib/i18n";
+import { useLanguage } from "@/provider/languageProvider";
 
 export type StudioTone = "neutral" | "good" | "warning" | "danger";
 
@@ -62,7 +64,63 @@ type FieldProps = {
   children: ReactNode;
 };
 
+const STUDIO_TEXTS: Record<
+  AppLanguage,
+  {
+    templates: string;
+    uploading: string;
+    audioReady: string;
+    videoReady: string;
+    imageReady: string;
+    audio: string;
+    generatedImage: string;
+  }
+> = {
+  tr: {
+    templates: "Şablonlar",
+    uploading: "Yükleniyor...",
+    audioReady: "Ses hazır",
+    videoReady: "Video hazır",
+    imageReady: "Görsel hazır",
+    audio: "Ses",
+    generatedImage: "Üretilen görsel",
+  },
+  en: {
+    templates: "Templates",
+    uploading: "Uploading...",
+    audioReady: "Audio ready",
+    videoReady: "Video ready",
+    imageReady: "Image ready",
+    audio: "Audio",
+    generatedImage: "Generated image",
+  },
+  de: {
+    templates: "Vorlagen",
+    uploading: "Wird hochgeladen...",
+    audioReady: "Audio bereit",
+    videoReady: "Video bereit",
+    imageReady: "Bild bereit",
+    audio: "Audio",
+    generatedImage: "Erzeugtes Bild",
+  },
+  ku: {
+    templates: "Şablon",
+    uploading: "Tê barkirin...",
+    audioReady: "Deng amade ye",
+    videoReady: "Vîdyo amade ye",
+    imageReady: "Wêne amade ye",
+    audio: "Deng",
+    generatedImage: "Wêneya çêkirî",
+  },
+};
+
+function useStudioTexts() {
+  const { language } = useLanguage();
+  return STUDIO_TEXTS[getSafeLanguage(language)];
+}
+
 export function GenerationStudio(props: GenerationStudioProps) {
+  const studioTexts = useStudioTexts();
   const metrics = props.metrics ?? [];
   const secondaryActions = props.secondaryActions ?? [];
 
@@ -171,7 +229,7 @@ export function GenerationStudio(props: GenerationStudioProps) {
             <div style={styles.panelHeader}>
               <div>
                 <div style={styles.panelTitle}>
-                  {props.templatesTitle || "Templates"}
+                  {props.templatesTitle || studioTexts.templates}
                 </div>
                 {props.templatesDescription ? (
                   <div style={styles.panelDescription}>
@@ -346,6 +404,8 @@ export function StudioUpload(props: {
   mediaType?: "image" | "video" | "audio";
   busy?: boolean;
 }) {
+  const t = useStudioTexts();
+
   return (
     <label style={styles.uploadBox}>
       <input
@@ -360,15 +420,15 @@ export function StudioUpload(props: {
       />
       <span style={styles.uploadTitle}>{props.title}</span>
       <span style={styles.uploadDescription}>
-        {props.busy ? "Yükleniyor..." : props.description}
+        {props.busy ? t.uploading : props.description}
       </span>
       {props.value ? (
         <span style={styles.uploadReady}>
           {props.mediaType === "audio"
-            ? "Ses hazır"
+            ? t.audioReady
             : props.mediaType === "video"
-            ? "Video hazır"
-            : "Görsel hazır"}
+            ? t.videoReady
+            : t.imageReady}
         </span>
       ) : null}
     </label>
@@ -389,10 +449,12 @@ export function StudioMediaPreview(props: {
   src: string;
   title?: string;
 }) {
+  const t = useStudioTexts();
+
   if (props.kind === "audio") {
     return (
       <div style={styles.audioPreview}>
-        <div style={styles.audioTitle}>{props.title || "Audio"}</div>
+        <div style={styles.audioTitle}>{props.title || t.audio}</div>
         <audio controls src={props.src} style={styles.audio} />
       </div>
     );
@@ -412,7 +474,7 @@ export function StudioMediaPreview(props: {
   return (
     <img
       src={props.src}
-      alt={props.title || "Generated image"}
+      alt={props.title || t.generatedImage}
       style={styles.imagePreview}
     />
   );

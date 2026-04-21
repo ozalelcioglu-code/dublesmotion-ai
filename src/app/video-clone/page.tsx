@@ -23,8 +23,8 @@ import {
   setV2EditorPrefill,
 } from "@/lib/v2-store";
 import {
-  CLONE_MODE_OPTIONS,
-  CLONE_VOICE_MODE_OPTIONS,
+  getCloneModeOptions,
+  getCloneVoiceModeOptions,
   type CloneMode,
   type CloneVoiceMode,
 } from "@/lib/generation/options";
@@ -97,6 +97,16 @@ const COPY = {
     addToEditor: "Editöre ekle",
     download: "İndir",
     editorReady: "Clone video editöre gönderildi.",
+    sourceRequired: "Önce kaynak video yüklemelisin.",
+    referenceRequired: "Önce referans görsel yüklemelisin.",
+    voiceRequired: "Kendi ses modu için ses örneği yüklemelisin.",
+    promptRequired: "Yönlendirme alanı boş olamaz.",
+    generatedTemplateDescription: "Son video clone işleminden brief.",
+    generatedTitle: "Klonlanan Video",
+    characterValue: "Karakter",
+    faceValue: "Yüz",
+    ownVoiceValue: "Kendi sesim",
+    originalVoiceValue: "Orijinal",
   },
   en: {
     title: "Video Clone",
@@ -138,44 +148,272 @@ const COPY = {
     addToEditor: "Add to editor",
     download: "Download",
     editorReady: "Clone video sent to editor.",
+    sourceRequired: "Upload a source video first.",
+    referenceRequired: "Upload a reference image first.",
+    voiceRequired: "Upload a voice sample for own-voice mode.",
+    promptRequired: "Direction cannot be empty.",
+    generatedTemplateDescription: "Brief from the latest video clone.",
+    generatedTitle: "Cloned Video",
+    characterValue: "Character",
+    faceValue: "Face",
+    ownVoiceValue: "Own voice",
+    originalVoiceValue: "Original",
+  },
+  de: {
+    title: "Video Clone",
+    description:
+      "Bewahre das Quellvideo und ersetze entweder die ganze Figur oder nur das Gesicht.",
+    inputTitle: "Clone-Steuerung",
+    inputDescription:
+      "Quellvideo, Referenzbild, Clone-Modus und Audioverhalten in einem Panel.",
+    sourceVideo: "Quellvideo",
+    uploadVideo: "Video hochladen",
+    uploadVideoDescription: "MP4-, MOV- oder WebM-Quellvideo.",
+    referenceImage: "Referenzbild",
+    uploadReference: "Referenz hochladen",
+    referenceDescription: "Klares Referenzbild für Figur oder Gesicht.",
+    voiceSample: "Stimmprobe",
+    uploadVoice: "Stimmprobe hochladen",
+    voiceDescription: "Lade eine kurze, saubere Aufnahme für deine Stimmfarbe hoch.",
+    cloneMode: "Clone-Modus",
+    voiceMode: "Audiomodus",
+    preserveAudio: "Audiostruktur des Hauptvideos bewahren",
+    preserveAudioDescription:
+      "Song, Sprache, Rhythmus und Timing bleiben im Video erhalten.",
+    prompt: "Anweisung",
+    promptPlaceholder:
+      "Bewegung, Bildausschnitt, Licht und Timing beibehalten; Referenz natürlich ins Video integrieren.",
+    generate: "Clone starten",
+    reset: "Zurücksetzen",
+    previewTitle: "Preview",
+    previewDescription: "Quellvideo oder Clone-Ergebnis wird hier abgespielt.",
+    emptyTitle: "Noch kein Quellvideo",
+    emptyText: "Starte mit Quellvideo und Referenzbild.",
+    templatesTitle: "Fertige Clone-Briefs",
+    templatesDescription: "Wähle einen schnellen Start passend zum Einsatzzweck.",
+    loading: "Clone wird vorbereitet...",
+    uploading: "Wird hochgeladen...",
+    done: "Bereit",
+    error: "Video-Clone fehlgeschlagen.",
+    credits: "Credits",
+    addToEditor: "Zum Editor hinzufügen",
+    download: "Download",
+    editorReady: "Clone-Video wurde an den Editor gesendet.",
+    sourceRequired: "Lade zuerst ein Quellvideo hoch.",
+    referenceRequired: "Lade zuerst ein Referenzbild hoch.",
+    voiceRequired: "Lade für den eigenen Stimm-Modus eine Stimmprobe hoch.",
+    promptRequired: "Anweisung darf nicht leer sein.",
+    generatedTemplateDescription: "Brief aus dem letzten Video-Clone.",
+    generatedTitle: "Geklontes Video",
+    characterValue: "Figur",
+    faceValue: "Gesicht",
+    ownVoiceValue: "Meine Stimme",
+    originalVoiceValue: "Original",
+  },
+  ku: {
+    title: "Klona Vîdyoyê",
+    description:
+      "Vîdyoya çavkanî biparêze; yan karaktera tevahî, yan jî tenê rûyê biguherîne.",
+    inputTitle: "Kontrola clone",
+    inputDescription:
+      "Vîdyoya çavkanî, wêneya referans, moda clone û deng di yek panelê de.",
+    sourceVideo: "Vîdyoya çavkanî",
+    uploadVideo: "Vîdyo bar bike",
+    uploadVideoDescription: "Vîdyoya çavkanî ya MP4, MOV an WebM.",
+    referenceImage: "Wêneya referans",
+    uploadReference: "Referans bar bike",
+    referenceDescription: "Wêneya referans a zelal ji bo karakter an rû.",
+    voiceSample: "Nimûneya deng",
+    uploadVoice: "Nimûneya deng bar bike",
+    voiceDescription: "Tomarek kurt û paqij ji bo tonê dengê xwe bar bike.",
+    cloneMode: "Moda clone",
+    voiceMode: "Moda deng",
+    preserveAudio: "Struktura dengê vîdyoya sereke biparêze",
+    preserveAudioDescription:
+      "Stran, axaftin, rîtim û dem di vîdyoyê de têne parastin.",
+    prompt: "Rêberî",
+    promptPlaceholder:
+      "Tevger, kadraj, ronahî û dem bimînin; referans bi awayekî xwezayî bike nav vîdyoyê.",
+    generate: "Clone dest pê bike",
+    reset: "Ji nû ve",
+    previewTitle: "Preview",
+    previewDescription: "Vîdyoya çavkanî an encama clone li vir tê lîstin.",
+    emptyTitle: "Hê vîdyoya çavkanî tune",
+    emptyText: "Bi barkirina vîdyoya çavkanî û wêneya referans dest pê bike.",
+    templatesTitle: "Briefên clone yên amade",
+    templatesDescription: "Li gor armanca xwe destpêkek zû hilbijêre.",
+    loading: "Clone tê amadekirin...",
+    uploading: "Tê barkirin...",
+    done: "Amade",
+    error: "Pêvajoya video clone bi ser neket.",
+    credits: "Kredit",
+    addToEditor: "Li editorê zêde bike",
+    download: "Daxe",
+    editorReady: "Vîdyoya clone ji editorê re hate şandin.",
+    sourceRequired: "Pêşî vîdyoya çavkanî bar bike.",
+    referenceRequired: "Pêşî wêneya referans bar bike.",
+    voiceRequired: "Ji bo moda dengê xwe, nimûneya deng bar bike.",
+    promptRequired: "Qada rêberiyê vala nabe.",
+    generatedTemplateDescription: "Brief ji pêvajoya video clone ya dawî.",
+    generatedTitle: "Vîdyoya Clone",
+    characterValue: "Karakter",
+    faceValue: "Rû",
+    ownVoiceValue: "Dengê min",
+    originalVoiceValue: "Orîjînal",
   },
 } as const;
 
-const TEMPLATES = [
-  {
-    id: "character",
-    title: "Komple karakter",
-    description: "Vücut, yüz ve sahne uyumu birlikte korunur.",
-    prompt:
-      "Kaynak videodaki hareket, kadraj, ışık, sahne akışı ve zamanlama korunsun. Referans karakter doğal, gerçekçi ve stabil biçimde videodaki kişinin yerine geçsin.",
-    cloneMode: "character" as CloneMode,
-    badge: "Önerilen",
-  },
-  {
-    id: "face",
-    title: "Sadece yüz",
-    description: "Performans korunur, yalnızca yüz değiştirilir.",
-    prompt:
-      "Kaynak videodaki vücut, performans, kamera ve ses aynen korunsun. Sadece yüz referans görseldeki kişiyle doğal ve stabil biçimde değişsin.",
-    cloneMode: "face" as CloneMode,
-  },
-  {
-    id: "voice",
-    title: "Ses tonu hazır",
-    description: "Kendi ses örneğiyle çalışacak akış.",
-    prompt:
-      "Görüntü doğal kalsın, ana videodaki konuşma veya şarkının zamanlaması bozulmasın, referans kişi ve ses tonu mümkün olduğunca tutarlı olsun.",
-    cloneMode: "character" as CloneMode,
-  },
-  {
-    id: "music",
-    title: "Şarkılı video",
-    description: "Müzik ve ritim korunarak clone.",
-    prompt:
-      "Videodaki müzik, ritim, dudak ve performans zamanlaması korunsun. Referans karakter sahneye doğal şekilde yerleşsin.",
-    cloneMode: "character" as CloneMode,
-  },
-];
+type CloneTemplate = {
+  id: string;
+  title: string;
+  description: string;
+  prompt: string;
+  cloneMode: CloneMode;
+  badge?: string;
+};
+
+const TEMPLATES: Record<keyof typeof COPY, CloneTemplate[]> = {
+  tr: [
+    {
+      id: "character",
+      title: "Komple karakter",
+      description: "Vücut, yüz ve sahne uyumu birlikte korunur.",
+      prompt:
+        "Kaynak videodaki hareket, kadraj, ışık, sahne akışı ve zamanlama korunsun. Referans karakter doğal, gerçekçi ve stabil biçimde videodaki kişinin yerine geçsin.",
+      cloneMode: "character",
+      badge: "Önerilen",
+    },
+    {
+      id: "face",
+      title: "Sadece yüz",
+      description: "Performans korunur, yalnızca yüz değiştirilir.",
+      prompt:
+        "Kaynak videodaki vücut, performans, kamera ve ses aynen korunsun. Sadece yüz referans görseldeki kişiyle doğal ve stabil biçimde değişsin.",
+      cloneMode: "face",
+    },
+    {
+      id: "voice",
+      title: "Ses tonu hazır",
+      description: "Kendi ses örneğiyle çalışacak akış.",
+      prompt:
+        "Görüntü doğal kalsın, ana videodaki konuşma veya şarkının zamanlaması bozulmasın, referans kişi ve ses tonu mümkün olduğunca tutarlı olsun.",
+      cloneMode: "character",
+    },
+    {
+      id: "music",
+      title: "Şarkılı video",
+      description: "Müzik ve ritim korunarak clone.",
+      prompt:
+        "Videodaki müzik, ritim, dudak ve performans zamanlaması korunsun. Referans karakter sahneye doğal şekilde yerleşsin.",
+      cloneMode: "character",
+    },
+  ],
+  en: [
+    {
+      id: "character",
+      title: "Full character",
+      description: "Body, face, and scene consistency are preserved together.",
+      prompt:
+        "Preserve motion, framing, lighting, scene flow, and timing from the source video. Replace the person with the reference character naturally, realistically, and stably.",
+      cloneMode: "character",
+      badge: "Recommended",
+    },
+    {
+      id: "face",
+      title: "Face only",
+      description: "Performance is preserved while only the face changes.",
+      prompt:
+        "Keep body, performance, camera, and audio from the source video unchanged. Replace only the face with the reference image naturally and stably.",
+      cloneMode: "face",
+    },
+    {
+      id: "voice",
+      title: "Voice tone ready",
+      description: "Flow prepared for your own voice sample.",
+      prompt:
+        "Keep the image natural, preserve the timing of speech or song in the main video, and keep the reference person and voice tone as consistent as possible.",
+      cloneMode: "character",
+    },
+    {
+      id: "music",
+      title: "Music video",
+      description: "Clone while preserving music and rhythm.",
+      prompt:
+        "Preserve music, rhythm, lip timing, and performance timing from the video. Place the reference character into the scene naturally.",
+      cloneMode: "character",
+    },
+  ],
+  de: [
+    {
+      id: "character",
+      title: "Ganze Figur",
+      description: "Körper, Gesicht und Szene bleiben gemeinsam konsistent.",
+      prompt:
+        "Bewegung, Bildausschnitt, Licht, Szenenfluss und Timing des Quellvideos beibehalten. Die Person natürlich, realistisch und stabil durch die Referenzfigur ersetzen.",
+      cloneMode: "character",
+      badge: "Empfohlen",
+    },
+    {
+      id: "face",
+      title: "Nur Gesicht",
+      description: "Performance bleibt erhalten, nur das Gesicht ändert sich.",
+      prompt:
+        "Körper, Performance, Kamera und Audio des Quellvideos unverändert lassen. Nur das Gesicht natürlich und stabil durch das Referenzbild ersetzen.",
+      cloneMode: "face",
+    },
+    {
+      id: "voice",
+      title: "Stimmfarbe bereit",
+      description: "Ablauf für eigene Stimmprobe.",
+      prompt:
+        "Bild natürlich halten, Timing von Sprache oder Song im Hauptvideo bewahren, Referenzperson und Stimmfarbe möglichst konsistent halten.",
+      cloneMode: "character",
+    },
+    {
+      id: "music",
+      title: "Musikvideo",
+      description: "Clone mit bewahrter Musik und Rhythmik.",
+      prompt:
+        "Musik, Rhythmus, Lippen- und Performance-Timing des Videos bewahren. Referenzfigur natürlich in die Szene integrieren.",
+      cloneMode: "character",
+    },
+  ],
+  ku: [
+    {
+      id: "character",
+      title: "Karaktera tevahî",
+      description: "Laş, rû û lihevhatina dîmenê bi hev re tê parastin.",
+      prompt:
+        "Tevger, kadraj, ronahî, herikîna dîmenê û dem ji vîdyoya çavkanî biparêze. Karaktera referans bi awayekî xwezayî, rastîn û stabîl li şûna kesê vîdyoyê bixe.",
+      cloneMode: "character",
+      badge: "Pêşniyar",
+    },
+    {
+      id: "face",
+      title: "Tenê rû",
+      description: "Performans tê parastin, tenê rû diguhere.",
+      prompt:
+        "Laş, performans, kamera û dengê vîdyoya çavkanî wek xwe bimînin. Tenê rû bi wêneya referans bi awayekî xwezayî û stabîl biguhere.",
+      cloneMode: "face",
+    },
+    {
+      id: "voice",
+      title: "Tonê deng amade",
+      description: "Herikîn ji bo nimûneya dengê xwe.",
+      prompt:
+        "Wêne xwezayî bimîne, demkirina axaftin an stranê di vîdyoya sereke de neyê xirakirin, kesê referans û tonê deng bi qasî gengaz lihevhatî bin.",
+      cloneMode: "character",
+    },
+    {
+      id: "music",
+      title: "Vîdyoya stranê",
+      description: "Clone bi parastina muzîk û rîtimê.",
+      prompt:
+        "Muzîk, rîtim, demkirina lêv û performansê di vîdyoyê de biparêze. Karaktera referans bi awayekî xwezayî li dîmenê bicih bike.",
+      cloneMode: "character",
+    },
+  ],
+};
 
 type UploadSlot = "source" | "reference" | "voice" | null;
 
@@ -184,7 +422,15 @@ export default function VideoClonePage() {
   const { user, refreshSession } = useSession();
   const isMobile = useIsMobile(980);
   const safeLanguage = getSafeGenerationLanguage(language);
-  const t = safeLanguage === "tr" ? COPY.tr : COPY.en;
+  const t = COPY[safeLanguage];
+  const cloneModeOptions = useMemo(
+    () => getCloneModeOptions(safeLanguage),
+    [safeLanguage]
+  );
+  const cloneVoiceModeOptions = useMemo(
+    () => getCloneVoiceModeOptions(safeLanguage),
+    [safeLanguage]
+  );
 
   const [sourceVideoUrl, setSourceVideoUrl] = useState("");
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
@@ -204,7 +450,7 @@ export default function VideoClonePage() {
 
   const templates = useMemo<StudioTemplate[]>(
     () => {
-      const staticTemplates = TEMPLATES.map((template) => ({
+      const staticTemplates = TEMPLATES[safeLanguage].map((template) => ({
         id: template.id,
         title: template.title,
         description: template.description,
@@ -241,7 +487,7 @@ export default function VideoClonePage() {
         (item) => ({
           id: `generated-${item.id}`,
           title: item.title,
-          description: "Son video clone işleminden brief.",
+          description: t.generatedTemplateDescription,
           badge: "Neon",
           onSelect: () => {
             const nextSource =
@@ -275,7 +521,7 @@ export default function VideoClonePage() {
 
       return [...staticTemplates, ...generatedTemplates];
     },
-    [generation, recentClones]
+    [generation, recentClones, safeLanguage, t.generatedTemplateDescription]
   );
 
   async function uploadIntoSlot(file: File, slot: Exclude<UploadSlot, null>) {
@@ -304,22 +550,22 @@ export default function VideoClonePage() {
     const cleanPrompt = prompt.trim();
 
     if (!sourceVideoUrl) {
-      setGeneration({ status: "error", message: "Önce kaynak video yüklemelisin." });
+      setGeneration({ status: "error", message: t.sourceRequired });
       return;
     }
 
     if (!referenceImageUrl) {
-      setGeneration({ status: "error", message: "Önce referans görsel yüklemelisin." });
+      setGeneration({ status: "error", message: t.referenceRequired });
       return;
     }
 
     if (voiceMode === "own_voice" && !voiceSampleUrl) {
-      setGeneration({ status: "error", message: "Kendi ses modu için ses örneği yüklemelisin." });
+      setGeneration({ status: "error", message: t.voiceRequired });
       return;
     }
 
     if (!cleanPrompt) {
-      setGeneration({ status: "error", message: "Yönlendirme alanı boş olamaz." });
+      setGeneration({ status: "error", message: t.promptRequired });
       return;
     }
 
@@ -335,7 +581,7 @@ export default function VideoClonePage() {
           referenceImageUrl,
           voiceSampleUrl: voiceMode === "own_voice" ? voiceSampleUrl : undefined,
           prompt: cleanPrompt,
-          title: compactTitle(cleanPrompt, "Cloned Video"),
+          title: compactTitle(cleanPrompt, t.generatedTitle),
           cloneMode,
           voiceMode,
           preserveAudio,
@@ -349,7 +595,7 @@ export default function VideoClonePage() {
       }
 
       const videoUrl = String(data.videoUrl);
-      const title = compactTitle(cleanPrompt, "Cloned Video");
+      const title = compactTitle(cleanPrompt, t.generatedTitle);
       const voiceCloneNote =
         typeof data.voiceCloneNote === "string" ? data.voiceCloneNote : undefined;
 
@@ -438,7 +684,7 @@ export default function VideoClonePage() {
       ? { label: t.done, tone: "good" as const }
       : generation.status === "error"
       ? { label: generation.message, tone: "danger" as const }
-      : { label: "Ready" };
+      : { label: t.done };
 
   const credits =
     generation.status === "done" ? generation.remainingCredits : user?.remainingCredits;
@@ -453,8 +699,8 @@ export default function VideoClonePage() {
       status={status}
       metrics={[
         { label: t.credits, value: credits ?? "-" },
-        { label: t.cloneMode, value: cloneMode === "face" ? "Face" : "Character" },
-        { label: t.voiceMode, value: voiceMode === "own_voice" ? "Own voice" : "Original" },
+        { label: t.cloneMode, value: cloneMode === "face" ? t.faceValue : t.characterValue },
+        { label: t.voiceMode, value: voiceMode === "own_voice" ? t.ownVoiceValue : t.originalVoiceValue },
       ]}
       inputTitle={t.inputTitle}
       inputDescription={t.inputDescription}
@@ -486,14 +732,14 @@ export default function VideoClonePage() {
             <StudioSegmented<CloneMode>
               value={cloneMode}
               onChange={setCloneMode}
-              options={CLONE_MODE_OPTIONS}
+              options={cloneModeOptions}
             />
           </StudioField>
           <StudioField label={t.voiceMode}>
             <StudioSegmented<CloneVoiceMode>
               value={voiceMode}
               onChange={setVoiceMode}
-              options={CLONE_VOICE_MODE_OPTIONS}
+              options={cloneVoiceModeOptions}
             />
           </StudioField>
           {voiceMode === "own_voice" ? (

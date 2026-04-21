@@ -9,6 +9,7 @@ import {
 } from "@/lib/user-profile-repository";
 import { saveGenerationOutput } from "@/lib/server/generation-history";
 import { uploadRemoteVideoToCloudinary } from "@/lib/server/cloudinary-video";
+import { verifyInternalApiBillingSignature } from "@/lib/server/developer-api-billing";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -921,7 +922,14 @@ export async function POST(req: Request) {
 
     const planInfo = await getResolvedUserPlan(session.userId);
     const isPreview = input.preview === true;
-    creditCost = isPreview ? 0 : getCreditCostForMode(input.mode, input);
+    const developerApiBillingTrusted = verifyInternalApiBillingSignature(
+      req.headers.get("x-api-key-id"),
+      req.headers.get("x-dms-internal-api-billing")
+    );
+    creditCost =
+      isPreview || developerApiBillingTrusted
+        ? 0
+        : getCreditCostForMode(input.mode, input);
 
     if (
       shouldConsumeCredits(input.mode) &&

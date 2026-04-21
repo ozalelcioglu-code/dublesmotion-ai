@@ -7,8 +7,8 @@ export function isAppLanguage(value: string): value is AppLanguage {
 }
 
 export function getSafeLanguage(value?: string | null): AppLanguage {
-  if (!value) return "en";
-  return isAppLanguage(value) ? value : "en";
+  if (!value) return "tr";
+  return isAppLanguage(value) ? value : "tr";
 }
 
 export const LANGUAGE_LABELS: Record<AppLanguage, string> = {
@@ -31,6 +31,7 @@ export const COMMON_I18N = {
     appSubtitle: "AI Creative Platform",
 
     nav: {
+      home: "Ana sayfa",
       chat: "Sohbet",
       music: "Müzik",
       textToImage: "Görsel",
@@ -99,6 +100,7 @@ export const COMMON_I18N = {
     appSubtitle: "AI Creative Platform",
 
     nav: {
+      home: "Home",
       chat: "Chat",
       music: "Music",
       textToImage: "Image",
@@ -167,6 +169,7 @@ export const COMMON_I18N = {
     appSubtitle: "AI Creative Platform",
 
     nav: {
+      home: "Startseite",
       chat: "Chat",
       music: "Musik",
       textToImage: "Bild",
@@ -235,6 +238,7 @@ export const COMMON_I18N = {
     appSubtitle: "AI Creative Platform",
 
     nav: {
+      home: "Destpêk",
       chat: "Chat",
       music: "Muzîk",
       textToImage: "Wêne",
