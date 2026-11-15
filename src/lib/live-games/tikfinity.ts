@@ -3,7 +3,7 @@
  * Event shape documented at https://tikfinity.zerody.one/de/tiktok/actionsandevents
  * This is a local streamer-computer connection only (ws://localhost:21213/).
  */
-export type LiveEvent={kind:'join'|'like'|'gift';name:string;key:string};
+export type LiveEvent={kind:'join'|'like'|'gift';name:string;key:string;gender?:'female'|'male';avatarUrl?:string};
 type UnknownRecord=Record<string,unknown>;
 const obj=(v:unknown):UnknownRecord=>v&&typeof v==='object'&&!Array.isArray(v)?v as UnknownRecord:{};
 const string=(v:unknown)=>typeof v==='string'?v:'';
@@ -12,6 +12,11 @@ export function normalizeTikFinity(input:unknown):LiveEvent|null{
  const root=obj(input),data=obj(root.data),user=obj(data.user);
  const evt=string(root.event).toLowerCase();
  const nick=allow(string(data.uniqueId)||string(user.uniqueId)||string(data.nickname)||string(user.nickname)||string(data.userId));
+ const photo=string(data.profilePictureUrl)||string(user.profilePictureUrl)||string(data.avatarUrl);
+ let avatarUrl:string|undefined;
+ try{const url=new URL(photo);if(url.protocol==='https:'&&url.hostname.length>3&&photo.length<2048)avatarUrl=url.toString()}catch{}
+ const comment=string(data.comment).trim().toLocaleLowerCase('tr');
+ const gender=comment==='kadın'||comment==='kadin'?'female':comment==='erkek'?'male':undefined;
  if(!nick)return null;
  let kind:LiveEvent['kind']|null=null;
  if(evt==='gift'){
@@ -21,12 +26,12 @@ export function normalizeTikFinity(input:unknown):LiveEvent|null{
  } else if(evt==='like')kind='like';
  else if(evt==='follow'||evt==='subscribe')kind='join';
  else if(evt==='chat'){
-  const message=string(data.comment).toLocaleLowerCase('tr').trim();
-  if(!['katıl','katil','join','oyna','play','+','1'].includes(message))return null;
+  const message=comment;
+  if(!['kadın','kadin','erkek','katıl','katil','join','oyna','play','+','1'].includes(message))return null;
   kind='join';
  }
  if(!kind)return null;
  const eventId=string(data.transactionId)||string(data.msgId)||string(data.eventId)||string(data.id);
  const key=eventId?evt+':'+eventId:'';
- return {kind,name:nick,key};
+ return {kind,name:nick,key,gender,avatarUrl};
 }
