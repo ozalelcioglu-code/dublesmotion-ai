@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, Float, Sparkles, Stars, Text, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import type { GameType, Player } from '@/lib/live-games/game';
+import {CityWorld,TawafWorld} from './Worlds';
 
 function CrowdGlow({ color = '#7c5cff' }: { color?: string }) {
   return (
@@ -309,6 +310,8 @@ function MountainArena({ players, burst }: { players: Player[]; burst: number })
 }
 
 export default function Stage({ game, players, burst }: { game: GameType; players: Player[]; burst: number }) {
+  if(game==='race')return <CityWorld players={players}/>;
+  if(game==='tawaf')return <TawafWorld players={players}/>;
   return (
     <Canvas
       shadows
@@ -317,7 +320,7 @@ export default function Stage({ game, players, burst }: { game: GameType; player
       gl={{ antialias: true, alpha: false }}
       style={{ width: '100%', height: '100%' }}
     >
-      {game === 'halay' ? <HalayArena players={players} burst={burst} /> : game === 'mountain' ? <MountainArena players={players} burst={burst} /> : <CityRace players={players} />}
+      {game === 'halay' ? <HalayArena players={players} burst={burst} /> : <MountainArena players={players} burst={burst} />}
     </Canvas>
   );
 }
