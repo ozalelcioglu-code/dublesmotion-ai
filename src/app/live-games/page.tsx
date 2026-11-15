@@ -31,7 +31,7 @@ export default function LiveGames(){
   if(s.game==='tawaf'&&kind!=='join')return;const name=raw.trim().slice(0,32)||'İzleyici',index=s.players.findIndex(p=>p.name.toLocaleLowerCase('tr')===name.toLocaleLowerCase('tr'));const at=Date.now();let players=s.players;
   if(index<0)players=[...players,{id:crypto.randomUUID(),name,team:players.length%2,power:s.game==='tawaf'?0:kind==='gift'?(s.game==='race'?1:3):s.game==='race'?0:1,joinedAt:at,avatarUrl,gender:pilgrimGender}];
   else if(s.game==='tawaf')players=players.map((p,i)=>i!==index?p:{...p,gender:pilgrimGender??p.gender,avatarUrl:avatarUrl??p.avatarUrl});
-  else if(kind==='gift'||s.game!=='race')players=players.map((p,i)=>i!==index?p:{...p,power:p.power+(kind==='gift'?(s.game==='race'?1:3):kind==='like'?1:.5),avatarUrl:avatarUrl??p.avatarUrl};
+  else if(kind==='gift'||s.game!=='race')players=players.map((p,i)=>i!==index?p:{...p,power:p.power+(kind==='gift'?(s.game==='race'?1:3):kind==='like'?1:.5),avatarUrl:avatarUrl??p.avatarUrl});
   const event:GameEvent={id:crypto.randomUUID(),kind,name,at};update({...s,players,events:[event,...s.events].slice(0,14),startedAt:s.startedAt??at,burst:s.burst+(kind==='gift'?1:0)});
  },[update]);
  onLiveEvent.current=emit;
