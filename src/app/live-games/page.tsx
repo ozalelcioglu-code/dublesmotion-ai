@@ -1,52 +1,43 @@
 'use client';
-import { useEffect, useState } from 'react';
-import './live-games.css';
-import CinematicScene from './CinematicScene';
-
-type Game = 'halay' | 'mountain';
-type Player = { name: string; power: number };
-type State = { game: Game; players: Player[]; lastEvent: string };
-const starter: State = { game:'halay',players:[],lastEvent:'Oyun başlatılmayı bekliyor' };
-const channelName='dubles-motion-live-games-preview-v1';
-
-export default function LiveGamesPage() {
-  const [state,setState]=useState<State>(starter);
-  const [nickname,setNickname]=useState('Misafir');
-  const [overlay,setOverlay]=useState(false);
-  useEffect(() => {
-    const params=new URLSearchParams(window.location.search);
-    setOverlay(params.get('overlay')==='1');
-    try { const saved=localStorage.getItem(channelName);if(saved)setState(JSON.parse(saved) as State); }catch{}
-    const channel=new BroadcastChannel(channelName);
-    channel.onmessage=e=>{if(e.data && Array.isArray(e.data.players))setState(e.data as State);};
-    return ()=>channel.close();
-  },[]);
-  const update=(next:State)=>{
-    setState(next);
-    try {localStorage.setItem(channelName,JSON.stringify(next));const ch=new BroadcastChannel(channelName);ch.postMessage(next);ch.close();}catch{}
-  };
-  const event=(type:'join'|'like'|'gift')=>{
-    const name=nickname.trim().slice(0,26)||'Misafir';
-    const list=[...state.players];
-    const index=list.findIndex(p=>p.name.toLowerCase()===name.toLowerCase());
-    const bonus=type==='gift'?4:type==='like'?2:1;
-    if(index<0)list.push({name,power:bonus});else list[index]={...list[index],power:Math.min(25,list[index].power+bonus)};
-    update({...state,players:list.slice(-12),lastEvent:name+' · '+(type==='join'?'katıldı':type==='gift'?'demo hediyesi':'beğeni')});
-  };
-  const top=[...state.players].sort((a,b)=>b.power-a.power).slice(0,5);
-  const overlayUrl=typeof window==='undefined'?'':window.location.origin+'/live-games?overlay=1';
-  return <main className={'lg-shell '+(overlay?'lg-overlay':'')}>
-    {!overlay&&<div className="lg-header"><div><div className="lg-eyebrow">DUBLE-S MOTION AI · LIVE GAMES</div><h1>Cinematic LIVE Game Studio</h1><p>Gerçek zamanlı WebGL ortamları · TikTok bağlantısı kapalı · Test olayları</p></div><span className="lg-tag">CINEMATIC PREVIEW v0.5</span></div>}
-    {!overlay&&<div className="lg-toolbar"><button onClick={()=>update({...state,game:'halay'})} className={state.game==='halay'?'lg-selected':''}>🎶 Halay Party</button><button onClick={()=>update({...state,game:'mountain'})} className={state.game==='mountain'?'lg-selected':''}>🏔️ Mountain Race</button><button onClick={()=>update({...starter,game:state.game})}>↻ Sıfırla</button></div>}
-    <div className="lg-columns"><section className="lg-game">
-      <CinematicScene game={state.game}/><div className="lg-sky"/><div className="lg-spot lg-spot-left"/><div className="lg-spot lg-spot-right"/>
-      {state.game==='halay'?<><div className="lg-banner">HALAY PARTY 3D</div><div className="lg-floor"/><div className="lg-actors">{(state.players.length?state.players:[{name:'Duble-S',power:4},{name:'LIVE',power:3},{name:'GAMES',power:4}]).slice(-8).map((p,i)=><div key={p.name+i} className="lg-dancer" style={{animationDelay:(i*.14)+'s'}}><div className="lg-name">{p.name}</div><div className="lg-head"/><div className="lg-torso" style={{background:['#f34ea5','#1ddad4','#a779fe','#ffc44e'][i%4]}}/><div className="lg-arms"/><div className="lg-legs"/></div>)}</div></>:<>
-      <div className="lg-banner">MOUNTAIN RACE 3D</div><div className="lg-mountain lg-mountain-back"/><div className="lg-mountain"/><div className="lg-flag">🚩</div><div className="lg-climbers">{(state.players.length?state.players:[{name:'Duble-S',power:6},{name:'LIVE',power:4},{name:'GAMES',power:2}]).slice(-8).map((p,i)=><div className="lg-climber" key={p.name+i} style={{left:(12+i*10)+'%',bottom:(16+p.power*2.1)+'%'}}><span>{p.name}</span><b>🧗</b></div>)}</div></>}
-      <div className="lg-hud"><span>DEMO</span><span>{state.players.length} izleyici</span></div>
-    </section><aside className="lg-sidebar">
-      {!overlay&&<section className="lg-card"><h2>Test kontrol merkezi</h2><p>Gerçek TikTok hediyesi veya ödeme kullanılmaz.</p><input maxLength={26} value={nickname} onChange={e=>setNickname(e.target.value)} placeholder="İzleyici adı"/><div className="lg-actions"><button onClick={()=>event('join')}>Katıl</button><button onClick={()=>event('like')}>♡ Beğen</button><button onClick={()=>event('gift')}>✦ Demo hediye</button></div><button className="lg-copy" onClick={()=>navigator.clipboard.writeText(overlayUrl)}>OBS önizleme URL'sini kopyala</button><small>OBS ekranı aynı tarayıcı kökenindeki oturum verilerini kullanır. Üretim için sunucu senkronizasyonu gerekir.</small></section>}
-      <section className="lg-card"><h2>🏆 Canlı sıralama</h2>{top.length?top.map((p,i)=><div className="lg-leader" key={p.name}><span>{i+1}. {p.name}</span><strong>{p.power}</strong></div>):<p>Henüz katılımcı yok.</p>}<div className="lg-last">{state.lastEvent}</div></section>
-    </aside></div>
-    {!overlay&&<footer className="lg-footer">Duble-S LIVE Games · WebGL2 sinematik ortam önizlemesi. Canlı TikTok, çoklu yayıncı aboneliği ve kalıcı Neon oturumları henüz etkin değil.</footer>}
-  </main>;
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
+import dynamic from 'next/dynamic';
+import {Gamepad2,Radio,Users,Gift,Heart,Play,MonitorPlay,RotateCcw,Mountain,Music2,CarFront} from 'lucide-react';
+import type {GameType,Player,GameEvent} from '@/lib/live-games/game';
+import {starterNames} from '@/lib/live-games/game';
+import './style.css';
+const Stage=dynamic(()=>import('@/components/live-games/Stage'),{ssr:false,loading:()=> <div className="loading">3D sahne hazırlanıyor…</div>});
+type State={game:GameType;players:Player[];events:GameEvent[];burst:number;startedAt:number|null};
+const initial:State={game:'halay',players:[],events:[],burst:0,startedAt:null};
+const storageKey='dubles-live-games-v2';
+const titles:Record<GameType,string>={halay:'HALAY PARTY 3D',mountain:'MOUNTAIN RACE 3D',race:'ŞEHİR YARIŞI'};
+export default function LiveGames(){
+ const [state,setState]=useState<State>(initial),[overlay,setOverlay]=useState(false),[auto,setAuto]=useState(false),[name,setName]=useState('Yeniİzleyici'),[now,setNow]=useState(0),[copyStatus,setCopyStatus]=useState('');
+ const stateRef=useRef(state);
+ useEffect(()=>{stateRef.current=state},[state]);
+ // Browser-only settings cannot be read during server rendering.
+ // eslint-disable-next-line react-hooks/set-state-in-effect
+ useEffect(()=>{setNow(Date.now());setOverlay(new URLSearchParams(window.location.search).get('overlay')==='1');try{const s=localStorage.getItem(storageKey);if(s){const parsed=JSON.parse(s);if(['halay','mountain','race'].includes(parsed.game)&&Array.isArray(parsed.players)&&Array.isArray(parsed.events))setState(parsed);}}catch{}
+  const receive=(e:StorageEvent)=>{if(e.key===storageKey&&e.newValue)try{setState(JSON.parse(e.newValue))}catch{}};window.addEventListener('storage',receive);return()=>window.removeEventListener('storage',receive);
+ },[]);
+ const update=useCallback((next:State)=>{stateRef.current=next;setState(next);try{localStorage.setItem(storageKey,JSON.stringify(next))}catch{}},[]);
+ const emit=useCallback((kind:GameEvent['kind'],raw:string)=>{const s=stateRef.current;if(s.game==='race'&&s.startedAt&&Date.now()-s.startedAt>=300000)return;const name=raw.trim().slice(0,32)||'İzleyici',index=s.players.findIndex(p=>p.name.toLocaleLowerCase('tr')===name.toLocaleLowerCase('tr'));const at=Date.now();let players=s.players;
+  if(index<0)players=[...players,{id:crypto.randomUUID(),name,team:players.length%2,power:kind==='gift'?(s.game==='race'?1:3):s.game==='race'?0:1,joinedAt:at}];
+  else if(kind==='gift'||s.game!=='race')players=players.map((p,i)=>i!==index?p:{...p,power:p.power+(kind==='gift'?(s.game==='race'?1:3):kind==='like'?1:.5)});
+  const event:GameEvent={id:crypto.randomUUID(),kind,name,at};update({...s,players,events:[event,...s.events].slice(0,14),startedAt:s.startedAt??at,burst:s.burst+(kind==='gift'?1:0)});
+ },[update]);
+ useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer)},[]);
+ useEffect(()=>{if(!auto)return;const timer=setInterval(()=>emit(Math.random()>.78?'gift':'join',starterNames[Math.floor(Math.random()*starterNames.length)]),1800);return()=>clearInterval(timer)},[auto,emit]);
+ const top=useMemo(()=>[...state.players].sort((a,b)=>b.power-a.power||a.joinedAt-b.joinedAt).slice(0,10),[state.players]);
+ const left=state.startedAt?Math.max(0,300000-(now-state.startedAt)):300000;const seconds=Math.ceil(left/1000);const time=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
+ const switchGame=(game:GameType)=>{setAuto(false);update({...initial,game})};
+ const showOverlay=async()=>{const url=window.location.origin+'/live-games?overlay=1';try{await navigator.clipboard.writeText(url);setCopyStatus('Yayın ekranı bağlantısı kopyalandı.')}catch{setCopyStatus('Bağlantı kopyalanamadı; adres: '+url)}window.open(url,'_blank','noopener,noreferrer')};
+ return <main className={overlay?'app overlay':'app'}>
+ {!overlay&&<aside className="sidebar"><div className="brand"><div className="brandIcon">DS</div><div><strong>DUBLE-S</strong><span>LIVE GAMES</span></div></div><p className="sectionlabel">CREATOR STUDIO</p><div className="nav active"><Gamepad2 size={19}/> Oyun Stüdyosu</div><div className="nav"><Radio size={19}/> Canlı bağlantı · yakında</div><div className="sidebarBottom"><span className="pulse"/> Önizleme · demo verileri <small>3D Game Studio</small></div></aside>}
+ <section className="workspace"><header className="header"><div><span className="eyebrow">DUBLE-S MOTION / LIVE GAMES</span><h1>{overlay?'CANLI OYUN EKRANI':'LIVE GAME STUDIO'}</h1>{!overlay&&<p>Üç farklı oyun dünyasını dene · TikTok bağlantısı henüz etkin değil</p>}</div>{!overlay&&<div className="headerActions"><span className="status"><span className="led grey"/> DEMO</span><button className="ghost" onClick={showOverlay}><MonitorPlay size={16}/> Yayın ekranı</button></div>}</header>
+ <div className="content"><div className="maincol">{!overlay&&<div className="gameswitch"><button className={state.game==='halay'?'chosen':''} onClick={()=>switchGame('halay')}><Music2 size={18}/> Halay Party</button><button className={state.game==='mountain'?'chosen':''} onClick={()=>switchGame('mountain')}><Mountain size={18}/> Dağ Yarışı</button><button className={state.game==='race'?'chosen':''} onClick={()=>switchGame('race')}><CarFront size={18}/> Şehir Yarışı</button></div>}
+ <div className="stageFrame"><div className="stage"><Stage game={state.game} players={state.players} burst={state.burst}/></div><div className="stagelabel"><span className="liveDot"/> DEMO · {titles[state.game]}</div><div className="stagehud"><strong>{state.game==='race'?time:state.players.length}</strong><span>{state.game==='race'?'KALAN SÜRE':'KATILIMCI'}</span></div><div className="stagecaption">{state.game==='race'?'5 dakikalık şehir yarışı · Hediye sayısıyla konvoyda öne geç':state.game==='halay'?'Ritmi yakala, halaya katıl!':'Zirveye ilk ulaşan kim olacak?'}</div></div>
+ {!overlay&&<div className="controls"><div className="controlsHeader"><h2>Test Kontrol Merkezi</h2><span>Gerçek yayın gerektirmez</span></div><div className="inputRow"><input value={name} onChange={e=>setName(e.target.value)} maxLength={32} aria-label="İzleyici adı" placeholder="İzleyici adı"/><button onClick={()=>emit('join',name)}><Users size={17}/> Katıl</button><button onClick={()=>emit('like',name)}><Heart size={17}/> Beğeni</button><button className="pink" onClick={()=>emit('gift',name)}><Gift size={17}/> Demo hediye</button></div><div className="secondRow"><button className={auto?'toggled':''} onClick={()=>setAuto(v=>!v)}><Play size={16}/>{auto?'Simülasyonu durdur':'Otomatik simülasyon'}</button><button onClick={()=>{setAuto(false);update({...initial,game:state.game})}}><RotateCcw size={16}/> Sıfırla</button></div><p role="status">{copyStatus}</p></div>}</div>
+ {!overlay&&<div className="rightcol"><section className="panel"><div className="panelheading"><h3>Yayın bağlantısı</h3><span className="tag">HENÜZ ETKİN DEĞİL</span></div><p>Bu sürüm test verileri kullanır. TikTok yorumları ve hediyeleri henüz otomatik bağlanmaz.</p><div className="note">Yayın ekranı aynı tarayıcıdaki demo verilerini kullanır; farklı cihazlar arasında senkronizasyon henüz yoktur.</div></section><section className="panel"><div className="panelheading"><h3>🏆 Sıralama</h3><span className="tag">DEMO</span></div>{top.length===0?<div className="empty">Henüz oyuncu yok.</div>:top.map((p,i)=><div className="leader" key={p.id}><span className="rank">#{i+1}</span><strong>{p.name}</strong><span>{p.power} {state.game==='race'?'🎁':'puan'}</span></div>)}</section><div className="disclaimer">{state.game==='race'&&state.players.length>18?`İlk 18 araç sahnede gösteriliyor; toplam ${state.players.length} yarışçı sıralanıyor. `:''}Önizleme simülasyonudur; gerçek TikTok hediyesi veya ödeme içermez.</div></div>}
+ {overlay&&<div className="overlayScore"><b>🏆 DEMO SIRALAMA</b>{top.slice(0,4).map((p,i)=><div key={p.id}><span>{i+1}. {p.name}</span><strong>{p.power}</strong></div>)}</div>}
+ </div></section></main>;
 }
