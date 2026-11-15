@@ -862,6 +862,9 @@ export default function HomePageClient() {
           <Link href="/studio" style={styles.navLink}>
             {t.nav.studio}
           </Link>
+          <Link href="/live-games" style={styles.navLink}>
+            LIVE Games
+          </Link>
           <Link href="/developers" style={styles.navLink}>
             {t.nav.api}
           </Link>
