@@ -77,7 +77,7 @@ function StageWorld({dancers,bpm}:{dancers:Dancer[];bpm:number}){
 }
 function StageFallback(){return <Html center><div style={{color:'white',background:'#0f1633dd',padding:18,borderRadius:12,whiteSpace:'nowrap'}}>3D karakterler yükleniyor…</div></Html>;}
 export default function RapDanceStage({dancers,bpm}:{dancers:Dancer[];bpm:number}){
- const entries=dancers.length?dancers:demoNames.map((name,i)=>({id:'demo-'+i,name,gender:i%2?'male':'female',gifts:5-i,joined:i}));
+ const entries:Dancer[]=dancers.length?dancers:demoNames.map((name,i):Dancer=>({id:'demo-'+i,name,gender:i%2?'male':'female',gifts:5-i,joined:i}));
  return <Canvas shadows dpr={[1,1.7]} camera={{position:[0,4,16],fov:42}} gl={{antialias:true,powerPreference:'high-performance'}} style={{height:'100%',width:'100%'}}>
   <Suspense fallback={<StageFallback/>}><StageWorld dancers={entries} bpm={bpm}/></Suspense>
  </Canvas>;
