@@ -133,9 +133,10 @@ export default function AppShell({
       { href: "/video-clone", label: common.nav.videoClone },
       { href: "/history", label: common.nav.history },
       { href: "/editor", label: common.nav.editor },
+      { href: "/series-studio", label: language === "tr" ? "Dizi Stüdyosu" : "Series Studio" },
       { href: "/billing", label: common.nav.billing },
     ],
-    [common]
+    [common, language]
   );
 
   async function handleSignOut() {
